@@ -1,10 +1,10 @@
-# [AnimeFLV Stremio addon](stremio://animeflv-stremio-addon.onrender.com/manifest.json)
+# [AnimeFLV Stremio addon](https://animeflv-stremio-addon.onrender.com/manifest.json)
 <p align="center"><img src="https://play-lh.googleusercontent.com/ZIjIwO5FJe9R1rplSd4uz54OwBxQhwDcznjljSPl2MgHaCoyF3qG6R4kRMCB40f4l2A=w256" alt="AnimeFLV logo" height="256"/></p>
 
 Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with AnimeFLV. (I'm new to backend so I'm using it as a learning experience).
 
 ## Normal use:
-### Install by clicking [this link](stremio://animeflv-stremio-addon.onrender.com/manifest.json) or add <https://animeflv-stremio-addon.onrender.com/manifest.json> to your addons
+### Install by copying <stremio://animeflv-stremio-addon.onrender.com/manifest.json> on your browser or paste <https://animeflv-stremio-addon.onrender.com/manifest.json> on the stremio addons search bar
 Whenever you start watching something on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), the platform will call this addon. When the program can get the data for the item you are about to watch, some streaming options will apear as "AnimeFLV - ..." (right now they just open the link on your browser, working on getting the files directly on Stremio).
 
 ## Tips are welcome:
