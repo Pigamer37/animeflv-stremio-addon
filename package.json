@@ -1,0 +1,32 @@
+{
+  "name": "animeflv-stremio-addon",
+  "version": "0.0.1",
+  "description": "Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with AnimeFLV. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
+  "main": "index.js",
+  "scripts": {
+    "devStart": "nodemon index.js --ignore README"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pigamer37/animeflv-stremio-addon.git"
+  },
+  "keywords": [
+    "stremio",
+    "node.js",
+    "express.js",
+    "japanese"
+  ],
+  "author": "Pigamer37",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Pigamer37/animeflv-stremio-addon/issues"
+  },
+  "homepage": "https://github.com/Pigamer37/animeflv-stremio-addon#readme",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^4.21.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}
