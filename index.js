@@ -23,8 +23,8 @@ function ReadManifest() {
     let manifest = {
       "id": 'com.' + packageJSON.name.replaceAll('-', '.'),
       "version": packageJSON.version,
-      "name": "AnimeFLV Stremio Addon",
-      "logo": "https://www3.animeflv.net/favicon.ico",
+      "name": "AnimeFLV",
+      "logo": "https://play-lh.googleusercontent.com/ZIjIwO5FJe9R1rplSd4uz54OwBxQhwDcznjljSPl2MgHaCoyF3qG6R4kRMCB40f4l2A=w256",
       "description": packageJSON.description,
       "catalogs": [],
       "resources": [
