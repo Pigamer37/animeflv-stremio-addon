@@ -1,6 +1,6 @@
 {
   "name": "animeflv-stremio-addon",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with AnimeFLV. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
   "main": "index.js",
   "scripts": {

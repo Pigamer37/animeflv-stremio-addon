@@ -5,7 +5,7 @@ Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with Ani
 
 ## Normal use:
 ### Install by copying <stremio://animeflv-stremio-addon.onrender.com/manifest.json> on your browser or paste <https://animeflv-stremio-addon.onrender.com/manifest.json> on the stremio addons search bar
-Whenever you start watching something on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), the platform will call this addon. When the program can get the data for the item you are about to watch, some streaming options will apear as "AnimeFLV - ..." (right now they just open the link on your browser, working on getting the files directly on Stremio).
+Whenever you start watching something on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), the platform will call this addon. When the program can get the data for the item you are about to watch, some streaming options will apear as "AnimeFLV - ..." (external ones just open the link on your browser, working on getting more sources to be watchable directly on Stremio, as StreamTape is the only one).
 
 ## Tips are welcome:
 If you like the addon and would like to thank me monetarily, you can do so through ko-fi. Thank you!\
@@ -67,9 +67,10 @@ Parameters
 ## TO DO:
 - [X] Publish to Stremio Addon Catalog (not on Beam Up, because the beamup tool is not working for me)
 - [ ] Research how to get the files directly to Stremio instead of having to send an external link
+   - [X] Added internal links to StreamTape resources
 
 ### Enhancements/new features
-- [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu Stremio addon (see [issue #2](/../../issues/2)) via <https://relations.yuna.moe/api/v2>
+- [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu Stremio addon via <https://relations.yuna.moe/api/v2>
 - [ ] Touch up the views (the homepage, mainly)
 - [ ] Investigate Stremio API
 
