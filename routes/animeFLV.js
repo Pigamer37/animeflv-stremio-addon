@@ -1,6 +1,29 @@
 const ANIMEFLV_API_BASE = "https://animeflv.ahmedrangel.com/api"
 const ANIMEFLV_BASE = "https://www3.animeflv.net/anime"
 
+exports.GetAiringAnime = async function () {
+  const reqURL = `${ANIMEFLV_API_BASE}/list/animes-on-air`
+  return fetch(reqURL).then((resp) => {
+    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+    if (resp === undefined) throw Error(`Undefined response!`)
+    return resp.json()
+  }).then((data) => {
+    if (data?.data === undefined) throw Error("Invalid response!")
+    const promises = data.data.map((entry) => {
+      return this.GetAnimeBySlug(entry.slug).then((anime) => {
+        return {
+          title: anime.name, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
+          slug: entry.slug, poster: anime.poster, overview: anime.description
+        }
+      })
+    })
+
+    return Promise.allSettled(promises).then((results) =>
+      results.filter((prom) => (prom.value)).map((source) => source.value)
+    )
+  })
+}
+
 exports.SearchByTitle = async function (query) {
   const reqURL = `${ANIMEFLV_API_BASE}/search?query=${query}`
   return fetch(reqURL).then((resp) => {
@@ -9,11 +32,12 @@ exports.SearchByTitle = async function (query) {
     return resp.json()
   }).then((data) => {
     if (data?.data?.media === undefined) throw Error("Invalid response!")
-    //return first result
-    return {
-      title: data.data.media[0].title, type: (data.data.media[0].type === "Anime") ? "series" : "movie",
-      slug: data.data.media[0].slug, poster: data.data.media[0].cover, overview: data.data.media[0].synopsis
-    }
+    return data.data.media.map((anime) => {
+      return {
+        title: anime.title, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
+        slug: anime.slug, poster: anime.cover, overview: anime.synopsis
+      }
+    })
   })
 }
 
@@ -26,13 +50,20 @@ exports.GetAnimeBySlug = async function (slug) {
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
+    const epCount = data.data.episodes.length
     const videos = data.data.episodes.map((ep) => {
+      let d = new Date(Date.now())
+      const imgPattern = /\/(\d+).jpg$/g
+      const matches = imgPattern.exec(data.data.cover)
       return {
         id: `animeflv:${slug}:${ep.number}`,
         title: (slug.slice(0, 1).toUpperCase() + slug.slice(1)).replace("-", " ") + " Ep. " + ep.number,
-        released: Date.now(),
-        available: true,
-        episode: ep.number
+        season: 1,
+        episode: ep.number,
+        number: ep.number,
+        thumbnail: `https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
+        released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
+        available: true
       }
     })
     return {

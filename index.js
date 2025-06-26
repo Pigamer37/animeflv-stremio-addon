@@ -26,10 +26,19 @@ function ReadManifest() {
       "name": "AnimeFLV",
       "logo": "https://play-lh.googleusercontent.com/ZIjIwO5FJe9R1rplSd4uz54OwBxQhwDcznjljSPl2MgHaCoyF3qG6R4kRMCB40f4l2A=w256",
       "description": packageJSON.description,
-      "catalogs": [],
+      "catalogs": [
+        {
+          id: "animeflv", type: "AnimeFLV", name: "search results",
+          extra: [{ name: "search", isRequired: true }]
+        },
+        {
+          id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
+        }
+      ],
       "resources": [
         "stream",
-        "meta"
+        "meta",
+        "catalog"
       ],
       "types": [
         "movie",
@@ -107,6 +116,9 @@ app.use(streams);
 
 const meta = require("./routes/meta");
 app.use(meta);
+
+const catalog = require("./routes/catalog");
+app.use(catalog);
 
 app.listen(process.env.PORT || 3000, () => {
   console.log(`\x1b[32manimeflv-stremio-addon is listening on port ${process.env.PORT || 3000}\x1b[39m`)

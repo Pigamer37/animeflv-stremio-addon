@@ -5,20 +5,21 @@ Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with Ani
 
 ## Normal use:
 ### Install by copying <stremio://animeflv-stremio-addon.onrender.com/manifest.json> on your browser or paste <https://animeflv-stremio-addon.onrender.com/manifest.json> on the stremio addons search bar
-This addon provides metadata and streaming options from AnimeFLV. When you open an item on Stremio that that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV - ..." (external ones just open the link on your browser, working on getting more sources to be watchable directly on Stremio, as StreamTape is the only one).
+This addon provides metadata and streaming options from AnimeFLV. It offers the a catalog with airing animes on the homepage, and a searchable catalog of all AnimeFLV. When you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV - ..." (external ones just open the link on your browser, working on getting more sources to be watchable directly on Stremio, as StreamTape is currently the only one).
 
 ## Tips are welcome:
 If you like the addon and would like to thank me monetarily, you can do so through ko-fi. Thank you!\
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/M4M219PJVI)
 
-## Use as a subtitle API:
+## Endpoints:
 Here's the path to call it (parameters are marked by being enclosed in {} and described below):
 ```
-/stream/{type}/{ID}.json
+/{resource}/{type}/{ID}.json
 ```
 Parameters
-1. `type`: should not matter, but to make sure, use 'movie' or 'series' depending on what the item is
-2. `ID`: Except for IMDB, different seasons have different ID's. Here we have some options:
+1. `resource`: stream and meta are very self explanatory, and catalog exposes a list of airing anime. When using catalog as a resource, you can also do `/catalog/{type}/{ID}/search={quey}.json` where `query` is what to search for on AnimeFLV and return it as a catalog (making it searchable on Stremio)
+2. `type`: should not matter, but to make sure, use 'movie' or 'series' depending on what the item is
+3. `ID`: Except for IMDB, different seasons have different ID's. Here we have some options:
    - `IMDB ID`: starts with "tt", followed by a number, always. If you are looking for a series, you can specify the season and episode numbers. Example: `tt5370118:1:2` *should* give results for Konosuba Season 1 Episode 2
    - `TMDB ID`: starts with "tmdb:", followed by a number, always. You can specify a season and episode number if you want. Example: `tmdb:65844:1:2` *should* give results for Konosuba Season 1 Episode 2
    - `kitsu ID`: starts with "kitsu:", followed by a number, always. You can specify an episode number if you want. Example: `kitsu:10941:2` *should* give results for Konosuba (Season 1 was specified with the kitsu ID) Episode 2
@@ -66,12 +67,17 @@ Parameters
 
 ## TO DO:
 - [X] Publish to Stremio Addon Catalog (not on Beam Up, because the beamup tool is not working for me)
+- [X] Support Metadata requests
+   - [ ] Get logo
+   - [ ] Get backgound image
+   - [ ] Get episode thumbnails and or overviews
+- [X] Offer On Air catalog and searchable catalog
+- [ ] Make catalog searchable by genre
 - [ ] Research how to get the files directly to Stremio instead of having to send an external link
    - [X] Added internal links to StreamTape resources
 
 ### Enhancements/new features
 - [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu Stremio addon via <https://relations.yuna.moe/api/v2>
-- [X] Support Metadata requests
 - [ ] Touch up the views (the homepage, mainly)
 - [ ] Investigate Stremio API
 

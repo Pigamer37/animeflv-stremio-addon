@@ -1,5 +1,5 @@
 const express = require("express")
-const stream = express.Router()
+const metas = express.Router()
 
 require('dotenv').config()//process.env.var
 
@@ -84,8 +84,8 @@ function HandleMetaRequest(req, res, next) {
     }).then((metadata) => {
       const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
       animeFLVAPI.SearchByTitle(searchTerm).then((animeFLVitem) => {
-        console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem.title)
-        return animeFLVAPI.GetAnimeBySlug(animeFLVitem.slug).then((animeMeta) => {
+        console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
+        return animeFLVAPI.GetAnimeBySlug(animeFLVitem[0].slug).then((animeMeta) => {
           console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', animeMeta.name)
           res.json({ meta: animeMeta, cacheMaxAge: 10800, staleRevalidate: 3600, staleError: 259200, message: "Got AnimeFLV metadata!" });
           next()
@@ -119,8 +119,8 @@ function ParseConfig(req, res, next) {
   next()
 }
 //Configured requests
-stream.get("/:config/meta/:type/:videoId.json", ParseConfig, HandleMetaRequest)
+metas.get("/:config/meta/:type/:videoId.json", ParseConfig, HandleMetaRequest)
 //Unconfigured requests
-stream.get("/meta/:type/:videoId.json", HandleMetaRequest)
+metas.get("/meta/:type/:videoId.json", HandleMetaRequest)
 
-module.exports = stream;
+module.exports = metas;

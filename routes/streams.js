@@ -21,7 +21,7 @@ const animeFLVAPI = require('./animeFLV.js')
  * @param {subRequestMiddleware} next - REQUIRED: The next middleware function in the chain, should end the response at some point
  */
 function HandleLongStreamRequest(req, res, next) {
-  console.log(`\x1b[96mEntered HandleLongSubRequest with\x1b[39m ${req.originalUrl}`)
+  console.log(`\x1b[96mEntered HandleLongStreamRequest with\x1b[39m ${req.originalUrl}`)
   res.locals.extraParams = SearchParamsRegex(req.params[0])
   next()
 }
@@ -32,7 +32,7 @@ function HandleLongStreamRequest(req, res, next) {
  * @param {subRequestMiddleware} [next] - The next middleware function in the chain, can be empty because we already responded with this middleware
  */
 function HandleStreamRequest(req, res, next) {
-  console.log(`\x1b[96mEntered HandleSubRequest with\x1b[39m ${req.originalUrl}`)
+  console.log(`\x1b[96mEntered HandleStreamRequest with\x1b[39m ${req.originalUrl}`)
   let streams = []
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
@@ -40,6 +40,7 @@ function HandleStreamRequest(req, res, next) {
     const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
     let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
+    console.log('Extra parameters:', res.locals.extraParams)
     animeFLVAPI.GetItemStreams(ID, episode).then((streamArr) => {
       console.log(`\x1b[36mGot ${streamArr.length} streams\x1b[39m`)
       res.json({ streams: streamArr, cacheMaxAge: 10800, staleRevalidate: 3600, staleError: 259200, message: "Got AnimeFLV streams!" });
@@ -96,8 +97,8 @@ function HandleStreamRequest(req, res, next) {
     }).then((metadata) => {
       const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
       animeFLVAPI.SearchByTitle(searchTerm).then((animeFLVitem) => {
-        console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem.title)
-        return animeFLVAPI.GetItemStreams(animeFLVitem.slug, episode).then((streamArr) => {
+        console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
+        return animeFLVAPI.GetItemStreams(animeFLVitem[0].slug, episode).then((streamArr) => {
           console.log(`\x1b[36mGot ${streamArr.length} streams\x1b[39m`)
           res.json({ streams: streamArr, cacheMaxAge: 10800, staleRevalidate: 3600, staleError: 259200, message: "Got AnimeFLV streams!" });
           next()
