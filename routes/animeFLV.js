@@ -1,7 +1,9 @@
 const ANIMEFLV_API_BASE = "https://animeflv.ahmedrangel.com/api"
 const ANIMEFLV_BASE = "https://www3.animeflv.net/anime"
 
-exports.GetAiringAnime = async function () {
+const fsPromises = require("fs/promises");
+
+exports.GetAiringAnimeFromWeb = async function () {
   const reqURL = `${ANIMEFLV_API_BASE}/list/animes-on-air`
   return fetch(reqURL).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
@@ -21,6 +23,23 @@ exports.GetAiringAnime = async function () {
     return Promise.allSettled(promises).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value)
     )
+  })
+}
+
+exports.GetAiringAnime = async function () {
+  return fsPromises.readFile('./onair_titles.json').then((data) => JSON.parse(data)).catch((err) => {
+    console.error('\x1b[31mFailed reading titles cache:\x1b[39m ' + err)
+    return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
+  })
+}
+
+exports.UpdateAiringAnimeFile = function () {
+  return this.GetAiringAnimeFromWeb().then((titles) => {
+    console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to onair_titles.json`)
+    return fsPromises.writeFile('./onair_titles.json', JSON.stringify(titles))
+  }).catch((err) => {
+    console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
+    throw err
   })
 }
 
