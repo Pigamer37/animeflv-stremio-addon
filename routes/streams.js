@@ -92,7 +92,6 @@ function HandleStreamRequest(req, res, next) {
         res.json({ streams, message: "Failed getting media info" });
         next()
       }
-      throw err
     })
   })
 }
