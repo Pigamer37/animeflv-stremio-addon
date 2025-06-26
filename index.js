@@ -38,11 +38,11 @@ function ReadManifest() {
       ],
       "idPrefixes": [
         "tt",
-        "tmdb",
-        "anilist",
-        "kitsu",
-        "mal",
-        "anidb"
+        "tmdb:",
+        "anilist:",
+        "kitsu:",
+        "mal:",
+        "anidb:"
       ],
       "stremioAddonsConfig": {
         "issuer": "https://stremio-addons.net",

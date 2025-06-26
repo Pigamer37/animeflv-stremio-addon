@@ -89,10 +89,16 @@ function HandleStreamRequest(req, res, next) {
     }).catch((err) => {
       console.error('\x1b[31mFailed on animeFLV search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.json({ streams, message: "Failed getting media info" });
+        res.json({ streams, message: "Failed getting animeFLV info" });
         next()
       }
     })
+  }).catch((err) => {
+    console.error('\x1b[31mFailed on metadata search because:\x1b[39m ' + err)
+    if (!res.headersSent) {
+      res.json({ streams, message: "Failed getting media info" });
+      next()
+    }
   })
 }
 /** 
