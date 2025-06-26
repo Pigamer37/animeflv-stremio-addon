@@ -61,7 +61,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: ep.number,
         number: ep.number,
-        thumbnail: `https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
+        thumbnail: `https://www3.animeflv.net/uploads/animes/thumbs/${matches[1]}.jpg`,
         released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
