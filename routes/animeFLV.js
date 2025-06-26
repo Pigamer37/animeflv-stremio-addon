@@ -17,6 +17,32 @@ exports.SearchByTitle = async function (query) {
   })
 }
 
+exports.GetAnimeBySlug = async function (slug) {
+  const reqURL = `${ANIMEFLV_API_BASE}/anime/${slug}`
+  return fetch(reqURL).then((resp) => {
+    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+    if (resp === undefined) throw Error(`Undefined response!`)
+    return resp.json()
+  }).then((data) => {
+    if (data?.data === undefined) throw Error("Invalid response!")
+    //return first result
+    const videos = data.data.episodes.map((ep) => {
+      return {
+        id: `animeflv:${slug}:${ep.number}`,
+        title: (slug.slice(0, 1).toUpperCase() + slug.slice(1)).replace("-", " ") + " Ep. " + ep.number,
+        released: Date.now(),
+        available: true,
+        episode: ep.number
+      }
+    })
+    return {
+      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Anime") ? "series" : "movie",
+      videos, poster: data.data.cover, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `animeflv:${slug}`,
+      language: "jpn"
+    }
+  })
+}
+
 exports.GetItemStreams = async function (slug, epNumber = 1) {
   //if we don't get an episode number, use 1, that's how animeFLV works
   const reqURL = `${ANIMEFLV_API_BASE}/anime/${slug}/episode/${epNumber}`;

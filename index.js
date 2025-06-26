@@ -28,7 +28,8 @@ function ReadManifest() {
       "description": packageJSON.description,
       "catalogs": [],
       "resources": [
-        "stream"
+        "stream",
+        "meta"
       ],
       "types": [
         "movie",
@@ -38,6 +39,7 @@ function ReadManifest() {
       ],
       "idPrefixes": [
         "tt",
+        "animeflv:",
         "tmdb:",
         "anilist:",
         "kitsu:",
@@ -102,6 +104,9 @@ app.get("/:config/configure", (req, res) => {
 
 const streams = require("./routes/streams");
 app.use(streams);
+
+const meta = require("./routes/meta");
+app.use(meta);
 
 app.listen(process.env.PORT || 3000, () => {
   console.log(`\x1b[32manimeflv-stremio-addon is listening on port ${process.env.PORT || 3000}\x1b[39m`)
