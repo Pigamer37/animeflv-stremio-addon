@@ -37,7 +37,12 @@ function HandleCatalogRequest(req, res, next) {
   let catalogPromise
   if (res.locals.extraParams) {
     let genreArr = (res.locals.extraParams.genre) ? res.locals.extraParams.genre.split(',', 4) : undefined
-    catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr)
+    //calculate the page to start from, AnimeFLV uses 24 results per page
+    //if skip is defined, we can calculate the page and the number of items we already delivered
+    let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
+      gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
+    console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+    catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr, undefined, page, gottenItems)
   } else {
     catalogPromise = animeFLVAPI.GetAiringAnime()
   }

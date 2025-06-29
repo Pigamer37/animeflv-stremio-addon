@@ -43,18 +43,19 @@ exports.UpdateAiringAnimeFile = function () {
   })
 }
 
-exports.SearchAnimeFLV = async function (query, genreArr = undefined, url = undefined) {
+exports.SearchAnimeFLV = async function (query, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimeFLV()")
-  const anilistURL = (url) ? url
-    : `https://www3.animeflv.net/browse?${(query) ? "q=" + query + "&" : ""}${(genreArr) ? "genre[]=" + genreArr.join("&genre[]=") : ""}`
-  const reqURL = `${ANIMEFLV_API_BASE}/search/by-url?url=${anilistURL}`
+  const animeFLVURL = (url) ? url
+    : `https%3A%2F%2Fwww3.animeflv.net%2Fbrowse%3F${(query) ? "q%3D" + query + "%26" : ""}${(genreArr) ? "genre%5B%5D%3D" + genreArr.join("%26genre%5B%5D%3D") : ""}${(page) ? "%26page%3D" + page : ""}`
+  const reqURL = `${ANIMEFLV_API_BASE}/search/by-url?url=${animeFLVURL}`
+  console.log("\x1b[36mSearching:\x1b[39m", reqURL)
   return fetch(reqURL).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     if (resp === undefined) throw Error(`Undefined response!`)
     return resp.json()
   }).then((data) => {
     if (data?.data?.media === undefined) throw Error("Invalid response!")
-    return data.data.media.map((anime) => {
+    return data.data.media.slice(gottenItems).map((anime) => {
       return {
         title: anime.title, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
         slug: anime.slug, poster: anime.cover, overview: anime.synopsis, genres: genreArr
