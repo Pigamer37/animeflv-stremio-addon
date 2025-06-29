@@ -43,8 +43,11 @@ exports.UpdateAiringAnimeFile = function () {
   })
 }
 
-exports.SearchByTitle = async function (query) {
-  const reqURL = `${ANIMEFLV_API_BASE}/search?query=${query}`
+exports.SearchAnimeFLV = async function (query, genreArr = undefined, url = undefined) {
+  if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimeFLV()")
+  const anilistURL = (url) ? url
+    : `https://www3.animeflv.net/browse?${(query) ? "q=" + query + "&" : ""}${(genreArr) ? "genre[]=" + genreArr.join("&genre[]=") : ""}`
+  const reqURL = `${ANIMEFLV_API_BASE}/search/by-url?url=${anilistURL}`
   return fetch(reqURL).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     if (resp === undefined) throw Error(`Undefined response!`)
@@ -54,7 +57,7 @@ exports.SearchByTitle = async function (query) {
     return data.data.media.map((anime) => {
       return {
         title: anime.title, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
-        slug: anime.slug, poster: anime.cover, overview: anime.synopsis
+        slug: anime.slug, poster: anime.cover, overview: anime.synopsis, genres: genreArr
       }
     })
   })

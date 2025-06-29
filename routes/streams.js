@@ -96,7 +96,7 @@ function HandleStreamRequest(req, res, next) {
       })
     }).then((metadata) => {
       const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
-      animeFLVAPI.SearchByTitle(searchTerm).then((animeFLVitem) => {
+      animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
         console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
         return animeFLVAPI.GetItemStreams(animeFLVitem[0].slug, episode).then((streamArr) => {
           console.log(`\x1b[36mGot ${streamArr.length} streams\x1b[39m`)

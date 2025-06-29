@@ -35,8 +35,9 @@ function HandleCatalogRequest(req, res, next) {
   console.log(`\x1b[96mEntered HandleCatalogRequest with\x1b[39m ${req.originalUrl}`)
   console.log('Extra parameters:', res.locals.extraParams)
   let catalogPromise
-  if (res.locals.extraParams?.search) {
-    catalogPromise = animeFLVAPI.SearchByTitle(res.locals.extraParams.search)
+  if (res.locals.extraParams) {
+    let genreArr = (res.locals.extraParams.genre) ? res.locals.extraParams.genre.split(',', 4) : undefined
+    catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr)
   } else {
     catalogPromise = animeFLVAPI.GetAiringAnime()
   }
@@ -48,7 +49,8 @@ function HandleCatalogRequest(req, res, next) {
         type: anime.type,
         name: anime.title,
         poster: anime.poster,
-        description: anime.overview
+        description: anime.overview,
+        genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
       }
     })
     res.json({ metas, cacheMaxAge: 10800, staleRevalidate: 3600, staleError: 259200, message: "Got AnimeFLV metadata!" });
