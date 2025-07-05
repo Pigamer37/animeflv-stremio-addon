@@ -43,7 +43,7 @@ function HandleStreamRequest(req, res, next) {
     console.log('Extra parameters:', res.locals.extraParams)
     animeFLVAPI.GetItemStreams(ID, episode).then((streamArr) => {
       console.log(`\x1b[36mGot ${streamArr.length} streams\x1b[39m`)
-      res.json({ streams: streamArr, cacheMaxAge: 10800, staleRevalidate: 3600, staleError: 259200, message: "Got AnimeFLV streams!" });
+      res.json({ streams: streamArr, message: "Got AnimeFLV streams!" });
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on animeFLV slug search because:\x1b[39m ' + err)
@@ -100,7 +100,8 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
         return animeFLVAPI.GetItemStreams(animeFLVitem[0].slug, episode).then((streamArr) => {
           console.log(`\x1b[36mGot ${streamArr.length} streams\x1b[39m`)
-          res.json({ streams: streamArr, cacheMaxAge: 10800, staleRevalidate: 3600, staleError: 259200, message: "Got AnimeFLV streams!" });
+          res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200");
+          res.json({ streams: streamArr, message: "Got AnimeFLV streams!" });
           next()
         })
       }).catch((err) => {

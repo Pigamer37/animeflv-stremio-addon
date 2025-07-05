@@ -30,7 +30,8 @@ function HandleMetaRequest(req, res, next) {
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     animeFLVAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', animeMeta.name)
-      res.json({ meta: animeMeta, cacheMaxAge: 10800, staleRevalidate: 3600, staleError: 259200, message: "Got AnimeFLV metadata!" });
+      res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200");
+      res.json({ meta: animeMeta, message: "Got AnimeFLV metadata!" });
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on animeFLV slug search because:\x1b[39m ' + err)
@@ -87,7 +88,8 @@ function HandleMetaRequest(req, res, next) {
         console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
         return animeFLVAPI.GetAnimeBySlug(animeFLVitem[0].slug).then((animeMeta) => {
           console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', animeMeta.name)
-          res.json({ meta: animeMeta, cacheMaxAge: 10800, staleRevalidate: 3600, staleError: 259200, message: "Got AnimeFLV metadata!" });
+          res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200");
+          res.json({ meta: animeMeta, message: "Got AnimeFLV metadata!" });
           next()
         })
       }).catch((err) => {
