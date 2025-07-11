@@ -5,7 +5,7 @@ Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with Ani
 
 ## Normal use:
 ### Install by copying <stremio://animeflv-stremio-addon.onrender.com/manifest.json> on your browser or paste <https://animeflv-stremio-addon.onrender.com/manifest.json> on the stremio addons search bar
-This addon provides metadata and streaming options from AnimeFLV. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV - ..." (the ones marked as external just open the link on your browser, working on getting more sources to be watchable directly on Stremio, as StreamTape is currently the only one).
+This addon provides metadata and streaming options from AnimeFLV. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV - ..." (the ones marked as external just open the link on your browser, working on getting sources to be watchable directly on Stremio).
 
 > [!TIP]
 > ### Recommendations:
@@ -81,7 +81,6 @@ Parameters
 - [X] Offer "On Air" catalog and searchable catalog
 - [ ] Make catalog searchable by genre
 - [ ] Research how to get the files directly to Stremio instead of having to send an external link
-   - [X] Added internal links to StreamTape resources (not working 100%)
 
 ### Enhancements/new features
 - [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu Stremio addon via <https://relations.yuna.moe/api/v2>

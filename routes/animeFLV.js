@@ -118,8 +118,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         }
       }
     })
-    //return externalStreams
-    const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape")/* || (src.embed !== undefined && src.name === "YourUpload")*/)
+    return externalStreams
+    /*const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape") || (src.embed !== undefined && src.name === "YourUpload"))
     const promises = downloadStreams.map((source) => {
       if (source.name === "Stape") {
         return GetStreamTapeLink(source.download).then((realURL) => {
@@ -137,7 +137,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           console.log("Failed getting StreamTape link:", err)
           return undefined
         })
-      } /*else if (source.name === "YourUpload") {
+      } else if (source.name === "YourUpload") {
         return GetYourUploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
@@ -161,12 +161,12 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           console.log("Failed getting YourUpload link:", err)
           return undefined
         })
-      }*/
+      }
     })
 
     return Promise.allSettled(promises).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value).concat(externalStreams)
-    )
+    )*/
   })
 }
 //Adapted from https://github.com/ChristopherProject/Streamtape-Video-Downloader
