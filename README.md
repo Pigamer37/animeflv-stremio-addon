@@ -1,10 +1,10 @@
-# [AnimeFLV Stremio addon](https://animeflv-stremio-addon.onrender.com/manifest.json)
+# [AnimeFLV Stremio addon](https://animeflv-stremio-addon.vercel.app/manifest.json)
 <p align="center"><img src="https://play-lh.googleusercontent.com/ZIjIwO5FJe9R1rplSd4uz54OwBxQhwDcznjljSPl2MgHaCoyF3qG6R4kRMCB40f4l2A=w256" alt="AnimeFLV logo" height="256"/></p>
 
 Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with AnimeFLV. (I'm new to backend so I'm using it as a learning experience).
 
 ## Normal use:
-### Install by copying <stremio://animeflv-stremio-addon.onrender.com/manifest.json> on your browser or paste <https://animeflv-stremio-addon.onrender.com/manifest.json> on the stremio addons search bar
+### Install by copying <stremio://animeflv-stremio-addon.vercel.app/manifest.json> on your browser or paste <https://animeflv-stremio-addon.vercel.app/manifest.json> on the stremio addons search bar
 This addon provides metadata and streaming options from AnimeFLV. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV - ..." (the ones marked as external just open the link on your browser, working on getting sources to be watchable directly on Stremio).
 
 > [!TIP]
