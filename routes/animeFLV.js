@@ -2,6 +2,7 @@ const ANIMEFLV_API_BASE = "https://animeflv.ahmedrangel.com/api"
 const ANIMEFLV_BASE = "https://www3.animeflv.net/anime"
 
 const fsPromises = require("fs/promises");
+const animeflvAPI = require("animeflv-api");
 
 exports.GetAiringAnimeFromWeb = async function () {
   const reqURL = `${ANIMEFLV_API_BASE}/list/animes-on-air`
@@ -9,6 +10,21 @@ exports.GetAiringAnimeFromWeb = async function () {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     if (resp === undefined) throw Error(`Undefined response!`)
     return resp.json()
+  }).catch((err) => {
+    console.error('\x1b[31mUsing npm package because animeFLV API failed because:\x1b[39m ' + err)
+    return animeflvAPI.getOnAir().then((data) => {
+      if (!data || data.length < 1) throw Error("Invalid response!")
+      return {
+        data: data.map((entry) => {
+          return {
+            title: entry.title,
+            type: entry.type,
+            slug: entry.id,
+            url: entry.url
+          }
+        })
+      }
+    })
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
     const promises = data.data.map((entry) => {
@@ -53,6 +69,23 @@ exports.SearchAnimeFLV = async function (query, genreArr = undefined, url = unde
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     if (resp === undefined) throw Error(`Undefined response!`)
     return resp.json()
+  }).catch((err) => {
+    console.error('\x1b[31mUsing npm package because animeFLV API failed because:\x1b[39m ' + err)
+    return animeflvAPI.searchAnimesBySpecificURL(reqURL).then((data) => {
+      if (!data || data?.data === undefined) throw Error("Invalid response!")
+      return {
+        data: data.map((entry) => {
+          return {
+            currentPage: 1,
+            hasNextPage: (!entry.nextPage) ? false : true,
+            previousPage: entry.previousPage,
+            nextPage: entry.nextPage,
+            foundPages: entry.foundPages,
+            media: data.data.map((el) => { return { title: el.title, cover: el.cover, synopsis: el.synopsis, rating: el.rating, slug: el.id, type: el.type, url: el.url } })
+          }
+        })
+      }
+    })
   }).then((data) => {
     if (data?.data?.media === undefined) throw Error("Invalid response!")
     return data.data.media.slice(gottenItems).map((anime) => {
@@ -70,6 +103,24 @@ exports.GetAnimeBySlug = async function (slug) {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     if (resp === undefined) throw Error(`Undefined response!`)
     return resp.json()
+  }).catch((err) => {
+    console.error('\x1b[31mUsing npm package because animeFLV API failed because:\x1b[39m ' + err)
+    return animeflvAPI.getAnimeInfo(slug).then((data) => {
+      if (!data) throw Error("Invalid response!")
+      let episodes = []
+      for (let i = 1; i <= data.episodes; i++) episodes.push({ number: i })
+      return {
+        data: data.map((entry) => {
+          return {
+            title: entry.title,
+            type: entry.type,
+            slug: entry.id,
+            url: entry.url,
+            episodes
+          }
+        })
+      }
+    })
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
@@ -80,7 +131,7 @@ exports.GetAnimeBySlug = async function (slug) {
       const matches = imgPattern.exec(data.data.cover)
       return {
         id: `animeflv:${slug}:${ep.number}`,
-        title: (slug.slice(0, 1).toUpperCase() + slug.slice(1)).replace("-", " ") + " Ep. " + ep.number,
+        title: data.data.title + " Ep. " + ep.number,
         season: 1,
         episode: ep.number,
         number: ep.number,
@@ -103,7 +154,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
   return fetch(reqURL).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     if (resp === undefined) throw Error(`Undefined response!`)
-    return resp.json()
+    return resp.json()//npm package doesn't have a stream function, we'll have to program it ourselves
   }).then((data) => {
     if (data?.data?.servers === undefined) throw Error("Invalid response!")
     let epName = data.data.title
