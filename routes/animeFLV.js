@@ -80,7 +80,7 @@ exports.GetAnimeBySlug = async function (slug) {
       const matches = imgPattern.exec(data.data.cover)
       return {
         id: `animeflv:${slug}:${ep.number}`,
-        title: (slug.slice(0, 1).toUpperCase() + slug.slice(1)).replace("-", " ") + " Ep. " + ep.number,
+        title: data.data.title + " Ep. " + ep.number,
         season: 1,
         episode: ep.number,
         number: ep.number,

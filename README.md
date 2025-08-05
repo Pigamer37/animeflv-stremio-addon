@@ -79,12 +79,12 @@ Parameters
    - [ ] Get series backgound image
    - [ ] Get episode overviews
 - [X] Offer "On Air" catalog and searchable catalog
-- [ ] Make catalog searchable by genre
+- [X] Make catalog searchable by genre
 - [ ] Research how to get the files directly to Stremio instead of having to send an external link
 
 ### Enhancements/new features
 - [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu Stremio addon via <https://relations.yuna.moe/api/v2>
-- [ ] Implement skip extra argument functionality (each search page in the api outputs 24 results, so it's not cleanly divided by 100)
+- [X] Implement skip extra argument functionality (each search page in the api outputs 24 results, so it's not cleanly divided by 100)
 - [ ] Touch up the views (the homepage, mainly)
 - [ ] Investigate Stremio API
 
