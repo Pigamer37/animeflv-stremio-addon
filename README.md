@@ -64,10 +64,7 @@ Parameters
 > This application/addon uses AnimeFLV but is not endorsed, certified, or otherwise approved by AnimeFLV.
 >
 > [The unofficial AnimeFLV API](https://animeflv.ahmedrangel.com/api)
-> This application/addon uses the unofficial AnimeFLV API but is not endorsed, certified, or otherwise approved by it.
->
-> [animeflv-api npm package](https://www.npmjs.com/package/animeflv-api?activeTab=readme)
-> This application/addon uses animeflv-api npm package when the unofficial AnimeFLV API fails, but is not endorsed, certified, or otherwise approved by it.
+> This application/addon uses the unofficial AnimeFLV API (or its adapted code) but is not endorsed, certified, or otherwise approved by it.
 >
 > ![The Movie DataBase logo](https://www.themoviedb.org/assets/2/v4/logos/v2/blue_long_2-9665a76b1ae401a510ec1e0ca40ddcb3b0cfe45f1d51b77a308fea0845885648.svg)
 > This application/addon uses TMDB and the TMDB API but is not endorsed, certified, or otherwise approved by TMDB.

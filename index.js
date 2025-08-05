@@ -150,8 +150,8 @@ app.use(catalog);
 
 app.listen(process.env.PORT || 3000, () => {
   console.log(`\x1b[32manimeflv-stremio-addon is listening on port ${process.env.PORT || 3000}\x1b[39m`)
-  const animeFLVAPI = require('./routes/animeFLV.js')
+  /*const animeFLVAPI = require('./routes/animeFLV.js')
   animeFLVAPI.UpdateAiringAnimeFile().then(() => {
     setInterval(animeFLVAPI.UpdateAiringAnimeFile.bind(animeFLVAPI), 86400000); //Update every 24h
-  })
+  }) disabled caching*/
 });
