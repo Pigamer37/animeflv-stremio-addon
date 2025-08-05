@@ -3,6 +3,7 @@ const ANIMEFLV_BASE = "https://www3.animeflv.net/anime"
 
 const fsPromises = require("fs/promises");
 const animeflvAPI = require("animeflv-api");
+import { load } from "cheerio";
 
 exports.GetAiringAnimeFromWeb = async function () {
   const reqURL = `${ANIMEFLV_API_BASE}/list/animes-on-air`
@@ -155,6 +156,12 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     if (resp === undefined) throw Error(`Undefined response!`)
     return resp.json()//npm package doesn't have a stream function, we'll have to program it ourselves
+  }).catch((err) => {
+    console.error('\x1b[31mUsing adapted funtion from API because animeFLV API failed because:\x1b[39m ' + err)
+    return GetEpisodeLinks(slug, epNumber).then((data) => {
+      if (!data) throw Error('Empty response!')
+      return { data: data }
+    })
   }).then((data) => {
     if (data?.data?.servers === undefined) throw Error("Invalid response!")
     let epName = data.data.title
@@ -219,6 +226,67 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
       results.filter((prom) => (prom.value)).map((source) => source.value).concat(externalStreams)
     )*/
   })
+}
+//Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
+async function GetEpisodeLinks(slug, epNumber = 1) {
+  try {
+    const episodeData = async () => {
+      if (slug && !epNumber)
+        return await fetch(ANIMEFLV_BASE + "/ver/" + slug).then((resp) => {
+          if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+          if (resp === undefined) throw Error(`Undefined response!`)
+          return resp.text()
+        }).catch(() => null);
+      else if (slug && epNumber)
+        return await fetch(ANIMEFLV_BASE + "/ver/" + slug + "-" + epNumber).then((resp) => {
+          if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+          if (resp === undefined) throw Error(`Undefined response!`)
+          return resp.text()
+        }).catch(() => null);
+      else return null;
+    }
+
+    if (!(await episodeData())) return null;
+
+    const $ = load(await episodeData());
+
+    const episodeLinks = {
+      title: $("body > div.Wrapper > div.Body > div > div > div > nav.Brdcrmb > a").next("i").next("a").text(),
+      number: Number($("body > div.Wrapper > div.Body > div > div > div > div.CapiTop > h2.SubTitle").text().replace("Episodio ", "")),
+      servers: []
+    }
+
+    const scripts = $("script");
+    const serversFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var videos ="));
+    const serversObj = serversFind?.match(/var videos = (\{.*\})/)?.[1];
+    if (serversObj) {
+      const servers = JSON.parse(serversObj).SUB;
+      for (const s of servers) {
+        episodeLinks.servers.push({
+          name: s?.title,
+          download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
+          embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/")
+        });
+      }
+    }
+
+    const otherDownloads = $("body > div.Wrapper > div.Body > div > div > div > div > div > table > tbody > tr");
+
+    for (const el of otherDownloads) {
+      const name = $(el).find("td").eq(0).text();
+      const lookFor = ["Zippyshare", "1Fichier"];
+      if (lookFor.includes(name)) {
+        episodeLinks.servers.push({
+          name: $(el).find("td").eq(0).text(),
+          download: $(el).find("td:last-child a").attr("href")
+        });
+      }
+    }
+    return episodeLinks;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
 }
 //Adapted from https://github.com/ChristopherProject/Streamtape-Video-Downloader
 function GetStreamTapeLink(url) {
