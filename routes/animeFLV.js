@@ -36,7 +36,7 @@ exports.GetAiringAnimeFromWeb = async function () {
 exports.GetAiringAnime = async function () {
   /*return fsPromises.readFile('./onair_titles.json').then((data) => JSON.parse(data)).catch((err) => {
     console.error('\x1b[31mFailed reading titles cache:\x1b[39m ' + err)*/
-    return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
+  return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
   //})
 }
 
@@ -68,6 +68,7 @@ exports.SearchAnimeFLV = async function (query, genreArr = undefined, url = unde
   })
   /*})*/.then((data) => {
     if (data?.data?.media === undefined) throw Error("Invalid response!")
+    if (data.data.media.length < 1) throw Error("No search results!")
     return data.data.media.slice(gottenItems).map((anime) => {
       return {
         title: anime.title, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
@@ -252,7 +253,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     return episodeLinks;
   } catch (e) {
     console.error("Error on GetEpisodeLinks:", e);
-    return null;
+    throw e
   }
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
@@ -334,7 +335,7 @@ async function GetAnimeInfo(slug) {
     return animeInfo;
   } catch (error) {
     console.error("Error al obtener la información del anime", slug, error);
-    return null;
+    throw error
   }
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
@@ -394,7 +395,6 @@ async function SearchAnimesBySpecificURL(animeFLVURL) {
             url: ANIMEFLV_BASE + ($(el).find("a").attr("href"))
           });
         });
-        console.log("Media vector:", mediaVec)
         return mediaVec
       }
       else {
@@ -413,9 +413,9 @@ async function SearchAnimesBySpecificURL(animeFLVURL) {
     search.currentPage = inferredPage || 1;
     search.hasNextPage = nextPage ? true : false;
     return search;
-  } catch(error) {
+  } catch (error) {
     console.error("Error al buscar animes por URL:", error);
-    return null;
+    throw error
   }
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
@@ -441,9 +441,9 @@ async function GetOnAir() {
       })
     }
     return onAir;
-  } catch(e) {
+  } catch (e) {
     console.error("Error on GetOnAir:", e)
-    return null
+    throw e
   }
 }
 //Adapted from https://github.com/ChristopherProject/Streamtape-Video-Downloader

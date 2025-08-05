@@ -93,6 +93,10 @@ function HandleMetaRequest(req, res, next) {
           next()
         })
       }).catch((err) => {
+        if (err.message == "No search results!" && !res.headersSent) {
+          res.json({ meta: {}, message: "No search results!" });
+          next()
+        }
         console.error('\x1b[31mFailed on animeFLV search because:\x1b[39m ' + err)
         if (!res.headersSent) {
           res.json({ meta: {}, message: "Failed getting animeFLV info" });
