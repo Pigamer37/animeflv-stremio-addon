@@ -43,11 +43,13 @@ function HandleStreamRequest(req, res, next) {
     console.log('Extra parameters:', res.locals.extraParams)
     animeFLVAPI.GetItemStreams(ID, episode).then((streamArr) => {
       console.log(`\x1b[36mGot ${streamArr.length} streams\x1b[39m`)
-      res.json({ streams: streamArr, message: "Got AnimeFLV streams!" });
+      res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
+      res.json({ streams: streamArr, message: "Got AnimeFLV streams!" })
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on animeFLV slug search because:\x1b[39m ' + err)
       if (!res.headersSent) {
+        res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200");
         res.json({ streams, message: "Failed getting animeFLV info" });
         next()
       }
@@ -72,7 +74,12 @@ function HandleStreamRequest(req, res, next) {
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID).then((ids) => ids.imdb_id)
-    } else { if (!res.headersSent) { res.json({ streams, message: "Wrong ID format, check manifest for errors" }); next() } }
+    } else {
+      if (!res.headersSent) {
+        res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
+        res.json({ streams, message: "Wrong ID format, check manifest for errors" }); next()
+      }
+    }
 
     console.log('Extra parameters:', res.locals.extraParams)
     animeIMDBIDPromise.then((imdbID) => {
@@ -89,6 +96,7 @@ function HandleStreamRequest(req, res, next) {
       }).catch((err) => { //only catches error from TMDB or Cinemeta API calls, which we want
         console.error('\x1b[31mFailed on metadata:\x1b[39m ' + err)
         if (!res.headersSent) {
+          res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200");
           res.json({ streams, message: "Failed getting media info" })
           next()
         }
@@ -100,21 +108,23 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
         return animeFLVAPI.GetItemStreams(animeFLVitem[0].slug, episode).then((streamArr) => {
           console.log(`\x1b[36mGot ${streamArr.length} streams\x1b[39m`)
-          res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200");
-          res.json({ streams: streamArr, message: "Got AnimeFLV streams!" });
+          res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
+          res.json({ streams: streamArr, message: "Got AnimeFLV streams!" })
           next()
         })
       }).catch((err) => {
         console.error('\x1b[31mFailed on animeFLV search because:\x1b[39m ' + err)
         if (!res.headersSent) {
-          res.json({ streams, message: "Failed getting animeFLV info" });
+          res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
+          res.json({ streams, message: "Failed getting animeFLV info" })
           next()
         }
       })
     }).catch((err) => {
       console.error('\x1b[31mFailed on metadata search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.json({ streams, message: "Failed getting media info" });
+        res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
+        res.json({ streams, message: "Failed getting media info" })
         next()
       }
     })

@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/Pigamer37/animeflv-stremio-addon#readme",
   "dependencies": {
+    "@vercel/blob": "^1.1.1",
     "cheerio": "^1.1.2",
     "dotenv": "^16.5.0",
     "express": "^4.21.1"
