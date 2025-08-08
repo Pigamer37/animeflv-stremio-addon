@@ -73,7 +73,7 @@ function HandleStreamRequest(req, res, next) {
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
-      animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID).then((ids) => ids.imdb_id)
+      animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID)
     } else {
       if (!res.headersSent) {
         res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
