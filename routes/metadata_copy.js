@@ -62,6 +62,7 @@ class Metadata {
         if ((data === undefined)) reject(new Error("Invalid response!"))
         if (data.movie_results.length > 0) resolve(Metadata.ParseTMDBMeta(data.movie_results, imdbID))
         else if (data.tv_results.length > 0) resolve(Metadata.ParseTMDBMeta(data.tv_results, imdbID))
+        else reject(new Error("No results found!"))
       }).catch(e => {
         reject(e)
       })
