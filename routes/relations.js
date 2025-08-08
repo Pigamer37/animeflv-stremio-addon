@@ -10,6 +10,6 @@ exports.GetIMDBIDFromANIMEID = async function (IDType, ID) {
   }).then((data) => {
     if (data === undefined) throw Error("Invalid response!")
     //return first result
-    return { imdb_id: data.imdb }
+    return data.imdb
   })
 }

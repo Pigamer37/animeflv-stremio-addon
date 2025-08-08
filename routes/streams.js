@@ -83,6 +83,7 @@ function HandleStreamRequest(req, res, next) {
 
     console.log('Extra parameters:', res.locals.extraParams)
     animeIMDBIDPromise.then((imdbID) => {
+      if (!imdbID || imdbID === "null") throw Error("No IMDB ID")
       console.log(`\x1b[33mGetting TMDB metadata for IMDB ID:\x1b[39m`, imdbID)
       return Metadata.GetTMDBMeta(imdbID).then((TMDBmeta) => {
         console.log('\x1b[36mGot TMDB metadata:\x1b[39m', TMDBmeta.shortPrint())
