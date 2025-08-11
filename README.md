@@ -74,6 +74,9 @@ Parameters
 ## TO DO:
 - [X] Publish to Stremio Addon Catalog (not on Beam Up, because the beamup tool is not working for me)
 - [X] Support Metadata requests
+   - [X] Get upcoming episodes with correct dates
+     - [ ] Get Stremio to show `UPCOMING` episodes on the calendar
+   - [X] Get and display the item's related entries
    - [X] Get episode thumbnails (same for each episode atm)
    - [ ] Get series logo
    - [ ] Get series backgound image

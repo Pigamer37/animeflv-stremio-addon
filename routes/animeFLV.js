@@ -123,10 +123,10 @@ exports.GetAnimeBySlug = async function (slug) {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
     const epCount = data.data.episodes.length
+    const imgPattern = /\/(\d+).jpg$/g
+    const matches = imgPattern.exec(data.data.cover)
     const videos = data.data.episodes.map((ep) => {
       let d = new Date(Date.now())
-      const imgPattern = /\/(\d+).jpg$/g
-      const matches = imgPattern.exec(data.data.cover)
       return {
         id: `animeflv:${slug}:${ep.number}`,
         title: data.data.title + " Ep. " + ep.number,
@@ -138,10 +138,26 @@ exports.GetAnimeBySlug = async function (slug) {
         available: true
       }
     })
+    if (data.data.next_airing_episode !== undefined) {
+      videos.push({
+        id: `animeflv:${slug}:${epCount + 1}`,
+        title: `${data.data.title} Ep. ${epCount + 1}`,
+        season: 1,
+        episode: epCount + 1,
+        number: epCount + 1,
+        released: new Date(data.data.next_airing_episode),
+        available: false //next episode is not available yet
+      })
+    }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Anime") ? "series" : "movie",
       videos, poster: data.data.cover, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `animeflv:${slug}`,
-      language: "jpn"
+      language: "jpn", ...(data.data.related) && {
+        links: data.data.related.map((r) => {
+          return { name: r.title, category: r.relation, url: `stremio:///detail/series/animeflv:${r.slug}` }
+        })
+      },
+      ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } }
     }
   })
 }
