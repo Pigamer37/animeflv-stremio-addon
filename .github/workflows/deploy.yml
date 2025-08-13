@@ -6,6 +6,7 @@ on:
     - 'vercel.json'
     - '.gitatributes'
     - '.gitignore'
+    - '.github/**'
     branches:
     - main
   workflow_dispatch:
@@ -54,3 +55,4 @@ jobs:
           vercel.json
           .gitatributes
           .gitignore
+          .github
