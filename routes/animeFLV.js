@@ -3,7 +3,7 @@ const ANIMEFLV_BASE = "https://www3.animeflv.net"
 
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
-const vercelBlob = require("@vercel/blob");
+//const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
 exports.GetAiringAnimeFromWeb = async function () {
@@ -36,11 +36,11 @@ exports.GetAiringAnimeFromWeb = async function () {
 }
 
 exports.GetAiringAnime = async function () {
-  /*return fsPromises.readFile('./onair_titles.json').then((data) => JSON.parse(data)).catch((err) => {
-      console.error('\x1b[31mFailed reading titles cache:\x1b[39m ' + err)
-      return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
-    })*/
-  try {
+  return fsPromises.readFile('./onair_titles.json').then((data) => JSON.parse(data)).catch((err) => {
+    console.error('\x1b[31mFailed reading titles cache:\x1b[39m ' + err)
+    return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
+  })
+  /*try {
     return fetch(process.env.BLOB_URL).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
@@ -60,19 +60,19 @@ exports.GetAiringAnime = async function () {
   } catch (error) {
     console.error('\x1b[31mFailed reading titles Vercel Blob:\x1b[39m ' + err)
     return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
-  }
+  }*/
 }
 
 exports.UpdateAiringAnimeFile = function () {
   return this.GetAiringAnimeFromWeb().then((titles) => {
-    console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to Vercel Blob`)
-    //return fsPromises.writeFile('./onair_titles.json', JSON.stringify(titles))
-    return vercelBlob.put(`onair_titles.json`, JSON.stringify(titles), {
-      access: "public",
-      allowOverwrite: true, //Allow overwriting the file
-      cacheControlMaxAge: 86400000, //1 day
-      contentType: "application/json"
-    })
+    console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
+    return fsPromises.writeFile('./onair_titles.json', JSON.stringify(titles))
+    // return vercelBlob.put(`onair_titles.json`, JSON.stringify(titles), {
+    //   access: "public",
+    //   allowOverwrite: true, //Allow overwriting the file
+    //   cacheControlMaxAge: 86400000, //1 day
+    //   contentType: "application/json"
+    // })
   }).then(() => console.log('\x1b[32mOn Air titles "cached" successfully!\x1b[39m')
   ).catch((err) => {
     console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
