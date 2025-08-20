@@ -61,6 +61,24 @@ function ReadManifest() {
         },
         {
           id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
+        },
+        {
+          type: "series",
+          id: "calendar-videos",
+          extra: [
+            {
+              name: "calendarVideosIds",
+              isRequired: true,
+              optionsLimit: 15
+            }
+          ],
+          extraSupported: [
+            "calendarVideosIds"
+          ],
+          extraRequired: [
+            "calendarVideosIds"
+          ],
+          name: "Calendar videos"
         }
       ],
       "resources": [
@@ -86,6 +104,9 @@ function ReadManifest() {
       "stremioAddonsConfig": {
         "issuer": "https://stremio-addons.net",
         "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..0XN39hJS4zjNV5ES2brUeQ.sjRgcAHGPIUA0GXXbZI2BZLuKUOiT3jfI8ALp-QlUcWNuW_9qcVjARUxKCE6ncTE1rdK9yCma3IlgdCbI8-3ZV1E5WsKdS3LncHDeqlXThTZ9V7Znc1rATu7kJE_NDxE.Y8gIKpiHqAVypGGOvEXVqw"
+      },
+      "behaviorHints": {
+        "newEpisodeNotifications": true
       }/*,
       "behaviorHints": { "configurable": true }*/
     }

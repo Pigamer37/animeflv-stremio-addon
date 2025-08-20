@@ -81,6 +81,63 @@ function ParseConfig(req, res, next) {
   console.log('Config parameters:', res.locals.config)
   next()
 }
+//Calendar requests
+catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", (req, res) => {
+  console.log("Entered catalog request with", req.params.calendarVideosIds)
+  console.log("IDvector", req.params.calendarVideosIds.slice(18).split(','))
+  console.log("FilteredVector", req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
+    .filter((id) => id.startsWith("animeflv:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))
+  let metasDetailed = [], uniqueIDs = [...new Set(req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
+    .filter((id) => id.startsWith("animeflv:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
+
+  console.log("Unique IDs:", uniqueIDs)
+
+  Promise.allSettled(uniqueIDs.map((item) => {
+    const idDetails = item.split(':')
+    const videoID = idDetails[0]
+    if (videoID.startsWith("animeflv")) {
+      const ID = idDetails[1]
+      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+      return animeFLVAPI.GetAnimeBySlug(ID)
+    } else {
+      let animeIMDBIDPromise
+      const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
+      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+      animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID)
+      animeIMDBIDPromise.then((imdbID) => {
+        if (!imdbID || imdbID === "null") throw Error("No IMDB ID")
+        console.log(`\x1b[33mGetting TMDB metadata for IMDB ID:\x1b[39m`, imdbID)
+        return Metadata.GetTMDBMeta(imdbID).then((TMDBmeta) => {
+          console.log('\x1b[36mGot TMDB metadata:\x1b[39m', TMDBmeta.shortPrint())
+          return TMDBmeta
+        }).catch((reason) => {
+          console.error("\x1b[31mDidn't get TMDB metadata because:\x1b[39m " + reason + ", \x1b[33mtrying Cinemeta...\x1b[39m")
+          return Metadata.GetCinemetaMeta(imdbID, req.params.type).then((Cinemeta) => {
+            console.log('\x1b[36mGot Cinemeta metadata:\x1b[39m', Cinemeta.shortPrint())
+            return Cinemeta
+          })
+        })
+      }).then((metadata) => {
+        const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
+        return animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
+          console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
+          return animeFLVAPI.GetAnimeBySlug(animeFLVitem[0].slug)
+        })
+      })
+    }
+  })).then((promises) => {
+    console.log("Promises allSettled")
+    metasDetailed = promises.filter((prom) => (prom.value)).map((el) => {
+      el.value.videos = el.value.videos.filter((video) => (video.released >= new Date()))//only resolve future videos
+      return el.value
+    })
+
+    if (!res.headersSent) {
+      res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
+      res.json({ metasDetailed })
+    }
+  })
+})
 //Configured requests
 catalog.get("/:config/catalog/:type/:videoId/*.json", ParseConfig, HandleLongCatalogRequest, HandleCatalogRequest)
 catalog.get("/:config/catalog/:type/:videoId.json", ParseConfig, HandleCatalogRequest)
