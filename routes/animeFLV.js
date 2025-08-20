@@ -145,6 +145,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: epCount + 1,
         number: epCount + 1,
+        thumbnail: "https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png",
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
       })

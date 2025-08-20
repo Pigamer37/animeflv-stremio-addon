@@ -5,7 +5,16 @@ Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with Ani
 
 ## Normal use:
 ### Install by copying <stremio://pigamer37.alwaysdata.net/manifest.json> on your browser or paste <https://pigamer37.alwaysdata.net/manifest.json> on the stremio addons search bar
-This addon provides metadata and streaming options from AnimeFLV. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV - ..." (the ones marked as external just open the link on your browser, working on getting sources to be watchable directly on Stremio).
+
+### Features:
+- Catalog of currently airing anime
+- Search the AnimeFLV database/catalog through Stremio's searchbar, or by genre in the Discovery tab
+- Compatible with other addons, like Cinemeta, TMDB or kitsu (see [supported ID's](#endpoints) for technical details)
+- Provides AnimeFLV metadata, like genres, synopsis and episode lists
+  - Shows **UPCOMING** episodes, and if you add series to your list, they will show up in your calendar!
+- Provides stream sources from AnimeFLV
+
+This addon provides metadata and streaming options from AnimeFLV. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV - ..." (the ones marked as external just open the link on your browser, working on getting sources to be watchable directly on Stremio).
 
 > [!TIP]
 > ### Recommendations:
@@ -75,7 +84,7 @@ Parameters
 - [X] Publish to Stremio Addon Catalog (not on Beam Up, because the beamup tool is not working for me)
 - [X] Support Metadata requests
    - [X] Get upcoming episodes with correct dates
-     - [ ] Get Stremio to show `UPCOMING` episodes on the calendar
+     - [X] Get Stremio to show `UPCOMING` episodes on the calendar (undocumented,but reverse engineered)
    - [X] Get and display the item's related entries
    - [X] Get episode thumbnails (same for each episode atm)
    - [ ] Get series logo
@@ -83,7 +92,7 @@ Parameters
    - [ ] Get episode overviews
 - [X] Offer "On Air" catalog and searchable catalog
 - [X] Make catalog searchable by genre
-- [ ] Research how to get the files directly to Stremio instead of having to send an external link
+- [ ] Research how to get the files directly to Stremio instead of having to send an external link (Streamtape streams are IP bound 😞)
 
 ### Enhancements/new features
 - [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu Stremio addon via <https://relations.yuna.moe/api/v2>

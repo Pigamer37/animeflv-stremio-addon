@@ -1,7 +1,7 @@
 {
   "name": "animeflv-stremio-addon",
-  "version": "0.3.0",
-  "description": "Node.js addon to add AnimeFLV functionallity to Stremio, not affiliated with AnimeFLV. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
+  "version": "0.4.0",
+  "description": "Add AnimeFLV functionallity to Stremio, including catalogs, streams and metadata, even showing upcoming episodes in the calendar! Not affiliated with AnimeFLV. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
   "main": "index.js",
   "scripts": {
     "devStart": "nodemon index.js --ignore onair_titles.json --ignore README",

@@ -69,7 +69,7 @@ function ReadManifest() {
             {
               name: "calendarVideosIds",
               isRequired: true,
-              optionsLimit: 5
+              optionsLimit: 15
             }
           ],
           extraSupported: [

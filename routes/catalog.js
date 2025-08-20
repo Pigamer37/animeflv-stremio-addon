@@ -133,7 +133,7 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
     })
 
     if (!res.headersSent) {
-      //res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
+      res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
       res.json({ metasDetailed })
     }
   })
