@@ -58,12 +58,13 @@ function HandleCatalogRequest(req, res, next) {
         genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
       }
     })
-    res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200");
+    res.header('Cache-Control', "max-age=259200, stale-while-revalidate=86400, stale-if-error=259200")
     res.json({ metas, message: "Got AnimeFLV metadata!" });
     next()
   }).catch((err) => {
     console.error('\x1b[31mFailed on animeFLV search because:\x1b[39m ' + err)
     if (!res.headersSent) {
+      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
       res.json({ metas: [], message: "Failed getting animeFLV info" });
       next()
     }
@@ -133,7 +134,7 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
     })
 
     if (!res.headersSent) {
-      res.header('Cache-Control', "max-age=10800, stale-while-revalidate=3600, stale-if-error=259200")
+      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
       res.json({ metasDetailed })
     }
   })

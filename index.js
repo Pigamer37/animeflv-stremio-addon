@@ -117,6 +117,7 @@ function ReadManifest() {
 app.get("/manifest.json", (_req, res) => {
   ReadManifest().then((manif) => {
     //manif.behaviorHints.configurationRequired = true
+    res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
   }).catch((err) => {
     res.status(500).statusMessage("Error reading file: " + err);
@@ -126,6 +127,7 @@ app.get("/manifest.json", (_req, res) => {
 app.get("/:config/manifest.json", (_req, res) => {
   ReadManifest().then((manif) => {
     //console.log("Params:", decodeURIComponent(req.params[0]))
+    res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
   }).catch((err) => {
     res.status(500).statusMessage("Error reading file: " + err);

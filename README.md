@@ -87,8 +87,8 @@ Parameters
      - [X] Get Stremio to show `UPCOMING` episodes on the calendar (undocumented,but reverse engineered)
    - [X] Get and display the item's related entries
    - [X] Get episode thumbnails (same for each episode atm)
-   - [ ] Get series logo
-   - [ ] Get series backgound image
+   - [ ] Get series logos
+   - [ ] Get series backgound images
    - [ ] Get episode overviews
 - [X] Offer "On Air" catalog and searchable catalog
 - [X] Make catalog searchable by genre
