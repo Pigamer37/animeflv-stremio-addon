@@ -36,7 +36,7 @@ function HandleCatalogRequest(req, res, next) {
   console.log('Extra parameters:', res.locals.extraParams)
   let catalogPromise
   if (res.locals.extraParams) {
-    let genreArr = (res.locals.extraParams.genre) ? res.locals.extraParams.genre.split(',', 4) : undefined
+    let genreArr = res.locals.extraParams.genre
     //calculate the page to start from, AnimeFLV uses 24 results per page
     //if skip is defined, we can calculate the page and the number of items we already delivered
     let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
@@ -153,13 +153,19 @@ function SearchParamsRegex(extraParams) {
   //console.log(`\x1b[33mfull extra params were:\x1b[39m ${extraParams}`)
   if (extraParams !== undefined) {
     const paramMap = new Map()
-    const keyVals = extraParams.split('&');
+    //if multiple genres get selected, they get requested like &genre=blah&genre=blahblah
+    //rn we only get one because Stremio doesn't handle multiple genres right in the UI smh
+    let genreArr = []
+    const keyVals = extraParams.split('&')
     for (let keyVal of keyVals) {
       const keyValArr = keyVal.split('=')
-      const param = keyValArr[0]; const val = keyValArr[1];
-      paramMap.set(param, val)
+      const param = keyValArr[0], val = keyValArr[1]
+      if (param === "genre")
+        genreArr.push(val)
+      else paramMap.set(param, val)
     }
     const paramJSON = Object.fromEntries(paramMap)
+    paramJSON.genre = genreArr
     //console.log(paramJSON)
     return paramJSON
   } else return {}

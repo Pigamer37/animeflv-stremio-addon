@@ -38,7 +38,7 @@ function ReadManifest() {
               "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
               "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
               "yaoi", "yuri"],
-            optionsLimit: 4, isRequired: false
+            optionsLimit: 1, isRequired: false
           },
           { name: "skip", isRequired: false }
           ]
@@ -54,7 +54,7 @@ function ReadManifest() {
                 "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
                 "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
                 "yaoi", "yuri"],
-              optionsLimit: 4, isRequired: true
+              optionsLimit: 1, isRequired: true
             },
             { name: "skip", isRequired: false }
           ]
