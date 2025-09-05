@@ -14,7 +14,7 @@ Node.js and express.js based addon to add AnimeFLV functionallity to Stremio, no
   - :calendar: If you add series to your library, upcoming episodes will show up in your Stremio calendar!
 - :satellite: Provides stream sources from AnimeFLV
 
-This addon provides metadata and streaming options from AnimeFLV. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV - ..." (the ones marked as external just open the link on your browser, working on getting sources to be watchable directly on Stremio).
+This addon provides metadata and streaming options from AnimeFLV. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV ..." (the ones marked as external open a player on your browser, working on getting more sources to be watchable directly on Stremio).
 
 > [!TIP]
 > ### Recommendations
@@ -90,6 +90,7 @@ Parameters
 - [X] Publish to Stremio Addon Catalog (not on Beam Up, because the beamup tool is not working for me)
 - [X] Implement Stremio's `skip` extra argument functionality for pagination (each query outputs 24 results)
 - [ ] Research how to get the files directly to Stremio instead of having to send an external link (Streamtape streams are IP bound 😞)
+  - [X] Got YourUpload streams working inside of Stremio
 
 ### Enhancements/new features
 - [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu and MALSync Stremio addons via <https://relations.yuna.moe/api/v2>

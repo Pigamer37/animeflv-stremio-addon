@@ -178,22 +178,22 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
   })
   /*})*/.then((data) => {
     if (data?.data?.servers === undefined) throw Error("Invalid response!")
-    let epName = data.data.title
+    let epName = (data.data.number) ? data.data.title + " Ep. " + data.data.number : data.data.title
     const externalStreams = data.data.servers.filter((src) => src.embed !== undefined).map((source) => {
       return {
         externalUrl: source.embed,
-        name: "AnimeFLV - " + source.name + " (external)",
-        title: epName + " via " + source.name + "\n(opens in " + source.name + " in your browser)\n" + source.embed,
+        name: "AnimeFLV\n" + source.name + "⇗\n(external)",
+        title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed,
         behaviorHints: {
           bingeGroup: "animeFLV|" + source.name,
           filename: source.embed
         }
       }
     })
-    return externalStreams
-    /*const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape") || (src.embed !== undefined && src.name === "YourUpload"))
+    //return externalStreams
+    const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape") || (src.embed !== undefined && src.name === "YourUpload"))
     const promises = downloadStreams.map((source) => {
-      if (source.name === "Stape") {
+      /*if (source.name === "Stape") {
         return GetStreamTapeLink(source.download).then((realURL) => {
           return {
             url: realURL,
@@ -209,18 +209,19 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           console.log("Failed getting StreamTape link:", err)
           return undefined
         })
-      } else if (source.name === "YourUpload") {
+      } else*/ if (source.name === "YourUpload") {
         return GetYourUploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "AnimeFLV - " + source.name,
-            title: epName + " via " + source.name + "\n" + realURL,
+            name: "AnimeFLV\n" + source.name,
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL,
             behaviorHints: {
               bingeGroup: "animeFLV|" + source.name,
               filename: realURL,
               notWebReady: true,
               proxyHeaders: {
                 request: {
+                  "Referer": "https://yourupload.com",
                   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
                 },
                 response: {
@@ -230,7 +231,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
             }
           }
         }).catch((err) => {
-          console.log("Failed getting YourUpload link:", err)
+          console.error("Failed getting YourUpload link:", err)
           return undefined
         })
       }
@@ -238,7 +239,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
 
     return Promise.allSettled(promises).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value).concat(externalStreams)
-    )*/
+    )
   })
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
@@ -516,7 +517,6 @@ function GetStreamTapeLink(url) {
 }
 
 function GetYourUploadLink(url) {
-  //const reqURL = url.replace("/embed/", "/watch/")
   return fetch(url).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     if (resp === undefined) throw Error(`Undefined response!`)
@@ -528,7 +528,6 @@ function GetYourUploadLink(url) {
       const vidPattern = /content\s*=\s*"(\S+)"/g
       const vidMatch = vidPattern.exec(data.substring(metaMatch.index))
       if (vidMatch[1]) {
-        console.log(vidMatch[1])
         return vidMatch[1]
       } else console.log("No video link")
     } else console.log("No video")
