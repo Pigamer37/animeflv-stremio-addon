@@ -185,7 +185,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         name: "AnimeFLV\n" + source.name + "⇗\n(external)",
         title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed,
         behaviorHints: {
-          bingeGroup: "animeFLV|" + source.name,
+          bingeGroup: "animeFLV|" + source.name + "|ext",
           filename: source.embed
         }
       }
