@@ -23,7 +23,7 @@ function ReadManifest() {
     let manifest = {
       "id": 'com.' + packageJSON.name.replaceAll('-', '.'),
       "version": packageJSON.version,
-      "name": "AnimeFLV",
+      "name": "AnimeFLV & AnimeAV1",
       "logo": "https://play-lh.googleusercontent.com/ZIjIwO5FJe9R1rplSd4uz54OwBxQhwDcznjljSPl2MgHaCoyF3qG6R4kRMCB40f4l2A=w256",
       "description": packageJSON.description,
       "catalogs": [
@@ -95,6 +95,7 @@ function ReadManifest() {
       "idPrefixes": [
         "tt",
         "animeflv:",
+        "animeav1:",
         "tmdb:",
         "anilist:",
         "kitsu:",

@@ -14,7 +14,7 @@ exports.GetAiringAnimeFromWeb = async function () {
     const promises = data.data.map((entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
-          title: anime.name, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
+          title: anime.name, type: (anime.type === "TV Anime" || anime.type === "series") ? "series" : "movie",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
@@ -82,7 +82,7 @@ exports.SearchAnimeAV1 = async function (query, genreArr = undefined, url = unde
     if (data.data.media.length < 1) throw Error("No search results!")
     return data.data.media.slice(gottenItems).map((anime) => {
       return {
-        title: anime.title, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
+        title: anime.title, type: (anime.type === "TV Anime" || anime.type === "series") ? "series" : "movie",
         slug: anime.slug, poster: anime.cover, overview: anime.synopsis, genres: genreArr
       }
     })
@@ -119,19 +119,22 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: epCount + 1,
         number: epCount + 1,
-        thumbnail: `${ANIMEAV1_BASE}/assets/animeflv/img/cnt/proximo.png`,
+        thumbnail: "https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png",
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
       })
     }
     return {
-      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Anime") ? "series" : "movie",
-      videos, poster: data.data.cover, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `animeav1:${slug}`,
+      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "TV Anime") ? "series" : "movie",
+      videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n'), website: data.data.url, id: `animeav1:${slug}`,
       language: "jpn", ...(data.data.related) && {
         links: data.data.related.map((r) => {
           return { name: r.title, category: r.relation, url: `stremio:///detail/series/animeav1:${r.slug}` }
         })
       },
+      runtime: data.data.runtime,
+      ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: data.data.startDate.getFullYear() + "-".concat((data.data.endDate!==undefined)?data.data.endDate?.getFullYear():"") },
+      ...(data.data.trailers) && { trailers: [ {source: data.data.trailers, type: "Trailer"} ] },
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } }
     }
   })
@@ -197,13 +200,13 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
   try {
     const episodeData = async () => {
       if (slug && !epNumber)
-        return await fetch(ANIMEAV1_BASE + "/ver/" + slug).then((resp) => {
+        return await fetch(ANIMEAV1_BASE + "/media/" + slug).then((resp) => {
           if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
           if (resp === undefined) throw Error(`Undefined response!`)
           return resp.text()
         }).catch(() => null);
       else if (slug && epNumber)
-        return await fetch(ANIMEAV1_BASE + "/ver/" + slug + "-" + epNumber).then((resp) => {
+        return await fetch(ANIMEAV1_BASE + "/media/" + slug + "/" + epNumber).then((resp) => {
           if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
           if (resp === undefined) throw Error(`Undefined response!`)
           return resp.text()
@@ -217,22 +220,39 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
 
     const episodeLinks = {
       title: $("body > div.Wrapper > div.Body > div > div > div > nav.Brdcrmb > a").next("i").next("a").text(),
-      number: Number($("body > div.Wrapper > div.Body > div > div > div > div.CapiTop > h2.SubTitle").text().replace("Episodio ", "")),
+      number: Number($("body > div > div.container > main > article > div > div > header > div > h1").text().replace("Episodio ", "")) || epNumber,
       servers: []
     }
 
     const scripts = $("script");
-    const serversFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var videos ="));
-    const serversObj = serversFind?.match(/var videos = (\{.*\})/)?.[1];
+    const metadataJSON = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("kit.start(app, element, {"));
+    
+    const serversObj = metadataJSON?.match(/embeds:\s?\{SUB:\s?(\[.*?\])/)?.[1];
+    const downloadObj = metadataJSON?.match(/downloads:\s?\{SUB:\s?(\[.*?\])/)?.[1];
+    let servers = {};
     if (serversObj) {
-      const servers = JSON.parse(serversObj).SUB;
-      for (const s of servers) {
-        episodeLinks.servers.push({
-          name: s?.title,
-          download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
-          embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/")
-        });
-      }
+      servers = serversObj.split("},")?.map(s => {
+        return {
+          title: s.match(/server:\s?"(.*?)"/)?.[1],
+          code: s.match(/url:\s?"(.*?)"/)?.[1]
+        }
+      });
+    }
+    if (downloadObj) {
+      servers.concat(downloadObj.split("},")?.map(s => {
+        return {
+          title: s.match(/server:\s?"(.*?)"/)?.[1],
+          url: s.match(/url:\s?"(.*?)"/)?.[1]
+        }
+      }));
+    }
+
+    for (const s of servers) {
+      episodeLinks.servers.push({
+        name: s?.title,
+        download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
+        embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/")
+      });
     }
 
     const otherDownloads = $("body > div.Wrapper > div.Body > div > div > div > div > div > table > tbody > tr");
@@ -267,30 +287,33 @@ async function GetAnimeInfo(slug) {
     const $ = cheerio.load(html);
     //WIP
     const scripts = $("script");
-    const nextAiringFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var anime_info ="));
-    const nextAiringInfo = nextAiringFind?.match(/anime_info = (\[.*\])/)?.[1];
+    // const nextAiringFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var anime_info ="));
+    // const nextAiringInfo = nextAiringFind?.match(/anime_info = (\[.*\])/)?.[1];
+
+    const metadataJSON = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("kit.start(app, element, {"));
+    const metadataObj = metadataJSON?.match(/data:(.+\]),/)?.[1];
 
     const animeInfo = {
-      title: $("body main > article > div > div > header > div > h1").text(),
+      title: metadataObj?.match(/title:\s?"(.+?)",/)?.[1] || $("body main > article > div > div > header > div > h1").text(),
       alternative_titles: [],
-      status: $("body main > article > div > div > header > div > span:last-child").text(),
-      rating: $("div.ic-star-solid > div.text-lead").text(),
-      type: $("body main > article > div > div > header > div > span:first-child").text(),
+      status: metadataObj?.match(/title:\s?"(.*?)",/)?.[1] || $("body main > article > div > div > header > div > span:last-child").text(),
+      rating: metadataObj?.match(/score:\s?(\d{0,2}\.\d{0,2}),/)?.[1] || $("div.ic-star-solid > div.text-lead").text(),
+      type: metadataObj?.match(/category:\s?.+?name:"(.*?)",/)?.[1] || $("body main > article > div > div > header > div > span:first-child").text(),
       cover: $("body main > article > div > div > figure > img").attr("src"),
-      synopsis: $("body main > article > div > div > div.entry > p").text(),
-      genres: $("body main > article > div > div > header > div > a")
+      synopsis: metadataObj?.match(/synopsis:\s?"(.*?)",/)?.[1] ||$("body main > article > div > div > div.entry > p").text(),
+      genres: metadataObj?.match(/genres:\s?(.*?)],/)?.[1]?.matchAll(/name:\s?"(.+?)"/g).toArray().map((el)=>el[1].trim()) || $("body main > article > div > div > header > div > a")
         .map((_, el) => $(el).text().trim())
         .get(),
       //next_airing_episode: nextAiringInfo ? JSON.parse(nextAiringInfo)?.[3] : undefined,
       episodes: [],
-      url
+      url,
+      ...(metadataObj?.match(/runtime:\s?(.*?),/)?.[1] !== "null") && { runtime: `${metadataObj?.match(/runtime:\s?(.*?),/)?.[1]}m` || undefined },
+      ...(metadataObj?.match(/trailer:\s?"(.*?)",/)?.[1]) && { trailers: metadataObj?.match(/trailer:\s?"(.*?)",/)?.[1] || undefined }
     };
-    //WIP
-    const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var episodes ="));
-    const episodesArray = episodesFind?.match(/episodes = (\[\[.*\].*])/)?.[1];
-
-    if (episodesArray) {
-      for (let i = 1; i <= JSON.parse(episodesArray)?.length; i++) {
+    
+    if (metadataObj?.includes("episodesCount")){
+      const episodesCount = Number(metadataObj?.match(/episodesCount:\s?(\d+),/)?.[1]);
+      for (let i = 1; i <= episodesCount; i++) {
         if (animeInfo.episodes instanceof Array) {
           animeInfo.episodes.push({
             number: i,
@@ -300,10 +323,19 @@ async function GetAnimeInfo(slug) {
         }
       }
     }
-
-    $("body main > article > div > div > header > div > h2").each((_, el) => {
-      animeInfo.alternative_titles.push($(el).text());
-    });
+    // Alternative titles
+    if (metadataObj?.includes("aka:")){
+      try {
+        const alt_titls = JSON.parse(metadataObj?.match(/aka:\s?({.+?}),/)?.[1]);
+        for (const value of Object.values(alt_titls)) {
+          animeInfo.alternative_titles.push(value);
+        }
+      } catch (error) {}
+    } else {
+      $("body main > article > div > div > header > div > h2").each((_, el) => {
+        animeInfo.alternative_titles.push($(el).text());
+      });
+    }
 
     // Relacionados
     const relatedEls = $("body > div > div.container > main > section:nth-child(2) > div > div.gradient-cut > div > div");
@@ -327,6 +359,14 @@ async function GetAnimeInfo(slug) {
     // Asigna la propiedad si hay elementos
     if (relatedAnimes.length > 0) {
       animeInfo.related = relatedAnimes;
+    }
+
+    // Dates
+    if (metadataObj?.includes("startDate:")){
+      const startDate = Date.parse(metadataObj?.match(/startDate:\s?"(.*?)",/)?.[1]);
+      const endDate = Date.parse(metadataObj?.match(/endDate:\s?"(.*?)",/)?.[1]);
+      if (!isNaN(startDate)) animeInfo.startDate = new Date(startDate);
+      if (!isNaN(endDate)) animeInfo.endDate = new Date(endDate);
     }
 
     return animeInfo;
