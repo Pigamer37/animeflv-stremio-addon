@@ -72,9 +72,9 @@ exports.UpdateAiringAnimeFile = function () {
 
 exports.SearchAnimeAV1 = async function (query, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimeAV1()")
-  const animeFLVURL = (url) ? url
+  const animeAV1URL = (url) ? url
     : `${encodeURIComponent(ANIMEAV1_BASE)}%2Fbrowse%3F${(query) ? "q%3D" + encodeURIComponent(query) + "%26" : ""}${(genreArr) ? "genre%5B%5D%3D" + genreArr.join("%26genre%5B%5D%3D") : ""}${(page) ? "%26page%3D" + page : ""}`
-  return SearchAnimesBySpecificURL(animeFLVURL).then((data) => {
+  return SearchAnimesBySpecificURL(animeAV1URL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
   }).then((data) => {
@@ -141,7 +141,7 @@ exports.GetAnimeBySlug = async function (slug) {
 }
 //WIP
 exports.GetItemStreams = async function (slug, epNumber = 1) {
-  //if we don't get an episode number, use 1, that's how animeFLV works
+  //if we don't get an episode number, use 1, that's how animeAV1 works
   return GetEpisodeLinks(slug, epNumber).then((data) => {
     if (!data) throw Error('Empty response!')
     return { data }
@@ -154,7 +154,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         name: "AnimeAV1\n" + source.name + "⇗\n(external)",
         title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed,
         behaviorHints: {
-          bingeGroup: "animeFLV|" + source.name + "|ext",
+          bingeGroup: "animeAV1|" + source.name + "|ext",
           filename: source.embed
         }
       }
@@ -169,7 +169,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
             name: "AnimeAV1\n" + source.name,
             title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL,
             behaviorHints: {
-              bingeGroup: "animeFLV|" + source.name,
+              bingeGroup: "animeAV1|" + source.name,
               filename: realURL,
               notWebReady: true,
               proxyHeaders: {
@@ -376,9 +376,9 @@ async function GetAnimeInfo(slug) {
   }
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
-async function SearchAnimesBySpecificURL(animeFLVURL) {
+async function SearchAnimesBySpecificURL(animeAV1URL) {
   try {
-    const html = await fetch(decodeURIComponent(animeFLVURL)).then((resp) => {
+    const html = await fetch(decodeURIComponent(animeAV1URL)).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
       return resp.text()
