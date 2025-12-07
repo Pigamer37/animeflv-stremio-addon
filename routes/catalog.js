@@ -6,6 +6,7 @@ require('dotenv').config()//process.env.var
 const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
 const animeFLVAPI = require('./animeFLV.js')
+const animeAV1API = require('./animeav1.js')
 
 /**
  * Tipical express middleware callback.
@@ -35,37 +36,91 @@ function HandleCatalogRequest(req, res, next) {
   console.log(`\x1b[96mEntered HandleCatalogRequest with\x1b[39m ${req.originalUrl}`)
   console.log('Extra parameters:', res.locals.extraParams)
   let catalogPromise
-  if (res.locals.extraParams) {
-    let genreArr = res.locals.extraParams.genre
-    //calculate the page to start from, AnimeFLV uses 24 results per page
-    //if skip is defined, we can calculate the page and the number of items we already delivered
-    let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
-      gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
-    console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
-    catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr, undefined, page, gottenItems)
+  if (req.params.videoId.startsWith("animeav1")) {
+    //animeAV1 catalog request
+    if (res.locals.extraParams) {
+      let genreArr = res.locals.extraParams.genre
+      //calculate the page to start from, AnimeFLV uses 24 results per page
+      //if skip is defined, we can calculate the page and the number of items we already delivered
+      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 20) + 1 : undefined,
+        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 20 : undefined
+      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+      catalogPromise = animeAV1API.SearchAnimeAV1(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
+        console.log('\x1b[36mGot AnimeAV1 metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `animeav1:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    } else {
+      catalogPromise = animeAV1API.GetAiringAnime().then((result) => {
+        console.log('\x1b[36mGot AnimeAV1 metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `animeav1:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    }
+
   } else {
-    catalogPromise = animeFLVAPI.GetAiringAnime()
+    if (res.locals.extraParams) {
+      let genreArr = res.locals.extraParams.genre
+      //calculate the page to start from, AnimeFLV uses 24 results per page
+      //if skip is defined, we can calculate the page and the number of items we already delivered
+      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
+        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
+      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+      catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr, undefined, page, gottenItems).then((result) => {
+        console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `animeflv:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    } else {
+      catalogPromise = animeFLVAPI.GetAiringAnime().then((result) => {
+        console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `animeflv:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    }
   }
-  catalogPromise.then((result) => {
-    console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
-    const metas = result.map((anime) => {
-      return {
-        id: `animeflv:${anime.slug}`,
-        type: anime.type,
-        name: anime.title,
-        poster: anime.poster,
-        description: anime.overview,
-        genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
-      }
-    })
+  catalogPromise.then((metas) => {
+    console.log('\x1b[36mGot Anime metadata for:\x1b[39m', metas.length, "search results")
     res.header('Cache-Control', "max-age=259200, stale-while-revalidate=86400, stale-if-error=259200")
-    res.json({ metas, message: "Got AnimeFLV metadata!" });
+    res.json({ metas, message: "Got Anime metadata!" });
     next()
   }).catch((err) => {
-    console.error('\x1b[31mFailed on animeFLV search because:\x1b[39m ' + err)
+    console.error('\x1b[31mFailed on search because:\x1b[39m ' + err)
     if (!res.headersSent) {
       res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-      res.json({ metas: [], message: "Failed getting animeFLV info" });
+      res.json({ metas: [], message: "Failed getting info" });
       next()
     }
   })

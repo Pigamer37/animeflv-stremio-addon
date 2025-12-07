@@ -23,7 +23,7 @@ exports.GetAiringAnimeFromWeb = async function () {
     const promises = data.data.map((entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
-          title: anime.name, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
+          title: anime.name, type: (anime.type === "Pelicula" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
@@ -100,7 +100,7 @@ exports.SearchAnimeFLV = async function (query, genreArr = undefined, url = unde
     if (data.data.media.length < 1) throw Error("No search results!")
     return data.data.media.slice(gottenItems).map((anime) => {
       return {
-        title: anime.title, type: (anime.type === "Anime" || anime.type === "series") ? "series" : "movie",
+        title: anime.title, type: (anime.type === "Pelicula" || anime.type === "movie") ? "movie" : "series",
         slug: anime.slug, poster: anime.cover, overview: anime.synopsis, genres: genreArr
       }
     })

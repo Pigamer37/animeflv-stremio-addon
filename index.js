@@ -44,7 +44,39 @@ function ReadManifest() {
           ]
         },
         {
+          id: "animeav1", type: "AnimeAV1", name: "search results",
+          extra: [{ name: "search", isRequired: true },
+          {
+            name: "genre",
+            options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
+              "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
+              "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
+              "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
+              "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
+              "yaoi", "yuri"],
+            optionsLimit: 1, isRequired: false
+          },
+          { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "animeflv|genres", type: "AnimeFLV", name: "AnimeFLV",
+          extra: [
+            {
+              name: "genre",
+              options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
+                "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
+                "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
+                "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
+                "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
+                "yaoi", "yuri"],
+              optionsLimit: 1, isRequired: true
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
+          id: "animeav1|genres", type: "AnimeAV1", name: "AnimeAV1",
           extra: [
             {
               name: "genre",

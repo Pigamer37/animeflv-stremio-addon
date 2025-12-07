@@ -109,20 +109,26 @@ function HandleStreamRequest(req, res, next) {
       })
     }).then((metadata) => {
       const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
-      animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
+      const animeFLVp = animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
         console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
-        return animeFLVAPI.GetItemStreams(animeFLVitem[0].slug, episode).then((streamArr) => {
-          console.log(`\x1b[36mGot ${streamArr.length} streams\x1b[39m`)
+        return animeFLVAPI.GetItemStreams(animeFLVitem[0].slug, episode)
+      })
+      const animeAV1p = animeAV1API.SearchAnimeAV1(searchTerm, req.params.type).then((animeFLVitem) => {
+        console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', animeFLVitem[0].title)
+        return animeAV1API.GetItemStreams(animeFLVitem[0].slug, episode)
+      })
+      CombineStreams(animeFLVp, animeAV1p).then((combinedStreams)=>{
+        if (combinedStreams.length > 0) {
+          console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ streams: streamArr, message: "Got AnimeFLV streams!" })
+          res.json({ streams: combinedStreams, message: "Got streams!" })
           next()
-        })
-      }).catch((err) => {
-        console.error('\x1b[31mFailed on animeFLV search because:\x1b[39m ' + err)
-        if (!res.headersSent) {
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ streams, message: "Failed getting animeFLV info" })
-          next()
+        } else {
+          if (!res.headersSent) {
+            res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+            res.json({ streams, message: "Failed getting Anime info" });
+            next()
+          }
         }
       })
     }).catch((err) => {

@@ -14,7 +14,7 @@ exports.GetAiringAnimeFromWeb = async function () {
     const promises = data.data.map((entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
-          title: anime.name, type: (anime.type === "TV Anime" || anime.type === "series") ? "series" : "movie",
+          title: anime.name, type: (anime.type === "Pelicula" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
@@ -70,10 +70,14 @@ exports.UpdateAiringAnimeFile = function () {
   })
 }
 
-exports.SearchAnimeAV1 = async function (query, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
+exports.SearchAnimeAV1 = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimeAV1()")
+  if (type) {
+    type = (type === "movie") ? "category%3Dpelicula%26" : "category%3Dtv-anime%26category%3Dova%26category%3Despecial%26"
+  }
+//https://animeav1.com/catalogo?search=one-piece&category=tv-anime&genre=accion&page=2
   const animeAV1URL = (url) ? url
-    : `${encodeURIComponent(ANIMEAV1_BASE)}%2Fbrowse%3F${(query) ? "q%3D" + encodeURIComponent(query) + "%26" : ""}${(genreArr) ? "genre%5B%5D%3D" + genreArr.join("%26genre%5B%5D%3D") : ""}${(page) ? "%26page%3D" + page : ""}`
+    : `${encodeURIComponent(ANIMEAV1_BASE)}%2Fcatalogo%3F${(query) ? "search%3D" + encodeURIComponent(query) + "%26" : ""}${(type) ? type : ""}${(genreArr) ? "genre%3D" + genreArr.join("%26genre%3D") : ""}${(page) ? "%26page%3D" + page : ""}`
   return SearchAnimesBySpecificURL(animeAV1URL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -82,7 +86,7 @@ exports.SearchAnimeAV1 = async function (query, genreArr = undefined, url = unde
     if (data.data.media.length < 1) throw Error("No search results!")
     return data.data.media.slice(gottenItems).map((anime) => {
       return {
-        title: anime.title, type: (anime.type === "TV Anime" || anime.type === "series") ? "series" : "movie",
+        title: anime.title, type: (anime.type === "Pelicula" || anime.type === "movie") ? "movie" : "series",
         slug: anime.slug, poster: anime.cover, overview: anime.synopsis, genres: genreArr
       }
     })
@@ -125,7 +129,7 @@ exports.GetAnimeBySlug = async function (slug) {
       })
     }
     return {
-      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "TV Anime") ? "series" : "movie",
+      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula") ? "movie" : "series",
       videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n'), website: data.data.url, id: `animeav1:${slug}`,
       language: "jpn", ...(data.data.related) && {
         links: data.data.related.map((r) => {
@@ -394,7 +398,7 @@ async function SearchAnimesBySpecificURL(animeAV1URL) {
       media: []
     };
 
-    const pageSelector = $("body > div.Wrapper > div > div > main > div > ul > li");
+    const pageSelector = $("body > div > div.container > main > section > div > a");
     const getNextAndPrevPages = (selector) => {
       const aTagValue = selector.last().prev().find("a").text();
       const aRef = selector.eq(0).children("a").attr("href");
@@ -416,19 +420,19 @@ async function SearchAnimesBySpecificURL(animeAV1URL) {
     }
     const { foundPages, nextPage, previousPage } = getNextAndPrevPages(pageSelector)
     const scrapSearchAnimeData = ($) => {
-      const selectedElement = $("body > div.Wrapper > div > div > main > ul > li");
+      const selectedElement = $("body > div > div.container > main > section > div > article");
 
       if (selectedElement.length > 0) {
         const mediaVec = [];
 
-        selectedElement.each((i, el) => {
+        selectedElement.each((_, el) => {
           mediaVec.push({
-            title: $(el).find("h3").text(),
-            cover: $(el).find("figure > img").attr("src"),
-            synopsis: $(el).find("div.Description > p").eq(1).text(),
-            rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
-            slug: $(el).find("a").attr("href").replace("/anime/", ""),
-            type: $(el).find("a > div > span.Type").text(),
+            title: $(el).find("header > h3").text(),
+            cover: $(el).find("div > figure > img").attr("src"),
+            synopsis: $(el).find("div > div > div > p").eq(1).text(),
+            //rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
+            slug: $(el).find("a").attr("href").replace("/media/", ""),
+            type: $(el).find("div > figure + div > div").text(),
             url: ANIMEAV1_BASE + ($(el).find("a").attr("href"))
           });
         });
