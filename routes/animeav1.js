@@ -254,7 +254,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
         embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/")
       });
     }
-
+    /*
     const otherDownloads = $("body > div.Wrapper > div.Body > div > div > div > div > div > table > tbody > tr");
 
     for (const el of otherDownloads) {
@@ -266,7 +266,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
           download: $(el).find("td:last-child a").attr("href")
         });
       }
-    }
+    }*/
     return episodeLinks;
   } catch (e) {
     console.error("Error on GetEpisodeLinks:", e);
