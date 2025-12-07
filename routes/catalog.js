@@ -59,7 +59,7 @@ function HandleCatalogRequest(req, res, next) {
         })
       })
     } else {
-      catalogPromise = animeAV1API.GetAiringAnime().then((result) => {
+      catalogPromise = animeAV1API.SearchAnimeAV1("",undefined,undefined,"https://animeav1.com/catalogo").then((result) => {
         console.log('\x1b[36mGot AnimeAV1 metadata for:\x1b[39m', result.length, "search results")
         return result.map((anime) => {
           return {
@@ -73,7 +73,6 @@ function HandleCatalogRequest(req, res, next) {
         })
       })
     }
-
   } else {
     if (res.locals.extraParams) {
       let genreArr = res.locals.extraParams.genre

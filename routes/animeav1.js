@@ -5,71 +5,6 @@ const cheerio = require("cheerio");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
-exports.GetAiringAnimeFromWeb = async function () {
-  return GetOnAir().then((data) => {
-    if (!data || data.length < 1) throw Error("Invalid response!")
-    return { data }
-  }).then((data) => {
-    if (data?.data === undefined) throw Error("Invalid response!")
-    const promises = data.data.map((entry) => {
-      return this.GetAnimeBySlug(entry.slug).then((anime) => {
-        return {
-          title: anime.name, type: (anime.type === "Pelicula" || anime.type === "movie") ? "movie" : "series",
-          slug: entry.slug, poster: anime.poster, overview: anime.description
-        }
-      })
-    })
-
-    return Promise.allSettled(promises).then((results) =>
-      results.filter((prom) => (prom.value)).map((source) => source.value)
-    )
-  })
-}
-
-exports.GetAiringAnime = async function () {
-  return fsPromises.readFile('./onair_titles_av1.json').then((data) => JSON.parse(data)).catch((err) => {
-    console.error('\x1b[31mFailed reading AV1 titles cache:\x1b[39m ' + err)
-    return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
-  })
-  /*try {
-    return fetch(process.env.BLOB_URL).then((resp) => {
-      if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-      if (resp === undefined) throw Error(`Undefined response!`)
-      return resp.json()
-    }).catch(async (err) => {
-      console.error('\x1b[31mFailed reading Vercel Blob with direct URL:\x1b[39m', err, 'Using expensive list() method instead')
-      const list = await vercelBlob.list({ limit: 2 })
-      if (list.blobs.length < 1) throw Error("No files found in Vercel Blob")
-      const blobObj = list.blobs.find((blob) => blob.pathname.includes("onair_titles.json"))
-      if (!blobObj) throw Error("Files found, but no onair_titles.json found")
-      return fetch(blobObj.url).then((resp) => {
-        if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-        if (resp === undefined) throw Error(`Undefined response!`)
-        return resp.json()
-      })
-    })
-  } catch (error) {
-    console.error('\x1b[31mFailed reading titles Vercel Blob:\x1b[39m ' + err)
-    return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
-  }*/
-}
-
-exports.UpdateAiringAnimeFile = function () {
-  return this.GetAiringAnimeFromWeb().then((titles) => {
-    console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
-    return fsPromises.writeFile('./onair_titles_av1.json', JSON.stringify(titles))
-    // return vercelBlob.put(`onair_titles.json`, JSON.stringify(titles), {
-    //   access: "public",
-    //   allowOverwrite: true, //Allow overwriting the file
-    //   cacheControlMaxAge: 86400000, //1 day
-    //   contentType: "application/json"
-    // })
-  }).then(() => console.log('\x1b[32mOn Air (AV1) titles "cached" successfully!\x1b[39m')
-  ).catch((err) => {
-    console.error('\x1b[31mFailed "caching" AV1 titles:\x1b[39m ' + err)
-  })
-}
-
 exports.SearchAnimeAV1 = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimeAV1()")
   if (type) {
@@ -130,7 +65,7 @@ exports.GetAnimeBySlug = async function (slug) {
     }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula") ? "movie" : "series",
-      videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n'), website: data.data.url, id: `animeav1:${slug}`,
+      videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
       language: "jpn", ...(data.data.related) && {
         links: data.data.related.map((r) => {
           return { name: r.title, category: r.relation, url: `stremio:///detail/series/animeav1:${r.slug}` }
@@ -457,33 +392,5 @@ async function SearchAnimesBySpecificURL(animeAV1URL) {
   } catch (error) {
     console.error("Error al buscar animes por URL:", error);
     throw error
-  }
-}
-//Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
-async function GetOnAir() {
-  try {
-    const onAirData = await fetch(decodeURIComponent(ANIMEAV1_BASE)).then((resp) => {
-      if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-      if (resp === undefined) throw Error(`Undefined response!`)
-      return resp.text()
-    }).catch(() => null);
-    const $ = cheerio.load(onAirData);
-
-    const onAir = [];
-    if ($(".ListSdbr > li").length > 0) {
-      $(".ListSdbr > li").each((i, el) => {
-        const temp = {
-          title: $(el).find("a").remove("span").text(),
-          type: $(el).find("a").children("span").text(),
-          slug: $(el).find("a").attr("href").replace("/anime/", ""),
-          url: ANIMEAV1_BASE + $(el).find("a").attr("href")
-        }
-        onAir.push(temp);
-      })
-    }
-    return onAir;
-  } catch (e) {
-    console.error("Error on GetOnAir:", e)
-    throw e
   }
 }
