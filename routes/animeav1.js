@@ -74,7 +74,8 @@ exports.GetAnimeBySlug = async function (slug) {
       runtime: data.data.runtime,
       ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: data.data.startDate.getFullYear() + "-".concat((data.data.endDate!==undefined)?data.data.endDate?.getFullYear():"") },
       ...(data.data.trailers) && { trailers: [ {source: data.data.trailers, type: "Trailer"} ] },
-      ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } }
+      ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
+      ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `animeav1:${slug}:1` } }
     }
   })
 }
