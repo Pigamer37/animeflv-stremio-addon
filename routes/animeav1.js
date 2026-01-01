@@ -100,7 +100,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
       }
     })
     //return externalStreams WIP
-    const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape") || (src.embed !== undefined && src.name === "YourUpload"))
+    const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape") || (src.embed !== undefined && ["YourUpload", "MP4Upload"].includes(src.name)))
     const promises = downloadStreams.map((source) => {
       if (source.name === "YourUpload") {
         return GetYourUploadLink(source.embed).then((realURL) => {
@@ -125,6 +125,31 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           }
         }).catch((err) => {
           console.error("Failed getting YourUpload link:", err)
+          return undefined
+        })
+      } else if (source.name === "MP4Upload") {
+        return GetMP4UploadLink(source.embed).then((realURL) => {
+          return {
+            url: realURL,
+            name: "AnimeAV1\n" + source.name,
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL,
+            behaviorHints: {
+              bingeGroup: "animeAV1|" + source.name,
+              filename: realURL,
+              notWebReady: true,
+              proxyHeaders: {
+                request: {
+                  "Referer": "https://a4.mp4upload.com",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+                },
+                response: {
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+                }
+              }
+            }
+          }
+        }).catch((err) => {
+          console.error("Failed getting MP4Upload link:", err)
           return undefined
         })
       }
@@ -394,4 +419,37 @@ async function SearchAnimesBySpecificURL(animeAV1URL) {
     console.error("Error al buscar animes por URL:", error);
     throw error
   }
+}
+
+function GetYourUploadLink(url) {
+  return fetch(url).then((resp) => {
+    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+    if (resp === undefined) throw Error(`Undefined response!`)
+    return resp.text()
+  }).then((data) => {
+    const metaPattern = /property\s*=\s*"og:video"/g
+    const metaMatch = metaPattern.exec(data)
+    if (metaMatch[0]) {
+      const vidPattern = /content\s*=\s*"(\S+)"/g
+      const vidMatch = vidPattern.exec(data.substring(metaMatch.index))
+      if (vidMatch[1]) {
+        return vidMatch[1]
+      } else console.log("No video link")
+    } else console.log("No video")
+  })
+}
+
+function GetMP4UploadLink(url) {
+  return fetch(url).then((resp) => {
+    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+    if (resp === undefined) throw Error(`Undefined response!`)
+    return resp.text()
+  }).then((data) => {
+    const metaPattern = /<script(?:.|\n)+?src:(?:.|\n)*?"(.+?\.mp4)"/g
+    const metaMatch = metaPattern.exec(data)
+    if (metaMatch && metaMatch[0]) {
+      console.log("Got link:", metaMatch[1])
+      return metaMatch[1]
+    } else console.log("No video link")
+  })
 }
