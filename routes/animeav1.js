@@ -14,7 +14,7 @@ exports.GetAiringAnimeFromWeb = async function () {
     const promises = data.data.map((entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
-          title: anime.name, type: (anime.type === "Pelicula" || anime.type === "movie") ? "movie" : "series",
+          title: anime.name, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
@@ -59,7 +59,7 @@ exports.SearchAnimeAV1 = async function (query, type = undefined, genreArr = und
     if (data.data.media.length < 1) throw Error("No search results!")
     return data.data.media.slice(gottenItems).map((anime) => {
       return {
-        title: anime.title, type: (anime.type === "Pelicula" || anime.type === "movie") ? "movie" : "series",
+        title: anime.title, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
         slug: anime.slug, poster: anime.cover, overview: anime.synopsis, genres: genreArr
       }
     })
@@ -102,7 +102,7 @@ exports.GetAnimeBySlug = async function (slug) {
       })
     }
     return {
-      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula") ? "movie" : "series",
+      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
       videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
       language: "jpn", ...(data.data.related) && {
         links: data.data.related.map((r) => {
@@ -222,7 +222,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     const $ = cheerio.load(await episodeData());
 
     const episodeLinks = {
-      title: $("body > div.Wrapper > div.Body > div > div > div > nav.Brdcrmb > a").next("i").next("a").text(),
+      title: $("body > div > div.container > main > article > div > div > header > div > div > a").text(),
       number: Number($("body > div > div.container > main > article > div > div > header > div > h1").text().replace("Episodio ", "")) || epNumber,
       servers: []
     }
@@ -500,7 +500,6 @@ function GetMP4UploadLink(url) {
     const metaPattern = /<script(?:.|\n)+?src:(?:.|\n)*?"(.+?\.mp4)"/g
     const metaMatch = metaPattern.exec(data)
     if (metaMatch && metaMatch[0]) {
-      console.log("Got link:", metaMatch[1])
       return metaMatch[1]
     } else console.log("No video link")
   })

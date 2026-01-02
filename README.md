@@ -12,7 +12,7 @@ Node.js and express.js based addon to add AnimeFLV & AnimeAv1 functionallity to 
 - :mag: Search the AnimeFLV & AnimeAV1 databases/catalogs through Stremio's searchbar, or filter them by genre in the Discovery tab
 - :wrench: Compatible with other addons, like Cinemeta, TMDB or kitsu so you can use your preferred metadata provider (see [supported ID's](#endpoints) for technical details)
 - :page_with_curl: See metadata extracted from AnimeFLV & AnimeAV1 natively in Stremio, like synopses/overviews, genres, related media, episode lists and release dates for upcoming episodes
-  - :calendar: If you add series to your library (through an AnimeFLV/AnimeAV1 ID), upcoming episodes will show up in your Stremio calendar!
+  - :calendar: If you add series to your library (through an AnimeFLV ID), upcoming episodes will show up in your Stremio calendar!
 - :satellite: Provides stream sources from AnimeFLV & AnimeAV1
 
 This addon provides metadata and streaming options from AnimeFLV & AnimeAV1. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV & AnimeAV1, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV ..." or "AnimeAV1 ..." (the ones marked as external open a player on your browser, working on getting more sources to be watchable directly on Stremio).

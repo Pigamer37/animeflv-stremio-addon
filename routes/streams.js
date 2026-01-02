@@ -110,6 +110,7 @@ function HandleStreamRequest(req, res, next) {
     }).then((metadata) => {
       const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
       const animeFLVp = animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
+        animeFLVitem.sort((a,b)=>(a.type === req.params.type && b.type !== req.params.type)?-1:0) //Sort by type to enhance matching
         console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
         return animeFLVAPI.GetItemStreams(animeFLVitem[0].slug, episode)
       })
