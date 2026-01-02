@@ -5,6 +5,44 @@ const cheerio = require("cheerio");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
+exports.GetAiringAnimeFromWeb = async function () {
+  return GetOnAir().then((data) => {
+    if (!data || data.length < 1) throw Error("Invalid response!")
+    return { data }
+  }).then((data) => {
+    if (data?.data === undefined) throw Error("Invalid response!")
+    const promises = data.data.map((entry) => {
+      return this.GetAnimeBySlug(entry.slug).then((anime) => {
+        return {
+          title: anime.name, type: (anime.type === "Pelicula" || anime.type === "movie") ? "movie" : "series",
+          slug: entry.slug, poster: anime.poster, overview: anime.description
+        }
+      })
+    })
+
+    return Promise.allSettled(promises).then((results) =>
+      results.filter((prom) => (prom.value)).map((source) => source.value)
+    )
+  })
+}
+
+exports.GetAiringAnime = async function () {
+  return fsPromises.readFile('./onairAV1_titles.json').then((data) => JSON.parse(data)).catch((err) => {
+    console.error('\x1b[31mFailed reading titles cache:\x1b[39m ' + err)
+    return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
+  })
+}
+
+exports.UpdateAiringAnimeFile = function () {
+  return this.GetAiringAnimeFromWeb().then((titles) => {
+    console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
+    return fsPromises.writeFile('./onairAV1_titles.json', JSON.stringify(titles))
+  }).then(() => console.log('\x1b[32mOn Air AV1 titles "cached" successfully!\x1b[39m')
+  ).catch((err) => {
+    console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
+  })
+}
+
 exports.SearchAnimeAV1 = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimeAV1()")
   if (type) {
@@ -419,6 +457,20 @@ async function SearchAnimesBySpecificURL(animeAV1URL) {
     console.error("Error al buscar animes por URL:", error);
     throw error
   }
+}
+
+async function GetOnAir() {
+  return SearchAnimesBySpecificURL("https://animeav1.com/catalogo?status=emision").then((data) => {
+    if (!data || data.media === undefined) throw Error("Invalid response!")
+    return data.media.map((anime) => {
+      return {
+        title: anime.title,
+        type: anime.type,
+        slug: anime.slug,
+        url: anime.url
+      }
+    })
+  })
 }
 
 function GetYourUploadLink(url) {

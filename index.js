@@ -95,6 +95,9 @@ function ReadManifest() {
           id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
         },
         {
+          id: "animeav1|onair", type: "AnimeAV1", name: "On Air"
+        },
+        {
           type: "series",
           id: "calendar-videos",
           extra: [
@@ -206,8 +209,21 @@ app.use(catalog);
 
 app.listen(process.env.PORT || 3000, () => {
   console.log(`\x1b[32manimeflv-stremio-addon is listening on port ${process.env.PORT || 3000}\x1b[39m`)
+  if(process.argv.includes('--launch')){
+    const OSC = '\u001B]';
+    const BEL = '\u0007';
+    const url = `${OSC}8;;stremio://127.0.0.1:${process.env.PORT || 3000}/manifest.json${BEL}Open this link to install the running addon on the Stremio app${OSC}8;;${BEL}`
+    console.log(url)
+  } else if(process.argv.includes('--webLaunch')){
+    const url = `http://127.0.0.1:${process.env.PORT || 3000}/manifest.json`
+    console.log('Open the following for a developement web Stremio session:', `https://staging.strem.io#?addonOpen=${encodeURIComponent(url)}`)
+  }
   const animeFLVAPI = require('./routes/animeFLV.js')
+  const animeAV1API = require('./routes/animeav1.js')
   animeFLVAPI.UpdateAiringAnimeFile().then(() => {
     setInterval(animeFLVAPI.UpdateAiringAnimeFile.bind(animeFLVAPI), 86400000); //Update every 24h
+  })
+  animeAV1API.UpdateAiringAnimeFile().then(() => {
+    setInterval(animeAV1API.UpdateAiringAnimeFile.bind(animeAV1API), 86400000); //Update every 24h
   })
 });

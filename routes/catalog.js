@@ -38,7 +38,7 @@ function HandleCatalogRequest(req, res, next) {
   let catalogPromise
   if (req.params.videoId.startsWith("animeav1")) {
     //animeAV1 catalog request
-    if (res.locals.extraParams) {
+    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
       let genreArr = res.locals.extraParams.genre
       //calculate the page to start from, AnimeFLV uses 24 results per page
       //if skip is defined, we can calculate the page and the number of items we already delivered
@@ -59,7 +59,7 @@ function HandleCatalogRequest(req, res, next) {
         })
       })
     } else {
-      catalogPromise = animeAV1API.SearchAnimeAV1("",undefined,undefined,"https://animeav1.com/catalogo").then((result) => {
+      catalogPromise = animeAV1API.GetAiringAnime().then((result) => {
         console.log('\x1b[36mGot AnimeAV1 metadata for:\x1b[39m', result.length, "search results")
         return result.map((anime) => {
           return {
@@ -74,7 +74,7 @@ function HandleCatalogRequest(req, res, next) {
       })
     }
   } else {
-    if (res.locals.extraParams) {
+    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
       let genreArr = res.locals.extraParams.genre
       //calculate the page to start from, AnimeFLV uses 24 results per page
       //if skip is defined, we can calculate the page and the number of items we already delivered
@@ -139,8 +139,7 @@ function ParseConfig(req, res, next) {
 //Calendar requests
 catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", (req, res) => {
   console.log("Entered catalog request with", req.params.calendarVideosIds)
-  console.log("IDvector", req.params.calendarVideosIds.slice(18).split(','))
-  console.log("FilteredVector", req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
+  console.log("FilteredVector:", req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
     .filter((id) => id.startsWith("animeflv:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))
   let metasDetailed = [], uniqueIDs = [...new Set(req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
     .filter((id) => id.startsWith("animeflv:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
@@ -154,6 +153,10 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return animeFLVAPI.GetAnimeBySlug(ID)
+    } else if (videoID.startsWith("animeav1")) {
+      const ID = idDetails[1]
+      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+      return animeAV1API.GetAnimeBySlug(ID)
     } else {
       let animeIMDBIDPromise
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID

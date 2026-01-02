@@ -4,7 +4,9 @@
   "description": "Add AnimeFLV & AnimeAV1 functionallity to Stremio, including catalogs, streams and metadata, even showing upcoming episodes in the calendar! Not affiliated with AnimeFLV or AnimeAV1. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
   "main": "index.js",
   "scripts": {
-    "devStart": "nodemon index.js --ignore onair_titles.json --ignore README",
+    "devStart": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore README",
+    "devStartApp": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore README --launch",
+    "devStartWeb": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore README --webLaunch",
     "start": "node index.js"
   },
   "repository": {
