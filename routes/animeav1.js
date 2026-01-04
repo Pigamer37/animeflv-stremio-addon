@@ -138,7 +138,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
       }
     })
     //return externalStreams WIP
-    const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape") || (src.embed !== undefined && ["YourUpload", "MP4Upload"].includes(src.name)))
+    const downloadStreams = data.data.servers.filter((src) => /*(src.download !== undefined && src.name === "Stape") ||*/ (src.embed !== undefined && ["YourUpload", "MP4Upload"/*, "PDrain"*/].includes(src.name)))
     const promises = downloadStreams.map((source) => {
       if (source.name === "YourUpload") {
         return GetYourUploadLink(source.embed).then((realURL) => {
@@ -188,6 +188,31 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           }
         }).catch((err) => {
           console.error("Failed getting MP4Upload link:", err)
+          return undefined
+        })
+      } else if(source.name === "PDrain") {
+        return GetPDrainLink(source.embed).then((realURL) => {
+          return {
+            url: realURL,
+            name: "AnimeAV1\n" + source.name,
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL,
+            behaviorHints: {
+              bingeGroup: "animeAV1|" + source.name,
+              filename: realURL,
+              notWebReady: true,
+              proxyHeaders: {
+                request: {
+                  "Referer": "https://pixeldrain.com",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+                },
+                response: {
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+                }
+              }
+            }
+          }
+        }).catch((err) => {
+          console.error("Failed getting PDrain link:", err)
           return undefined
         })
       }
@@ -503,4 +528,12 @@ function GetMP4UploadLink(url) {
       return metaMatch[1]
     } else console.log("No video link")
   })
+}
+
+function GetPDrainLink(url) {
+  const metaPattern = /(.+?:\/\/.+?)\/.+?\/(.+?)(?:\?embed)?$/g
+  const metaMatch = metaPattern.exec(url)
+  if (metaMatch && metaMatch[0]) {
+    return Promise.resolve(`${metaMatch[1]}/api/file/${metaMatch[2]}`)
+  } else { console.log("No video link"); Promise.reject("No video link") }
 }
