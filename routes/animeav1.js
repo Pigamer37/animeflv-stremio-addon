@@ -132,8 +132,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     const externalStreams = data.data.servers.filter((src) => src.embed !== undefined).map((source) => {
       return {
         externalUrl: source.embed,
-        name: "AnimeAV1\n" + source.name + "⇗\n(external)",
-        title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed,
+        name: "AnimeAV1\n" + source.name + "⇗\n(external)" + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+        title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
         behaviorHints: {
           bingeGroup: "animeAV1|" + source.name + "|ext",
           filename: source.embed
@@ -147,8 +147,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return GetYourUploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "AnimeAV1\n" + source.name,
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL,
+            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
             behaviorHints: {
               bingeGroup: "animeAV1|" + source.name,
               filename: realURL,
@@ -172,8 +172,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return GetMP4UploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "AnimeAV1\n" + source.name,
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL,
+            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
             behaviorHints: {
               bingeGroup: "animeAV1|" + source.name,
               filename: realURL,
@@ -197,8 +197,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return GetPDrainLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "AnimeAV1\n" + source.name,
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL,
+            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
             behaviorHints: {
               bingeGroup: "animeAV1|" + source.name,
               filename: realURL,
@@ -226,7 +226,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     )
   })
 }
-//Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
+
 async function GetEpisodeLinks(slug, epNumber = 1) {
   try {
     const episodeData = async () => {
@@ -260,8 +260,9 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     
     const serversObj = metadataJSON?.match(/embeds:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
     const downloadObj = metadataJSON?.match(/downloads:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
-    //TODO: Add DUB options too and make it clear in the title
-    let servers = {};
+    const serversObjDUB = metadataJSON?.match(/embeds:\s?.*?DUB:\s?(\[.*?\])/)?.[1];
+    const downloadObjDUB = metadataJSON?.match(/downloads:\s?.*?DUB:\s?(\[.*?\])/)?.[1];
+    let servers = [];
     if (serversObj) {
       servers = serversObj.split("},")?.map(s => {
         return {
@@ -271,10 +272,28 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
       });
     }
     if (downloadObj) {
-      servers.concat(downloadObj.split("},")?.map(s => {
+      servers = servers.concat(downloadObj.split("},")?.map(s => {
         return {
           title: s.match(/server:\s?"(.*?)"/)?.[1],
           url: s.match(/url:\s?"(.*?)"/)?.[1]
+        }
+      }));
+    }
+    if (serversObjDUB) {
+      servers = servers.concat(serversObjDUB.split("},")?.map(s => {
+        return {
+          title: s.match(/server:\s?"(.*?)"/)?.[1],
+          code: s.match(/url:\s?"(.*?)"/)?.[1],
+          dub: true
+        }
+      }));
+    }
+    if (downloadObjDUB) {
+      servers = servers.concat(downloadObjDUB.split("},")?.map(s => {
+        return {
+          title: s.match(/server:\s?"(.*?)"/)?.[1],
+          url: s.match(/url:\s?"(.*?)"/)?.[1],
+          dub: true
         }
       }));
     }
@@ -283,7 +302,8 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
       episodeLinks.servers.push({
         name: s?.title,
         download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
-        embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/")
+        embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/"),
+        dub: s?.dub || false
       });
     }
     /*
