@@ -101,6 +101,9 @@ exports.GetAnimeBySlug = async function (slug) {
         available: false //next episode is not available yet
       })
     }
+    if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
+      videos[0].title = videos[0].title.replace(" Ep. 1", "")
+    }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
       videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
@@ -248,15 +251,16 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
 
     const episodeLinks = {
       title: $("body > div > div.container > main > article > div > div > header > div > div > a").text(),
-      number: Number($("body > div > div.container > main > article > div > div > header > div > h1").text().replace("Episodio ", "")) || epNumber,
+      number: (["Película", "Especial"].includes($("body > div > div.container > main > article > div > div > header > div.flex > span").first().text().trim())) ? undefined : Number($("body > div > div.container > main > article > div > div > header > div.flex + h1").text().replace("Episodio ", "")) || epNumber,
       servers: []
     }
 
     const scripts = $("script");
     const metadataJSON = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("kit.start(app, element, {"));
     
-    const serversObj = metadataJSON?.match(/embeds:\s?\{SUB:\s?(\[.*?\])/)?.[1];
-    const downloadObj = metadataJSON?.match(/downloads:\s?\{SUB:\s?(\[.*?\])/)?.[1];
+    const serversObj = metadataJSON?.match(/embeds:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
+    const downloadObj = metadataJSON?.match(/downloads:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
+    //TODO: Add DUB options too and make it clear in the title
     let servers = {};
     if (serversObj) {
       servers = serversObj.split("},")?.map(s => {
