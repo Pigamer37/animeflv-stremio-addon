@@ -141,7 +141,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
       }
     })
     //return externalStreams WIP
-    const downloadStreams = data.data.servers.filter((src) => /*(src.download !== undefined && src.name === "Stape") ||*/ (src.embed !== undefined && ["YourUpload", "MP4Upload"/*, "PDrain"*/].includes(src.name)))
+    const downloadStreams = data.data.servers.filter((src) => /*(src.download !== undefined && src.name === "Stape") ||*/ (src.embed !== undefined && ["YourUpload", "MP4Upload"/*, "HLS", "PDrain"*/].includes(src.name)))
     const promises = downloadStreams.map((source) => {
       if (source.name === "YourUpload") {
         return GetYourUploadLink(source.embed).then((realURL) => {
@@ -209,13 +209,40 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
                   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
                 },
                 response: {
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+                  "Content-Type": "video/mp4"
                 }
               }
             }
           }
         }).catch((err) => {
           console.error("Failed getting PDrain link:", err)
+          return undefined
+        })
+      } else if(source.name === "HLS") {
+        return GetHLSLink(source.embed).then((realURL) => {
+          return {
+            url: realURL,
+            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            behaviorHints: {
+              bingeGroup: "animeAV1|" + source.name,
+              filename: realURL,
+              notWebReady: true,
+              proxyHeaders: {
+                request: {
+                  "Referer": "https://player.zilla-networks.com",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+                },
+                response: {
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+                  "Content-Type": (realURL.includes("/m3u8/")) ? "application/vnd.apple.mpegurl" : "video/mp4"
+                }
+              }
+            }
+          }
+        }).catch((err) => {
+          console.error("Failed getting HLS link:", err)
           return undefined
         })
       }
@@ -559,5 +586,11 @@ function GetPDrainLink(url) {
   const metaMatch = metaPattern.exec(url)
   if (metaMatch && metaMatch[0]) {
     return Promise.resolve(`${metaMatch[1]}/api/file/${metaMatch[2]}`)
+  } else { console.log("No video link"); Promise.reject("No video link") }
+}
+
+function GetHLSLink(url) {
+  if (url.includes("/play/") || url.includes("/m3u8/")) {
+    return Promise.resolve(url.replace("/play/", "/m3u8/"))
   } else { console.log("No video link"); Promise.reject("No video link") }
 }
