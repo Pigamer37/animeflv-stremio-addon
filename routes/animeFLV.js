@@ -349,14 +349,15 @@ async function GetAnimeInfo(slug) {
 
     const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var episodes ="));
     const episodesArray = episodesFind?.match(/episodes = (\[\[.*\].*])/)?.[1];
-
-    if (episodesArray) {
-      for (let i = 1; i <= JSON.parse(episodesArray)?.length; i++) {
+    
+    const epObj = JSON.parse(episodesArray)
+    if (epObj) {
+      for (ep of epObj) {
         if (animeInfo.episodes instanceof Array) {
           animeInfo.episodes.push({
-            number: i,
-            slug: slug + "-" + i,
-            url: ANIMEFLV_BASE + "/ver/" + slug + "-" + i
+            number: ep[0],
+            slug: slug + "-" + ep[0],
+            url: ANIMEFLV_BASE + "/ver/" + slug + "-" + ep[0]
           });
         }
       }

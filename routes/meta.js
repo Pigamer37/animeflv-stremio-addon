@@ -111,7 +111,7 @@ function HandleMetaRequest(req, res, next) {
     }).then((metadata) => {
       const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
       animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', threshold: 0})[0].obj;
+        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem[0];
         console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
         return animeFLVAPI.GetAnimeBySlug(result.slug).then((animeMeta) => {
           console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', animeMeta.name)
