@@ -7,6 +7,7 @@ const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
 const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
+const fuzzysort = require('fuzzysort')
 
 /**
  * Tipical express middleware callback.
@@ -110,13 +111,15 @@ function HandleStreamRequest(req, res, next) {
     }).then((metadata) => {
       const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
       const animeFLVp = animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
-        animeFLVitem.sort((a,b)=>(a.type === req.params.type && b.type !== req.params.type)?-1:0) //Sort by type to enhance matching
-        console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
-        return animeFLVAPI.GetItemStreams(animeFLVitem[0].slug, episode)
+        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', threshold: 0})[0].obj;
+        //animeFLVitem.sort((a,b)=>(a.type === req.params.type && b.type !== req.params.type)?-1:0) //Sort by type to enhance matching
+        console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
+        return animeFLVAPI.GetItemStreams(result.slug, episode)
       })
       const animeAV1p = animeAV1API.SearchAnimeAV1(searchTerm, req.params.type).then((animeFLVitem) => {
-        console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', animeFLVitem[0].title)
-        return animeAV1API.GetItemStreams(animeFLVitem[0].slug, episode)
+        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', threshold: 0})[0].obj;
+        console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', result.title)
+        return animeAV1API.GetItemStreams(result.slug, episode)
       })
       CombineStreams(animeFLVp, animeAV1p).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
