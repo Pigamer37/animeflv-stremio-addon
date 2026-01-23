@@ -23,7 +23,7 @@ function ReadManifest() {
     let manifest = {
       "id": 'com.' + packageJSON.name.replaceAll('-', '.'),
       "version": packageJSON.version,
-      "name": "AnimeFLV & AnimeAV1",
+      "name": "AnimeFLV, AnimeAV1 & Henaojara",
       "logo": "https://play-lh.googleusercontent.com/ZIjIwO5FJe9R1rplSd4uz54OwBxQhwDcznjljSPl2MgHaCoyF3qG6R4kRMCB40f4l2A=w256",
       "background": "https://images6.alphacoders.com/113/1135890.jpg",
       "description": packageJSON.description,
@@ -55,6 +55,23 @@ function ReadManifest() {
               "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
               "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
               "yaoi", "yuri"],
+            optionsLimit: 1, isRequired: false
+          },
+          { name: "skip", isRequired: false }
+          ]
+        },
+        {
+          id: "henaojara", type: "Henaojara", name: "search results",
+          extra: [{ name: "search", isRequired: true },
+          {
+            name: "genre",
+            options: ["accion", "aenime", "anime-latino", "artes-marciales", "aventura", "aventuras", "blu-ray",
+              "carreras", "castellano", "ciencia-ficcion", "comedia", "comida", "cyberpunk", "demencia", "dementia",
+              "demonios", "deportes", "drama", "ecchi", "escolares", "escuela", "espacial", "fantasia", "gore",
+              "harem", "historia-paralela", "historico", "horror", "infantil", "josei", "juegos", "latino", "lucha",
+              "magia", "mecha", "militar", "misterio", "monogatari", "musica", "parodia", "parodias", "policia",
+              "psicologico", "recuentos-de-la-vida", "recuerdos-de-la-vida", "romance", "samurai", "seinen", "shojo",
+              "shonen", "shoujo", "shounen", "shounen-ai", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros", "yaoi", "yuri"],
             optionsLimit: 1, isRequired: false
           },
           { name: "skip", isRequired: false }
@@ -93,10 +110,30 @@ function ReadManifest() {
           ]
         },
         {
+          id: "henaojara|genres", type: "Henaojara", name: "Henaojara",
+          extra: [
+            {
+              name: "genre",
+              options: ["accion", "aenime", "anime-latino", "artes-marciales", "aventura", "aventuras", "blu-ray",
+              "carreras", "castellano", "ciencia-ficcion", "comedia", "comida", "cyberpunk", "demencia", "dementia",
+              "demonios", "deportes", "drama", "ecchi", "escolares", "escuela", "espacial", "fantasia", "gore",
+              "harem", "historia-paralela", "historico", "horror", "infantil", "josei", "juegos", "latino", "lucha",
+              "magia", "mecha", "militar", "misterio", "monogatari", "musica", "parodia", "parodias", "policia",
+              "psicologico", "recuentos-de-la-vida", "recuerdos-de-la-vida", "romance", "samurai", "seinen", "shojo",
+              "shonen", "shoujo", "shounen", "shounen-ai", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros", "yaoi", "yuri"],
+              optionsLimit: 1, isRequired: true
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
         },
         {
           id: "animeav1|onair", type: "AnimeAV1", name: "On Air"
+        },
+        {
+          id: "henaojara|onair", type: "Henaojara", name: "On Air"
         },
         {
           type: "series",
@@ -132,6 +169,7 @@ function ReadManifest() {
         "tt",
         "animeflv:",
         "animeav1:",
+        "henaojara:",
         "tmdb:",
         "anilist:",
         "kitsu:",
@@ -221,10 +259,14 @@ app.listen(process.env.PORT || 3000, () => {
   }
   const animeFLVAPI = require('./routes/animeFLV.js')
   const animeAV1API = require('./routes/animeav1.js')
+  const henaojaraAPI = require('./routes/henaojara.js')
   animeFLVAPI.UpdateAiringAnimeFile().then(() => {
     setInterval(animeFLVAPI.UpdateAiringAnimeFile.bind(animeFLVAPI), 86400000); //Update every 24h
   })
   animeAV1API.UpdateAiringAnimeFile().then(() => {
     setInterval(animeAV1API.UpdateAiringAnimeFile.bind(animeAV1API), 86400000); //Update every 24h
+  })
+  henaojaraAPI.UpdateAiringAnimeFile().then(() => {
+    setInterval(henaojaraAPI.UpdateAiringAnimeFile.bind(henaojaraAPI), 86400000); //Update every 24h
   })
 });

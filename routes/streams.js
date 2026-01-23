@@ -7,6 +7,7 @@ const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
 const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
+const henaojaraAPI = require('./henaojara.js')
 const fuzzysort = require('fuzzysort')
 
 /**
@@ -38,14 +39,15 @@ function HandleStreamRequest(req, res, next) {
   let streams = []
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
-  if ((videoID?.startsWith("animeflv")) || (videoID?.startsWith("animeav1"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
+  if ((videoID?.startsWith("animeflv")) || (videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
     const ID = idDetails[1] //We want the second part of the videoID
     let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     console.log('Extra parameters:', res.locals.extraParams)
     const animeFLVp = animeFLVAPI.GetItemStreams(ID, episode)
     const animeAV1p = animeAV1API.GetItemStreams(ID, episode)
-    CombineStreams(animeFLVp, animeAV1p).then((combinedStreams)=>{
+    const henaojarap = henaojaraAPI.GetItemStreams(ID, episode)
+    CombineStreams(animeFLVp, animeAV1p, henaojarap).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
@@ -120,7 +122,12 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', result.title)
         return animeAV1API.GetItemStreams(result.slug, episode)
       })
-      CombineStreams(animeFLVp, animeAV1p).then((combinedStreams)=>{
+      const henaojarap = henaojaraAPI.SearchHenaojara(searchTerm).then((animeFLVitem) => {
+        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem[0];
+        console.log('\x1b[36mGot Henaojara entry:\x1b[39m', result.title)
+        return henaojaraAPI.GetItemStreams(result.slug, episode)
+      })
+      CombineStreams(animeFLVp, animeAV1p, henaojarap).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
@@ -183,8 +190,8 @@ function SearchParamsRegex(extraParams) {
   } else return {}
 }
 
-function CombineStreams(animeFLVPromise, animeAV1Promise) {
-  return Promise.allSettled([animeFLVPromise, animeAV1Promise]).then((results) => {
+function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise) {
+  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise]).then((results) => {
     let combinedStreams = []
     if (results[0].value) {
       console.log(`\x1b[36mGot ${results[0].value.length} AnimeFLV streams\x1b[39m`)
@@ -203,6 +210,19 @@ function CombineStreams(animeFLVPromise, animeAV1Promise) {
         combinedStreams = combinedStreams.concat(results[1].value.slice(lastInternalAV1 + 1)) //Append external links at the end
       }
     } else {console.error('\x1b[31mFailed on AnimeAV1 slug search because:\x1b[39m ' + results[1].reason)}
+    if (results[2].value) {
+      console.log(`\x1b[36mGot ${results[2].value.length} Henaojara streams\x1b[39m`)
+      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
+      lastInternalHena = results[2].value.findLastIndex((stream)=>stream.url !== undefined)
+      if (lastInternalHena === -1) {
+        combinedStreams = combinedStreams.concat(results[2].value) //Henaojara has only external links, just append at the end
+      } else if ((lastInternalHena !== -1) && (lastInternal === -1)) {
+        combinedStreams = results[2].value.concat(combinedStreams) //Previous has only external links, prepend at the start
+      } else {
+        combinedStreams.splice(lastInternal + 1, 0, ...results[2].value.slice(0, lastInternalHena + 1)) //Both have internal links, insert Henaojara internal links after last internal links
+        combinedStreams = combinedStreams.concat(results[2].value.slice(lastInternalHena + 1)) //Append external links at the end
+      }
+    } else {console.error('\x1b[31mFailed on Henaojara slug search because:\x1b[39m ' + results[2].reason)}
     return combinedStreams
   })
 }

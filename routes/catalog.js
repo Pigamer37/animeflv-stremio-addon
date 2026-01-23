@@ -7,6 +7,7 @@ const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
 const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
+const henaojaraAPI = require('./henaojara.js')
 
 /**
  * Tipical express middleware callback.
@@ -64,6 +65,43 @@ function HandleCatalogRequest(req, res, next) {
         return result.map((anime) => {
           return {
             id: `animeav1:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    }
+  } else if (req.params.videoId.startsWith("henaojara")) {
+    //henaojara catalog request
+    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
+      let genreArr = res.locals.extraParams.genre
+      //calculate the page to start from, Henaojara uses 24 results per page
+      //if skip is defined, we can calculate the page and the number of items we already delivered
+      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
+        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
+      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+      catalogPromise = henaojaraAPI.SearchHenaojara(res.locals.extraParams.search, genreArr, undefined, page, gottenItems).then((result) => {
+        console.log('\x1b[36mGot Henaojara metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `henaojara:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    } else {
+      catalogPromise = henaojaraAPI.GetAiringAnime().then((result) => {
+        console.log('\x1b[36mGot Henaojara metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `henaojara:${anime.slug}`,
             type: anime.type,
             name: anime.title,
             poster: anime.poster,
