@@ -467,7 +467,7 @@ async function SearchAnimesBySpecificURL(henaojaraURL) {
         selectedElement.each((_, el) => {
           mediaVec.push({
             title: $(el).find("h3").text() || $(el).find("figure > a > img").attr("alt"),
-            cover: $(el).find("figure > a > img").attr("src"),
+            cover: $(el).find("figure > a > img").attr("data-src"),
             //synopsis: $(el).find("div > div > div > p").eq(1).text(),
             //rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
             slug: $(el).find("a").attr("href").replace("./anime/", ""),
