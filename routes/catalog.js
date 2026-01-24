@@ -149,7 +149,6 @@ function HandleCatalogRequest(req, res, next) {
     }
   }
   catalogPromise.then((metas) => {
-    console.log('\x1b[36mGot Anime metadata for:\x1b[39m', metas.length, "search results")
     res.header('Cache-Control', "max-age=259200, stale-while-revalidate=86400, stale-if-error=259200")
     res.json({ metas, message: "Got Anime metadata!" });
     next()
