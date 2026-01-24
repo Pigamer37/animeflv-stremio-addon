@@ -2,6 +2,7 @@ const HENAOJARA_BASE = "https://ww1.henaojara.net"
 
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
+const streamParser = require("../lib/streamParsing.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
@@ -135,7 +136,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     const downloadStreams = data.data.servers.filter((src) => /*(src.download !== undefined && src.name === "Stape") ||*/ (src.embed !== undefined && ["YourUpload", "MP4Upload"/*, "HLS", "PDrain"*/].includes(src.name)))
     const promises = downloadStreams.map((source) => {
       if (source.name === "YourUpload") {
-        return GetYourUploadLink(source.embed).then((realURL) => {
+        return streamParser.GetYourUploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "Henaojara\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -160,7 +161,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           return undefined
         })
       } else if (source.name === "MP4Upload") {
-        return GetMP4UploadLink(source.embed).then((realURL) => {
+        return streamParser.GetMP4UploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "Henaojara\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -185,7 +186,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           return undefined
         })
       } else if(source.name === "PDrain") {
-        return GetPDrainLink(source.embed).then((realURL) => {
+        return streamParser.GetPDrainLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "Henaojara\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -211,7 +212,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           return undefined
         })
       } else if(source.name === "HLS") {
-        return GetHLSLink(source.embed).then((realURL) => {
+        return streamParser.GetHLSLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "Henaojara\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -277,10 +278,13 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     const downloadObj = JSON.parse(serversDIV.attr("data-dwn") || "null");
 
     const getServerTitle = (serverDomain) => {
-      return serverDomain.replace("bysesukior", "Filemoon").replace("movearnpre", "Vidhide")
+      const cleanDom = serverDomain.replace("bysesukior", "Filemoon").replace("movearnpre", "Vidhide")
         .replace("luluvdo", "Lulustream").replace("dhcplay", "Streamwish").replace("listeamed", "Vidguard")
-        .replace("rpmvip", "RPMshare").replace("stape", "Stape").replace("yourupload", "YourUpload").replace("mp4upload", "MP4Upload")
-        .replace("pdrain", "PDrain").replace("hls", "HLS").replace(".com", "").replace(".net", "").replace(".org", "");
+        .replace("rpmvip", "RPMshare").replace("yourupload", "YourUpload").replace("mp4upload", "MP4Upload")
+        .replace("pdrain", "PDrain").replace("hls", "HLS")
+        .replace(".com", "").replace(".net", "").replace(".org", "").replace(".top", "")
+        .replace(".to", "").replace(".ac", "").replace(".sx", "").replace(".ps", "");
+      return cleanDom.charAt(0).toUpperCase() + cleanDom.slice(1)
     }
     const hex2a = (hex) => { var str = ''; for (var i = 0; i < hex.length; i += 2) str += String.fromCharCode(parseInt(hex.substr(i, 2), 16)); return str;};
     const serverData = async () => {
@@ -361,7 +365,7 @@ async function GetAnimeInfo(slug) {
       status: $("#l > div.info > div.info-b > span.e").text(),
       //rating: $("div.ic-star-solid > div.text-lead").text(),
       type: $("#l > div.info > div.info-b > ul.dt > li:first-child").text().replace("Tipo: ", ""),
-      cover: $("#l > div.info > div.info-a > figure > img").attr("src") || `${HENAOJARA_BASE}/cdn/img/anime/${slug}.webp`,
+      cover: $("#l > div.info > div.info-a > figure > img").attr("data-src") || `${HENAOJARA_BASE}/cdn/img/anime/${slug}.webp`,
       synopsis: $("#l > div.info > div.info-b > div.tx > p").text(),
       genres: $("#l > div.info > div.info-b > ul.gn > li").map((_, el) => $(el).find("a").text().trim()).get(),
       //next_airing_episode: nextAiringInfo ? JSON.parse(nextAiringInfo)?.[3] : undefined,
@@ -511,50 +515,4 @@ async function GetOnAir() {
       }
     })
   })
-}
-
-function GetYourUploadLink(url) {
-  return fetch(url).then((resp) => {
-    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    if (resp === undefined) throw Error(`Undefined response!`)
-    return resp.text()
-  }).then((data) => {
-    const metaPattern = /property\s*=\s*"og:video"/g
-    const metaMatch = metaPattern.exec(data)
-    if (metaMatch[0]) {
-      const vidPattern = /content\s*=\s*"(\S+)"/g
-      const vidMatch = vidPattern.exec(data.substring(metaMatch.index))
-      if (vidMatch[1]) {
-        return vidMatch[1]
-      } else console.log("No video link")
-    } else console.log("No video")
-  })
-}
-
-function GetMP4UploadLink(url) {
-  return fetch(url).then((resp) => {
-    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    if (resp === undefined) throw Error(`Undefined response!`)
-    return resp.text()
-  }).then((data) => {
-    const metaPattern = /<script(?:.|\n)+?src:(?:.|\n)*?"(.+?\.mp4)"/g
-    const metaMatch = metaPattern.exec(data)
-    if (metaMatch && metaMatch[0]) {
-      return metaMatch[1]
-    } else console.log("No video link")
-  })
-}
-
-function GetPDrainLink(url) {
-  const metaPattern = /(.+?:\/\/.+?)\/.+?\/(.+?)(?:\?embed)?$/g
-  const metaMatch = metaPattern.exec(url)
-  if (metaMatch && metaMatch[0]) {
-    return Promise.resolve(`${metaMatch[1]}/api/file/${metaMatch[2]}`)
-  } else { console.log("No video link"); Promise.reject("No video link") }
-}
-
-function GetHLSLink(url) {
-  if (url.includes("/play/") || url.includes("/m3u8/")) {
-    return Promise.resolve(url.replace("/play/", "/m3u8/"))
-  } else { console.log("No video link"); Promise.reject("No video link") }
 }

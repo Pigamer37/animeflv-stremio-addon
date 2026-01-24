@@ -3,6 +3,7 @@ const ANIMEFLV_BASE = "https://www3.animeflv.net"
 
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
+const streamParser = require("../lib/streamParsing.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
@@ -195,7 +196,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape") || (src.embed !== undefined && src.name === "YourUpload"))
     const promises = downloadStreams.map((source) => {
       /*if (source.name === "Stape") {
-        return GetStreamTapeLink(source.download).then((realURL) => {
+        return streamParser.GetStreamTapeLink(source.download).then((realURL) => {
           return {
             url: realURL,
             name: "AnimeFLV - " + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -211,7 +212,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           return undefined
         })
       } else*/ if (source.name === "YourUpload") {
-        return GetYourUploadLink(source.embed).then((realURL) => {
+        return streamParser.GetYourUploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "AnimeFLV\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -504,44 +505,4 @@ async function GetOnAir() {
     console.error("Error on GetOnAir:", e)
     throw e
   }
-}
-//Adapted from https://github.com/ChristopherProject/Streamtape-Video-Downloader
-function GetStreamTapeLink(url) {
-  const reqURL = url.replace("/e/", "/v/")
-  return fetch(reqURL).then((resp) => {
-    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    if (resp === undefined) throw Error(`Undefined response!`)
-    return resp.text()
-  }).then((data) => {
-    const noRobotLinkPattern = /document\.getElementById\('norobotlink'\)\.innerHTML = (.+?);/g
-    const matches = noRobotLinkPattern.exec(data)
-    if (matches[1]) {
-      const tokenPattern = /token=([^&']+)/g
-      const tokenMatches = tokenPattern.exec(matches[1])
-      if (tokenMatches[1]) {
-        const STPattern = /id\s*=\s*"ideoooolink"/g
-        const tagEnd = data.indexOf(">", STPattern.exec(data).index) + 1
-        const streamtape = data.substring(tagEnd, data.indexOf("<", tagEnd))
-        return `https:/${streamtape}&token=${tokenMatches[1]}&dl=1s`
-      } else console.log("No token")
-    } else console.log("No norobotlink")
-  })
-}
-
-function GetYourUploadLink(url) {
-  return fetch(url).then((resp) => {
-    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    if (resp === undefined) throw Error(`Undefined response!`)
-    return resp.text()
-  }).then((data) => {
-    const metaPattern = /property\s*=\s*"og:video"/g
-    const metaMatch = metaPattern.exec(data)
-    if (metaMatch[0]) {
-      const vidPattern = /content\s*=\s*"(\S+)"/g
-      const vidMatch = vidPattern.exec(data.substring(metaMatch.index))
-      if (vidMatch[1]) {
-        return vidMatch[1]
-      } else console.log("No video link")
-    } else console.log("No video")
-  })
 }

@@ -2,6 +2,7 @@ const ANIMEAV1_BASE = "https://animeav1.com"
 
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
+const streamParser = require("../lib/streamParsing.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
@@ -144,7 +145,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     const downloadStreams = data.data.servers.filter((src) => /*(src.download !== undefined && src.name === "Stape") ||*/ (src.embed !== undefined && ["YourUpload", "MP4Upload"/*, "HLS", "PDrain"*/].includes(src.name)))
     const promises = downloadStreams.map((source) => {
       if (source.name === "YourUpload") {
-        return GetYourUploadLink(source.embed).then((realURL) => {
+        return streamParser.GetYourUploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -169,7 +170,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           return undefined
         })
       } else if (source.name === "MP4Upload") {
-        return GetMP4UploadLink(source.embed).then((realURL) => {
+        return streamParser.GetMP4UploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -194,7 +195,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           return undefined
         })
       } else if(source.name === "PDrain") {
-        return GetPDrainLink(source.embed).then((realURL) => {
+        return streamParser.GetPDrainLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -220,7 +221,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
           return undefined
         })
       } else if(source.name === "HLS") {
-        return GetHLSLink(source.embed).then((realURL) => {
+        return streamParser.GetHLSLink(source.embed).then((realURL) => {
           return {
             url: realURL,
             name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
@@ -547,50 +548,4 @@ async function GetOnAir() {
       }
     })
   })
-}
-
-function GetYourUploadLink(url) {
-  return fetch(url).then((resp) => {
-    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    if (resp === undefined) throw Error(`Undefined response!`)
-    return resp.text()
-  }).then((data) => {
-    const metaPattern = /property\s*=\s*"og:video"/g
-    const metaMatch = metaPattern.exec(data)
-    if (metaMatch[0]) {
-      const vidPattern = /content\s*=\s*"(\S+)"/g
-      const vidMatch = vidPattern.exec(data.substring(metaMatch.index))
-      if (vidMatch[1]) {
-        return vidMatch[1]
-      } else console.log("No video link")
-    } else console.log("No video")
-  })
-}
-
-function GetMP4UploadLink(url) {
-  return fetch(url).then((resp) => {
-    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    if (resp === undefined) throw Error(`Undefined response!`)
-    return resp.text()
-  }).then((data) => {
-    const metaPattern = /<script(?:.|\n)+?src:(?:.|\n)*?"(.+?\.mp4)"/g
-    const metaMatch = metaPattern.exec(data)
-    if (metaMatch && metaMatch[0]) {
-      return metaMatch[1]
-    } else console.log("No video link")
-  })
-}
-
-function GetPDrainLink(url) {
-  const metaPattern = /(.+?:\/\/.+?)\/.+?\/(.+?)(?:\?embed)?$/g
-  const metaMatch = metaPattern.exec(url)
-  if (metaMatch && metaMatch[0]) {
-    return Promise.resolve(`${metaMatch[1]}/api/file/${metaMatch[2]}`)
-  } else { console.log("No video link"); Promise.reject("No video link") }
-}
-
-function GetHLSLink(url) {
-  if (url.includes("/play/") || url.includes("/m3u8/")) {
-    return Promise.resolve(url.replace("/play/", "/m3u8/"))
-  } else { console.log("No video link"); Promise.reject("No video link") }
 }
