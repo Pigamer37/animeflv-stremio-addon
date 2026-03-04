@@ -23,7 +23,7 @@ function ReadManifest() {
     let manifest = {
       "id": 'com.' + packageJSON.name.replaceAll('-', '.'),
       "version": packageJSON.version,
-      "name": "AnimeFLV, AnimeAV1 & Henaojara",
+      "name": "AnimeFLV, AnimeAV1, Henaojara & TioAnime",
       "logo": "https://play-lh.googleusercontent.com/ZIjIwO5FJe9R1rplSd4uz54OwBxQhwDcznjljSPl2MgHaCoyF3qG6R4kRMCB40f4l2A=w256",
       "background": "https://images6.alphacoders.com/113/1135890.jpg",
       "description": packageJSON.description,
@@ -127,6 +127,22 @@ function ReadManifest() {
           ]
         },
         {
+          id: "tioanime|genres", type: "TioAnime", name: "TioAnime",
+          extra: [
+            {
+              name: "genre",
+              options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
+                "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
+                "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
+                "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
+                "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
+                "yaoi", "yuri"],
+                optionsLimit: 1, isRequired: true
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
         },
         {
@@ -134,6 +150,9 @@ function ReadManifest() {
         },
         {
           id: "henaojara|onair", type: "Henaojara", name: "On Air"
+        },
+        {
+          id: "tioanime|onair", type: "TioAnime", name: "On Air"
         },
         {
           type: "series",
@@ -170,6 +189,7 @@ function ReadManifest() {
         "animeflv:",
         "animeav1:",
         "henaojara:",
+        "tioanime:",
         "tmdb:",
         "anilist:",
         "kitsu:",
@@ -260,13 +280,11 @@ app.listen(process.env.PORT || 3000, () => {
   const animeFLVAPI = require('./routes/animeFLV.js')
   const animeAV1API = require('./routes/animeav1.js')
   const henaojaraAPI = require('./routes/henaojara.js')
-  animeFLVAPI.UpdateAiringAnimeFile().then(() => {
-    setInterval(animeFLVAPI.UpdateAiringAnimeFile.bind(animeFLVAPI), 86400000); //Update every 24h
-  })
-  animeAV1API.UpdateAiringAnimeFile().then(() => {
-    setInterval(animeAV1API.UpdateAiringAnimeFile.bind(animeAV1API), 86400000); //Update every 24h
-  })
-  henaojaraAPI.UpdateAiringAnimeFile().then(() => {
-    setInterval(henaojaraAPI.UpdateAiringAnimeFile.bind(henaojaraAPI), 86400000); //Update every 24h
+  const tioanimeAPI = require('./tioanime.js')
+  let imports = [animeFLVAPI, animeAV1API, tioanimeAPI, henaojaraAPI]
+  imports.forEach((api) => {
+    api.UpdateAiringAnimeFile().then(() => {
+      setInterval(api.UpdateAiringAnimeFile.bind(api), 86400000); //Update every 24h
+    })
   })
 });

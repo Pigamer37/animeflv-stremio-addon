@@ -8,6 +8,7 @@ const relationsAPI = require('./relations.js')
 const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
+const tioanimeAPI = require('./tioanime.js')
 const fuzzysort = require('fuzzysort')
 
 /**
@@ -75,6 +76,23 @@ function HandleMetaRequest(req, res, next) {
       if (!res.headersSent) {
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
         res.json({ meta: {}, message: "Failed getting Henaojara info" });
+        next()
+      }
+    })
+  } else if (videoID?.startsWith("tioanime")){
+    const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
+    let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
+    console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
+    tioanimeAPI.GetAnimeBySlug(ID).then((animeMeta) => {
+      console.log('\x1b[36mGot TioAnime metadata for:\x1b[39m', animeMeta.name)
+      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.json({ meta: animeMeta, message: "Got TioAnime metadata!" })
+      next()
+    }).catch((err) => {
+      console.error('\x1b[31mFailed on TioAnime slug search because:\x1b[39m ' + err)
+      if (!res.headersSent) {
+        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.json({ meta: {}, message: "Failed getting TioAnime info" });
         next()
       }
     })
