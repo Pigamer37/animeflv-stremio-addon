@@ -121,7 +121,7 @@ function HandleCatalogRequest(req, res, next) {
       let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
         gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
       console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
-      catalogPromise = tioanimeAPI.SearchTioAnime(res.locals.extraParams.search, genreArr, undefined, page, gottenItems).then((result) => {
+      catalogPromise = tioanimeAPI.SearchTioAnime(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
         console.log('\x1b[36mGot TioAnime metadata for:\x1b[39m', result.length, "search results")
         return result.map((anime) => {
           return {

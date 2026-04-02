@@ -48,8 +48,8 @@ exports.SearchTioAnime = async function (query, type = undefined, genreArr = und
   if (type) {
     type = (type === "movie") ? "type%5B%5D%3D1%26" : "type%5B%5D%3D0%26type%5B%5D%3D2%26type%5B%5D%3D3%26"
   }
-  const tioanimeURL = (url) ? url
-    : `${encodeURIComponent(TIOANIME_BASE)}%2Fdirectorio%3F${(query) ? "q%3D" + encodeURIComponent(query) + "%26" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D%3D" + genreArr.join("%26genre%5B%5D%3D") : ""}${(page) ? "%26p%3D" + page : ""}`
+  const tioanimeURL = (url) ? url //this search requires the year, sorting order and status (only one of them) to be added, otherwise it returns empty
+    : `${TIOANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(query) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genre%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C2026&status=2&sort=recent`
   return SearchAnimesBySpecificURL(tioanimeURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -85,7 +85,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: ep.number,
         number: ep.number,
-        thumbnail: `https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
+        thumbnail: `${TIOANIME_BASE}/uploads/thumbs/${matches[1]}.jpg`,
         released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
@@ -97,7 +97,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: epCount + 1,
         number: epCount + 1,
-        thumbnail: `${TIOANIME_BASE}/assets/animeflv/img/cnt/proximo.png`,
+        thumbnail: `https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png`,
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
       })
@@ -109,7 +109,9 @@ exports.GetAnimeBySlug = async function (slug) {
         links: data.data.related.map((r) => {
           return { name: r.title, category: r.relation, url: `stremio:///detail/series/tioanime:${r.slug}` }
         })
-      }, //both behavior hints can't coexist, if there's an upcoming episode, videos.length > 1
+      },
+      ...(data.data.year) && { releaseInfo: data.data.year },
+      //both behavior hints can't coexist, if there's an upcoming episode, videos.length > 1
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `tioanime:${slug}:1` } }
     }
@@ -211,47 +213,38 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     const $ = cheerio.load(await episodeData());
 
     const episodeLinks = {
-      title: $("body > div.Wrapper > div.Body > div > div > div > nav.Brdcrmb > a").next("i").next("a").text(),
-      number: Number($("body > div.Wrapper > div.Body > div > div > div > div.CapiTop > h2.SubTitle").text().replace("Episodio ", "")),
+      title: $("#tioanime > div > div > aside > h1").text(),
+      number: epNumber,
       servers: []
     }
 
     const scripts = $("script");
     const serversFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var videos ="));
-    const serversObj = serversFind?.match(/var videos = (\{.*\})/)?.[1];
+    const serversObj = serversFind?.match(/var videos = (\[\[.*]])/)?.[1];
     if (serversObj) {
-      const servers = JSON.parse(serversObj).SUB;
+      const servers = JSON.parse(serversObj);
       for (const s of servers) {
         episodeLinks.servers.push({
-          name: s?.title,
-          download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
-          embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/"),
+          name: s?.[0],
+          //download: s?.[1]?.replace("mega.nz/#!", "mega.nz/file/"),
+          embed: s?.[1]?.replace("mega.nz/embed#!", "mega.nz/embed/"),
           dub: false
         });
       }
-      const dubs = JSON.parse(serversObj).DUB || [];
-      for (const s of dubs) {
-        episodeLinks.servers.push({
-          name: s?.title,
-          download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
-          embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/"),
-          dub: true
-        });
-      }
     }
 
-    const otherDownloads = $("body > div.Wrapper > div.Body > div > div > div > div > div > table > tbody > tr");
+    // const otherDownloads = $("body > div.Wrapper > div.Body > div > div > div > div > div > table > tbody > tr");
 
-    for (const el of otherDownloads) {
-      const name = $(el).find("td").eq(0).text();
-      const lookFor = ["Zippyshare", "1Fichier"];
-      if (lookFor.includes(name)) {
-        episodeLinks.servers.push({
-          name: $(el).find("td").eq(0).text(),
-          download: $(el).find("td:last-child a").attr("href")
-        });
-      }
-    }
+    // for (const el of otherDownloads) {
+    //   const name = $(el).find("td").eq(0).text();
+    //   const lookFor = ["Zippyshare", "1Fichier"];
+    //   if (lookFor.includes(name)) {
+    //     episodeLinks.servers.push({
+    //       name: $(el).find("td").eq(0).text(),
+    //       download: $(el).find("td:last-child a").attr("href")
+    //     });
+    //   }
+    // }
     return episodeLinks;
   } catch (e) {
     console.error("Error on GetEpisodeLinks:", e);
@@ -272,53 +265,53 @@ async function GetAnimeInfo(slug) {
     const $ = cheerio.load(html);
 
     const scripts = $("script");
-    const nextAiringFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var anime_info ="));
-    const nextAiringInfo = nextAiringFind?.match(/anime_info = (\[.*\])/)?.[1];
+    // const nextAiringFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var anime_info ="));
+    const nextAiringInfo = html?.match(/Proximo episodio: <span>(\[.*\])<\/span>/)?.[1];
 
     const animeInfo = {
-      title: $("body > div.Wrapper > div > div > div.Ficha.fchlt > div.Container > h1").text(),
+      title: $("#tioanime > article > div > div > aside > h1.title").text(),
       alternative_titles: [],
-      status: $("body > div.Wrapper > div > div > div.Container > div > aside > p > span").text(),
-      rating: $("#votes_prmd").text(),
-      type: $("body > div.Wrapper > div > div > div.Ficha.fchlt > div.Container > span").text(),
-      cover: "https://animeflv.net" + ($("body > div.Wrapper > div > div > div.Container > div > aside > div.AnimeCover > div > figure > img").attr("src")),
-      synopsis: $("body > div.Wrapper > div > div > div.Container > div > main > section:nth-child(1) > div.Description > p").text(),
-      genres: $("body > div.Wrapper > div > div > div.Container > div > main > section:nth-child(1) > nav > a")
-        .map((_, el) => $(el).text().trim())
+      status: $("#tioanime > article > div > div > aside > div > a.status").text(),
+      rating: $("#score").text(),
+      type: $("#tioanime > article > div > div > aside > div.meta > span.anime-type-peli").text(),
+      cover: TIOANIME_BASE + ($("#tioanime > article > div > div > aside > div > figure > img").attr("src")),
+      synopsis: $("#tioanime > article > div > div > aside > p.sinopsis").text(),
+      genres: $("#tioanime > article > div > div > aside > p.genres > span")
+        .map((_, el) => $(el).find("a").text().trim())
         .get(),
-      next_airing_episode: nextAiringInfo ? JSON.parse(nextAiringInfo)?.[3] : undefined,
+      next_airing_episode: nextAiringInfo ? Date.parse(nextAiringInfo) : undefined,
       episodes: [],
       url
     };
 
     const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var episodes ="));
-    const episodesArray = episodesFind?.match(/episodes = (\[\[.*\].*])/)?.[1];
+    const episodesArray = episodesFind?.match(/episodes = (\[.*])/)?.[1];
     
     const epObj = JSON.parse(episodesArray)
     if (epObj) {
       for (ep of epObj) {
         if (animeInfo.episodes instanceof Array) {
           animeInfo.episodes.push({
-            number: ep[0],
-            slug: slug + "-" + ep[0],
-            url: TIOANIME_BASE + "/ver/" + slug + "-" + ep[0]
+            number: ep,
+            slug: slug + "-" + ep,
+            url: TIOANIME_BASE + "/ver/" + slug + "-" + ep
           });
         }
       }
     }
 
-    $("body > div.Wrapper > div > div > div.Ficha.fchlt > div.Container > div:nth-child(3) > span").each((i, el) => {
-      animeInfo.alternative_titles.push($(el).text());
-    });
+    // $("body > div.Wrapper > div > div > div.Ficha.fchlt > div.Container > div:nth-child(3) > span").each((i, el) => {
+    //   animeInfo.alternative_titles.push($(el).text());
+    // });
 
     // Relacionados
-    const relatedEls = $("ul.ListAnmRel > li");
+    const relatedEls = $("#tioanime > div > div > aside > div > section > ul > li");
     const relatedAnimes = [];
     relatedEls.each((_, el) => {
       const link = $(el).find("a");
       const href = link.attr("href");
-      const title = link.text().trim();
-      const relation = $(el).text().match(/\(([^)]+)\)$/)?.[1];
+      const title = $(el).find("h3.title").text().trim();
+      const relation = $(el).find("article > div.thumb > span.anime-type-peli").text().trim();
       if (href && title) {
         const slug = href.match(/\/anime\/([^/]+)/)?.[1] || href;
         relatedAnimes.push({
@@ -334,6 +327,8 @@ async function GetAnimeInfo(slug) {
     if (relatedAnimes.length > 0) {
       animeInfo.related = relatedAnimes;
     }
+
+    animeInfo.year = $("#tioanime > article > div > div > aside > div.meta > span.year").text().trim();
 
     return animeInfo;
   } catch (error) {
@@ -360,7 +355,7 @@ async function SearchAnimesBySpecificURL(tioanimeURL) {
       media: []
     };
 
-    const pageSelector = $("body > div.Wrapper > div > div > main > div > ul > li");
+    const pageSelector = $("#tioanime > div > div.row.justify-content-between.filters-cont > main > nav > ul > li");
     const getNextAndPrevPages = (selector) => {
       const aTagValue = selector.last().prev().find("a").text();
       const aRef = selector.eq(0).children("a").attr("href");
@@ -382,19 +377,19 @@ async function SearchAnimesBySpecificURL(tioanimeURL) {
     }
     const { foundPages, nextPage, previousPage } = getNextAndPrevPages(pageSelector)
     const scrapSearchAnimeData = ($) => {
-      const selectedElement = $("body > div.Wrapper > div > div > main > ul > li");
+      const selectedElement = $("main > ul > li");
 
       if (selectedElement.length > 0) {
         const mediaVec = [];
 
-        selectedElement.each((i, el) => {
+        selectedElement.each((_, el) => {
           mediaVec.push({
             title: $(el).find("h3").text(),
-            cover: $(el).find("figure > img").attr("src"),
-            synopsis: $(el).find("div.Description > p").eq(1).text(),
-            rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
+            cover: `${TIOANIME_BASE}${$(el).find("img").attr("src")}`,
+            //synopsis: $(el).find("div.Description > p").eq(1).text(),
+            //rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
             slug: $(el).find("a").attr("href").replace("/anime/", ""),
-            type: $(el).find("a > div > span.Type").text(),
+            //type: $(el).find("a > div > span.Type").text(),
             url: TIOANIME_BASE + ($(el).find("a").attr("href"))
           });
         });
@@ -432,11 +427,11 @@ async function GetOnAir() {
     const $ = cheerio.load(onAirData);
 
     const onAir = [];
-    if ($(".ListSdbr > li").length > 0) {
-      $(".ListSdbr > li").each((i, el) => {
+    if ($("#tioanime > div > section:nth-child(3) > ul > li").length > 0) {
+      $("#tioanime > div > section:nth-child(3) > ul > li").each((_, el) => {
         const temp = {
-          title: $(el).find("a").remove("span").text(),
-          type: $(el).find("a").children("span").text(),
+          title: $(el).find("h3").text(),
+          //type: $(el).find("a").children("span").text(),
           slug: $(el).find("a").attr("href").replace("/anime/", ""),
           url: TIOANIME_BASE + $(el).find("a").attr("href")
         }

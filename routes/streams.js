@@ -48,7 +48,7 @@ function HandleStreamRequest(req, res, next) {
     const animeFLVp = animeFLVAPI.GetItemStreams(ID, episode)
     const animeAV1p = animeAV1API.GetItemStreams(ID, episode)
     const henaojarap = henaojaraAPI.GetItemStreams(ID, episode)
-    const tioanimep = animeFLVAPI.GetItemStreams(ID, episode)
+    const tioanimep = tioanimeAPI.GetItemStreams(ID, episode)
     CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
@@ -197,8 +197,8 @@ function SearchParamsRegex(extraParams) {
   } else return {}
 }
 
-function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise) {
-  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise]).then((results) => {
+function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise) {
+  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise]).then((results) => {
     let combinedStreams = []
     if (results[0].value) {
       console.log(`\x1b[36mGot ${results[0].value.length} AnimeFLV streams\x1b[39m`)
