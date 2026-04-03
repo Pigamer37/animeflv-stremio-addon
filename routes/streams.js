@@ -222,9 +222,23 @@ function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise) {
         combinedStreams.splice(lastInternal + 1, 0, ...results[2].value.slice(0, lastInternalHena + 1)) //Both have internal links, insert Henaojara internal links after last internal links
         combinedStreams = combinedStreams.concat(results[2].value.slice(lastInternalHena + 1)) //Append external links at the end
       }
-    } else {console.error('\x1b[31mFailed on Henaojara slug search because:\x1b[39m ' + results[2].reason)}
-    return combinedStreams
+  } else {console.error('\x1b[31mFailed on Henaojara slug search because:\x1b[39m ' + results[2].reason)}
+combinedStreams = combinedStreams.map((stream) => {
+  let title = stream.name || stream.title || "";
+  const lower = title.toLowerCase();
+  let flag = "🇯🇵";
+  if (lower.includes("latino") || lower.includes("castellano")) {
+    flag = "🇪🇸";
+  }
+  if (!title.startsWith("🇯🇵") && !title.startsWith("🇪🇸")) {
+    title = `${flag} ${title}`;
+  }
+  return {
+    ...stream,
+    name: title,
+    title: title,
+  };
+});
   })
 }
-
 module.exports = stream;
