@@ -224,21 +224,21 @@ function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise) {
       }
   } else {console.error('\x1b[31mFailed on Henaojara slug search because:\x1b[39m ' + results[2].reason)}
 combinedStreams = combinedStreams.map((stream) => {
-  let title = stream.name || stream.title || "";
-  const lower = title.toLowerCase();
-  let flag = "🇯🇵";
-  if (lower.includes("latino") || lower.includes("castellano")) {
-    flag = "🇪🇸";
+  const isDub = (stream.name || "").includes("(DUB)") || (stream.title || "").includes("(DUB)");
+  
+  const flag = isDub ? "🇪🇸" : "🇯🇵";
+
+  let name = stream.name || "";
+  if (!name.startsWith("🇯🇵") && !name.startsWith("🇪🇸")) {
+    name = `${flag} ${name}`;
   }
-  if (!title.startsWith("🇯🇵") && !title.startsWith("🇪🇸")) {
-    title = `${flag} ${title}`;
-  }
+
   return {
     ...stream,
-    name: title,
-    title: title,
+    name: name,
   };
 });
+return combinedStreams 
   })
 }
 module.exports = stream;
