@@ -129,8 +129,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     const externalStreams = data.data.servers.filter((src) => src.embed !== undefined).map((source) => {
       return {
         externalUrl: source.embed,
-        name: "TioAnime\n" + source.name + "⇗\n(external)" + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
-        title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+        name: "TioAnime\n" + source.name + "⇗\n(external)" + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
+        title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
         behaviorHints: {
           bingeGroup: "tioanime|" + source.name + "|ext",
           filename: source.embed
@@ -144,8 +144,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return streamParser.GetStreamTapeLink(source.download).then((realURL) => {
           return {
             url: realURL,
-            name: "TioAnime - " + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
-            title: epName + " via " + source.name + "\n" + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            name: "TioAnime - " + source.name + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
+            title: epName + " via " + source.name + "\n" + realURL + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
             behaviorHints: {
               bingeGroup: "tioanime|" + source.name,
               filename: realURL,
@@ -160,8 +160,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return streamParser.GetYourUploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "TioAnime\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            name: "TioAnime\n" + source.name + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
             behaviorHints: {
               bingeGroup: "tioanime|" + source.name,
               filename: realURL,

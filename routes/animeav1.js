@@ -133,8 +133,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     const externalStreams = data.data.servers.filter((src) => src.embed !== undefined).map((source) => {
       return {
         externalUrl: source.embed,
-        name: "AnimeAV1\n" + source.name + "⇗\n(external)" + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
-        title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+        name: "AnimeAV1\n" + source.name + "⇗\n(external)" + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
+        title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
         behaviorHints: {
           bingeGroup: "animeAV1|" + source.name + "|ext",
           filename: source.embed
@@ -148,8 +148,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return streamParser.GetYourUploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
             behaviorHints: {
               bingeGroup: "animeAV1|" + source.name,
               filename: realURL,
@@ -173,8 +173,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return streamParser.GetMP4UploadLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
             behaviorHints: {
               bingeGroup: "animeAV1|" + source.name,
               filename: realURL,
@@ -198,8 +198,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return streamParser.GetPDrainLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
             behaviorHints: {
               bingeGroup: "animeAV1|" + source.name,
               filename: realURL,
@@ -224,8 +224,8 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
         return streamParser.GetHLSLink(source.embed).then((realURL) => {
           return {
             url: realURL,
-            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(DUB)" : ""),
+            name: "AnimeAV1\n" + source.name + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
+            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
             behaviorHints: {
               bingeGroup: "animeAV1|" + source.name,
               filename: realURL,
