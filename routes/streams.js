@@ -8,6 +8,7 @@ const relationsAPI = require('./relations.js')
 const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
+const tioanimeAPI = require('./tioanime.js')
 const fuzzysort = require('fuzzysort')
 
 /**
@@ -39,7 +40,7 @@ function HandleStreamRequest(req, res, next) {
   let streams = []
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
-  if ((videoID?.startsWith("animeflv")) || (videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
+  if ((videoID?.startsWith("animeflv")) || (videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
     const ID = idDetails[1] //We want the second part of the videoID
     let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
@@ -47,7 +48,8 @@ function HandleStreamRequest(req, res, next) {
     const animeFLVp = animeFLVAPI.GetItemStreams(ID, episode)
     const animeAV1p = animeAV1API.GetItemStreams(ID, episode)
     const henaojarap = henaojaraAPI.GetItemStreams(ID, episode)
-    CombineStreams(animeFLVp, animeAV1p, henaojarap).then((combinedStreams)=>{
+    const tioanimep = tioanimeAPI.GetItemStreams(ID, episode)
+    CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
@@ -127,7 +129,12 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot Henaojara entry:\x1b[39m', result.title)
         return henaojaraAPI.GetItemStreams(result.slug, episode)
       })
-      CombineStreams(animeFLVp, animeAV1p, henaojarap).then((combinedStreams)=>{
+      const tioanimep = tioanimeAPI.SearchTioAnime(searchTerm, req.params.type).then((animeFLVitem) => {
+        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem[0];
+        console.log('\x1b[36mGot TioAnime entry:\x1b[39m', result.title)
+        return tioanimeAPI.GetItemStreams(result.slug, episode)
+      })
+      CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
@@ -190,8 +197,8 @@ function SearchParamsRegex(extraParams) {
   } else return {}
 }
 
-function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise) {
-  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise]).then((results) => {
+function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise) {
+  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise]).then((results) => {
     let combinedStreams = []
     if (results[0].value) {
       console.log(`\x1b[36mGot ${results[0].value.length} AnimeFLV streams\x1b[39m`)
@@ -223,6 +230,19 @@ function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise) {
         combinedStreams = combinedStreams.concat(results[2].value.slice(lastInternalHena + 1)) //Append external links at the end
       }
     } else {console.error('\x1b[31mFailed on Henaojara slug search because:\x1b[39m ' + results[2].reason)}
+    if (results[3].value) {
+      console.log(`\x1b[36mGot ${results[3].value.length} TioAnime streams\x1b[39m`)
+      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
+      lastInternalTio = results[3].value.findLastIndex((stream)=>stream.url !== undefined)
+      if (lastInternalTio === -1) {
+        combinedStreams = combinedStreams.concat(results[3].value) //TioAnime has only external links, just append at the end
+      } else if ((lastInternalTio !== -1) && (lastInternal === -1)) {
+        combinedStreams = results[3].value.concat(combinedStreams) //Previous has only external links, prepend at the start
+      } else {
+        combinedStreams.splice(lastInternal + 1, 0, ...results[3].value.slice(0, lastInternalTio + 1)) //Both have internal links, insert TioAnime internal links after last internal links
+        combinedStreams = combinedStreams.concat(results[3].value.slice(lastInternalTio + 1)) //Append external links at the end
+      }
+    } else {console.error('\x1b[31mFailed on TioAnime slug search because:\x1b[39m ' + results[3].reason)}
     return combinedStreams
   })
 }
