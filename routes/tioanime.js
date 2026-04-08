@@ -266,7 +266,7 @@ async function GetAnimeInfo(slug) {
 
     const scripts = $("script");
     // const nextAiringFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var anime_info ="));
-    const nextAiringInfo = html?.match(/Proximo episodio: <span>(\[.*\])<\/span>/)?.[1];
+    const nextAiringInfo = html?.match(/Proximo episodio: <span>(.*)<\/span>/)?.[1];
 
     const animeInfo = {
       title: $("#tioanime > article > div > div > aside > h1.title").text(),
@@ -311,7 +311,7 @@ async function GetAnimeInfo(slug) {
       const link = $(el).find("a");
       const href = link.attr("href");
       const title = $(el).find("h3.title").text().trim();
-      const relation = $(el).find("article > div.thumb > span.anime-type-peli").text().trim();
+      const relation = "Cronología"; //$(el).find("article > div.thumb > span.anime-type-peli").text().trim();
       if (href && title) {
         const slug = href.match(/\/anime\/([^/]+)/)?.[1] || href;
         relatedAnimes.push({
