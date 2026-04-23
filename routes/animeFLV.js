@@ -179,69 +179,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     return { data }
   })
   /*})*/.then((data) => {
-    if (data?.data?.servers === undefined) throw Error("Invalid response!")
-    let epName = (data.data.number) ? data.data.title + " Ep. " + data.data.number : data.data.title
-    const externalStreams = data.data.servers.filter((src) => src.embed !== undefined).map((source) => {
-      return {
-        externalUrl: source.embed,
-        name: "AnimeFLV\n" + source.name + "⇗\n(external)" + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
-        title: epName + "\n⚙️ (opens " + source.name + " in your browser)\n🔗 " + source.embed + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
-        behaviorHints: {
-          bingeGroup: "animeFLV|" + source.name + "|ext",
-          filename: source.embed
-        }
-      }
-    })
-    //return externalStreams
-    const downloadStreams = data.data.servers.filter((src) => (src.download !== undefined && src.name === "Stape") || (src.embed !== undefined && src.name === "YourUpload"))
-    const promises = downloadStreams.map((source) => {
-      /*if (source.name === "Stape") {
-        return streamParser.GetStreamTapeLink(source.download).then((realURL) => {
-          return {
-            url: realURL,
-            name: "AnimeFLV - " + source.name + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
-            title: epName + " via " + source.name + "\n" + realURL + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
-            behaviorHints: {
-              bingeGroup: "animeFLV|" + source.name,
-              filename: realURL,
-              notWebReady: true
-            }
-          }
-        }).catch((err) => {
-          console.log("Failed getting StreamTape link:", err)
-          return undefined
-        })
-      } else*/ if (source.name === "YourUpload") {
-        return streamParser.GetYourUploadLink(source.embed).then((realURL) => {
-          return {
-            url: realURL,
-            name: "AnimeFLV\n" + source.name + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : ""),
-            title: epName + "\n⚙️ " + source.name + "\n🔗 " + realURL + ((source.dub) ? "\n🗣️🎙️(🇪🇸DUB)" : "\n🇯🇵🇪🇸"),
-            behaviorHints: {
-              bingeGroup: "animeFLV|" + source.name,
-              filename: realURL,
-              notWebReady: true,
-              proxyHeaders: {
-                request: {
-                  "Referer": "https://yourupload.com",
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-                },
-                response: {
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-                }
-              }
-            }
-          }
-        }).catch((err) => {
-          console.error("Failed getting YourUpload link:", err)
-          return undefined
-        })
-      }
-    })
-
-    return Promise.allSettled(promises).then((results) =>
-      results.filter((prom) => (prom.value)).map((source) => source.value).concat(externalStreams)
-    )
+    return streamParser.GetStreamLinks("AnimeFLV", "animeFLV", data)
   })
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
