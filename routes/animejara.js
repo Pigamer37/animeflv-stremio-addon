@@ -132,13 +132,13 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
   try {
     const episodeData = async () => {
       if (slug && !epNumber)
-        return await fetch(ANIMEJARA_BASE + "/ver/" + slug).then((resp) => {
+        return await fetch(ANIMEJARA_BASE + "/movie/" + slug).then((resp) => {
           if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
           if (resp === undefined) throw Error(`Undefined response!`)
           return resp.text()
         }).catch(() => null);
       else if (slug && epNumber)
-        return await fetch(ANIMEJARA_BASE + "/ver/" + slug + "-" + epNumber).then((resp) => {
+        return await fetch(ANIMEJARA_BASE + "/episode/" + slug + "-" + epNumber).then((resp) => {
           if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
           if (resp === undefined) throw Error(`Undefined response!`)
           return resp.text()
@@ -151,71 +151,59 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     const $ = cheerio.load(await episodeData());
 
     const episodeLinks = {
-      title: $("#l > div > h1").text(),
+      title: $("div.anime-info > h1").text() || $("div.episodio-detalle-header > h1.episodio-title").text(),
       servers: []
     }
 
-    const serversDIV = $("div.dwn");
+    const serversDIV = $("div.botones-idioma > div.boton-idioma"); //may be 1-3 (LATINO, JAPONÉS, CASTELLANO)
     
-    const downloadObj = JSON.parse(serversDIV.attr("data-dwn") || "null");
-
-    const getServerTitle = (serverDomain) => {
-      const cleanDom = serverDomain.replace("bysesukior", "Filemoon").replace("movearnpre", "Vidhide")
-        .replace("luluvdo", "Lulustream").replace("dhcplay", "Streamwish").replace("listeamed", "Vidguard")
-        .replace("rpmvip", "RPMshare").replace("yourupload", "YourUpload").replace("mp4upload", "MP4Upload")
-        .replace("pdrain", "PDrain").replace("hls", "HLS")
-        .replace(".com", "").replace(".net", "").replace(".org", "").replace(".top", "")
-        .replace(".to", "").replace(".ac", "").replace(".sx", "").replace(".ps", "");
-      return cleanDom.charAt(0).toUpperCase() + cleanDom.slice(1)
-    }
-    const hex2a = (hex) => { var str = ''; for (var i = 0; i < hex.length; i += 2) str += String.fromCharCode(parseInt(hex.substr(i, 2), 16)); return str;};
-    const serverData = async () => {
-      return await fetch(`${ANIMEJARA_BASE}/hj`, {
-        "headers": {
-          "accept": "*/*",
-          "accept-language": "en,en-US;q=0.9,es-ES;q=0.8,es;q=0.7,fr;q=0.6,no;q=0.5",
-          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "priority": "u=1, i",
-          "sec-ch-ua": "\"Opera GX\";v=\"125\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": "\"Windows\"",
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "same-origin",
-          "x-requested-with": "XMLHttpRequest",
-          "Referer": `${ANIMEJARA_BASE}/ver/${slug}-${epNumber}`,
-        },
-        "body": `acc=opt&i=${$(".opt").attr("data-encrypt")}`,
-        "method": "POST"
-      }).then((resp) => {
-        if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-        if (resp === undefined) throw Error(`Undefined response!`)
-        return resp.text()
-      }).catch(() => {console.log("Failed to fetch server data"); return null});
-    }
-    const $2 = cheerio.load(await serverData());
-    
-    if ($2) {
-      const lis = $2("li");
-      lis.each((_, el) => {
-        const s = hex2a($(el).attr("encrypt"));
-        const sURL = new URL(s)
-        episodeLinks.servers.push({
-          name: getServerTitle(sURL.hostname),
-          embed: s?.replace("mega.nz/embed#!", "mega.nz/embed/"),
-          dub: false
-        });
+    const serversObj = serversDIV.filter((_, el) => $(el).find(".lang-name").text().includes("JAP"));
+    const downloadObj = metadataJSON?.match(/downloads:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
+    const serversObjDUB = serversDIV.filter((_, el) => !$(el).find(".lang-name").text().includes("JAP"));
+    const downloadObjDUB = metadataJSON?.match(/downloads:\s?.*?DUB:\s?(\[.*?\])/)?.[1];
+    let servers = [];
+    if (serversObj) {
+      servers = serversObj.split("},")?.map(s => {
+        return {
+          title: s.match(/server:\s?"(.*?)"/)?.[1],
+          code: s.match(/url:\s?"(.*?)"/)?.[1]
+        }
       });
     }
     if (downloadObj) {
-      for (const s of downloadObj) {
-        const sURL = new URL(s)
-        episodeLinks.servers.push({
-          name: getServerTitle(sURL.hostname),
-          download: s?.replace("mega.nz/#!", "mega.nz/file/"),
-          dub: false
-        });
-      }
+      servers = servers.concat(downloadObj.split("},")?.map(s => {
+        return {
+          title: s.match(/server:\s?"(.*?)"/)?.[1],
+          url: s.match(/url:\s?"(.*?)"/)?.[1]
+        }
+      }));
+    }
+    if (serversObjDUB) {
+      servers = servers.concat(serversObjDUB.split("},")?.map(s => {
+        return {
+          title: s.match(/server:\s?"(.*?)"/)?.[1],
+          code: s.match(/url:\s?"(.*?)"/)?.[1],
+          dub: true
+        }
+      }));
+    }
+    if (downloadObjDUB) {
+      servers = servers.concat(downloadObjDUB.split("},")?.map(s => {
+        return {
+          title: s.match(/server:\s?"(.*?)"/)?.[1],
+          url: s.match(/url:\s?"(.*?)"/)?.[1],
+          dub: true
+        }
+      }));
+    }
+
+    for (const s of servers) {
+      episodeLinks.servers.push({
+        name: s?.title,
+        download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
+        embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/"),
+        dub: s?.dub || false
+      });
     }
 
     return episodeLinks;
