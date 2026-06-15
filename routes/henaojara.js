@@ -114,13 +114,13 @@ exports.GetAnimeBySlug = async function (slug) {
   })
 }
 //WIP
-exports.GetItemStreams = async function (slug, epNumber = 1) {
+exports.GetItemStreams = async function (slug, onlyInternal=true, epNumber = 1) {
   //if we don't get an episode number, use 1, that's how henaojara works
   return GetEpisodeLinks(slug, epNumber).then((data) => {
     if (!data) throw Error('Empty response!')
     return { data }
   }).then((data) => {
-    return streamParser.GetStreamLinks("Henaojara", "henaojara", data)
+    return streamParser.GetStreamLinks("Henaojara", "henaojara", data, onlyInternal)
   })
 }
 
