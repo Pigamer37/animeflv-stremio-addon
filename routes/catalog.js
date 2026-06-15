@@ -213,11 +213,8 @@ function ParseConfig(req, res, next) {
 }
 //Calendar requests
 catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", (req, res) => {
-  console.log("Entered catalog request with", req.params.calendarVideosIds)
-  console.log("FilteredVector:", req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
-    .filter((id) => id.startsWith("animeflv:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))
   let metasDetailed = [], uniqueIDs = [...new Set(req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
-    .filter((id) => id.startsWith("animeflv:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
+    .filter((id) => id.startsWith("animeflv:") /*|| id.startsWith("animeav1:") || id.startsWith("henaojara:")*/ || id.startsWith("tioanime:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
 
   console.log("Unique IDs:", uniqueIDs)
 
@@ -232,6 +229,14 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return animeAV1API.GetAnimeBySlug(ID)
+    } else if (videoID.startsWith("henaojara")) {
+      const ID = idDetails[1]
+      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+      return henaojaraAPI.GetAnimeBySlug(ID)
+    } else if (videoID.startsWith("tioanime")) {
+      const ID = idDetails[1]
+      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+      return tioanimeAPI.GetAnimeBySlug(ID)
     } else {
       let animeIMDBIDPromise
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID

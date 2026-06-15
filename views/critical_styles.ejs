@@ -1,0 +1,141 @@
+<style>
+  *{box-sizing:border-box}
+  :root{--accent-color:#8A5AAB;
+    --accent-darker:#6f3b92;accent-color:var(--accent-color)}
+  body,
+  html{margin:0;
+    padding:0;
+    width:100%;
+    min-height:100%}
+  body{padding:2vh;
+    font-size:2.2vh;
+    align-items:center;
+    height:100vh;
+    background-image:url("<%= manifest?.background || 'https://www.stremio.com/website/stremio-logo-small.png' %>");
+    background-size:cover;
+    background-position:center;
+    background-attachment:fixed;
+    &::before{content:'';
+      background-color:rgb(0 0 0 / 40%);
+      inset:0;position:fixed}
+    display:flex;
+    font-family:'Open Sans', Arial, sans-serif;
+    color:white}
+  h1,
+  h2,
+  h3,
+  p{margin:0;
+    text-shadow:0 0 1vh rgba(0, 0, 0, 0.15);
+    font-size:1.75vh}
+  h1{font-size:4.5vh;
+    font-weight:700}
+  h2{font-size:2.2vh;
+    font-weight:normal;
+    font-style:italic;
+    color:hsl(from currentColor h s l /.8)}
+  h3{font-size:2.2vh}
+  a{overflow-wrap:anywhere;color:var(--accent-color);text-shadow: 0.08em 0.08em 0.05em var(--accent-darker);font-weight:bold;font-style:normal;
+  &.install-link{text-decoration:none;outline:none}}
+  /*from https://codepen.io/Petr-Knoll/pen/QwWLZdx */
+  button{--blur-btn:16px;
+    --hov-box-shadow:inset 0 0.125em 0.125em rgba(0, 0, 0, 0.05),
+      inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
+      0 0.15em 0.05em -0.1em rgba(0, 0, 0, 0.25),
+      0 0 0.05em 0.1em inset rgba(255, 255, 255, 0.5),
+      0 0 0 0 rgba(255, 255, 255, 1);
+    --active-box-shadow:inset 0 0.125em 0.125em rgba(0, 0, 0, 0.05),
+      inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
+      0 0.125em 0.125em -0.125em rgba(0, 0, 0, 0.2),
+      0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.2),
+      0 0.225em 0.05em 0 rgba(0, 0, 0, 0.05),
+      0 0.25em 0 0 rgba(255, 255, 255, 0.75),
+      inset 0 0.25em 0.05em 0 rgba(0, 0, 0, 0.15);
+    border:0;
+    border-radius:99vh;
+    outline:0;
+    color:white;
+    background:var(--accent-color);
+    padding:1.2vh 3.5vh;
+    margin:auto;
+    text-align:center;
+    font-family:'Open Sans', Arial, sans-serif;
+    font-size:2.2vh;
+    font-weight:600;
+    cursor:pointer;
+    display:block;
+    box-shadow:0 0.5vh 1vh rgba(0, 0, 0, 0.2);
+    text-shadow:0em 0.25em 0.05em rgba(0, 0, 0, 0.1);
+    background:linear-gradient(-75deg,
+        hsl(from var(--accent-color) h s l / 0.05),
+        hsl(from var(--accent-color) h s l / 0.2),
+        hsl(from var(--accent-color) h s l / 0.05));
+    box-shadow:inset 0 0.125em 0.125em rgba(0, 0, 0, 0.05),
+      inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
+      0 0.25em 0.125em -0.125em rgba(0, 0, 0, 0.2),
+      0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.2),
+      0 0 0 0 rgba(255, 255, 255, 1);
+    backdrop-filter:blur(var(--blur-btn));
+    -webkit-backdrop-filter:blur(var(--blur-btn));
+    -moz-backdrop-filter:blur(var(--blur-btn));
+    -ms-backdrop-filter:blur(var(--blur-btn));
+    transition:all var(--anim--hover-time, 400ms) var(--anim--hover-ease, cubic-bezier(0.25, 1, 0.5, 1))}
+  button:focus-visible, a:focus-visible button{box-shadow:var(--hov-box-shadow), 0 0 .3rem .25rem var(--accent-color)}
+  button:hover, button:focus-visible, a:focus-visible button{box-shadow:none;
+    text-shadow:0.025em 0.025em 0.025em rgba(0, 0, 0, 0.12);
+    scale:.97;
+    box-shadow:var(--hov-box-shadow)}
+  button:active{box-shadow:var(--active-box-shadow);
+    text-shadow:0.025em 0.25em 0.05em rgba(0, 0, 0, 0.12);
+    transform:rotate3d(1, 0, 0, 25deg);
+    scale:1}
+  .addon{--blur:4px;
+    --padding-inline:2vh;
+    max-width:950px;
+    padding-inline:var(--padding-inline);
+    padding-block-start:var(--padding-inline);
+    margin:auto;
+    border-radius:1em;
+    background:rgb(from var(--accent-color) r g b / .4);
+    backdrop-filter:blur(var(--blur));
+    -webkit-backdrop-filter:blur(var(--blur));
+    -moz-backdrop-filter:blur(var(--blur));
+    -ms-backdrop-filter:blur(var(--blur));
+    position:relative;
+    &::before{content:'';
+      position:absolute;
+      inset:0;
+      z-index:-1;
+      border-radius:inherit;
+      border:3px solid transparent;
+      background:linear-gradient(var(--accent-color), var(--accent-darker)) border-box;
+      mask:linear-gradient(black) border-box,
+        linear-gradient(black) padding-box;
+      mask-composite:subtract}}
+  .logo{height:14vh;
+    width:14vh;
+    margin:auto;
+    margin-bottom:3vh}
+  .logo img{width:100%}
+  .name,
+  .version{display:inline-block;
+    vertical-align:top}
+  .name{line-height:5vh;
+    margin:0}
+  .version{position:relative;
+    line-height:5vh;
+    opacity:0.8;
+    margin-bottom:2vh}
+  .separator{margin-bottom:4vh}
+  .form-element{margin-bottom:2vh}
+  .label-to-top{margin-bottom:2vh}
+  .full-width{width:100%}
+  textarea{color-scheme:light dark}
+  @media(pointer: fine){
+    input[type="checkbox"]{width:1rem;height:1rem}
+    .copy-btn{padding:.3em .75em}
+  }
+  @media(pointer: coarse){
+    input[type="checkbox"]{width:24px;height:24px}
+    .copy-btn{padding:.375em .75em}
+  }
+</style>
