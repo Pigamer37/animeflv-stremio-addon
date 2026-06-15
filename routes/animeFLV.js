@@ -165,7 +165,7 @@ exports.GetAnimeBySlug = async function (slug) {
   })
 }
 
-exports.GetItemStreams = async function (slug, epNumber = 1) {
+exports.GetItemStreams = async function (slug, onlyInternal=true, epNumber = 1) {
   //if we don't get an episode number, use 1, that's how animeFLV works
   /*const reqURL = `${ANIMEFLV_API_BASE}/anime/${slug}/episode/${epNumber}`;
   return fetch(reqURL).then((resp) => {
@@ -179,7 +179,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     return { data }
   })
   /*})*/.then((data) => {
-    return streamParser.GetStreamLinks("AnimeFLV", "animeFLV", data)
+    return streamParser.GetStreamLinks("AnimeFLV", "animeFLV", data, onlyInternal)
   })
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts

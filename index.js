@@ -217,9 +217,9 @@ function ReadManifest() {
         "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..0XN39hJS4zjNV5ES2brUeQ.sjRgcAHGPIUA0GXXbZI2BZLuKUOiT3jfI8ALp-QlUcWNuW_9qcVjARUxKCE6ncTE1rdK9yCma3IlgdCbI8-3ZV1E5WsKdS3LncHDeqlXThTZ9V7Znc1rATu7kJE_NDxE.Y8gIKpiHqAVypGGOvEXVqw"
       },
       "behaviorHints": {
+        "configurable": true,
         "newEpisodeNotifications": true
-      }/*,
-      "behaviorHints": { "configurable": true }*/
+      }
     }
     return manifest;
   })
@@ -245,12 +245,10 @@ app.get("/:config/manifest.json", (_req, res) => {
   })
 })
 
-/*app.get("/configure", (req, res) => {
+app.get("/configure", (req, res) => {
   ReadManifest().then((manif) => {
-    let base_url = req.host;
     res.render('config', {
-      logged_in: false,
-      base_url: base_url,
+      config: undefined,
       manifest: manif
     })
   }).catch((err) => {
@@ -260,18 +258,14 @@ app.get("/:config/manifest.json", (_req, res) => {
 //WIP
 app.get("/:config/configure", (req, res) => {
   ReadManifest().then((manif) => {
-    let base_url = req.host;
     res.render('config', {
-      logged_in: true,
-      config: req.params.config,
-      user: req.params.config,
-      base_url: base_url,
+      config: new URLSearchParams(decodeURIComponent(req.params.config)),
       manifest: manif
     })
   }).catch((err) => {
     res.status(500).statusMessage("Error reading file: " + err);
   })
-})*/
+})
 
 const streams = require("./routes/streams");
 app.use(streams);

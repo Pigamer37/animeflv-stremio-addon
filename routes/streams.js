@@ -37,6 +37,7 @@ function HandleLongStreamRequest(req, res, next) {
  */
 function HandleStreamRequest(req, res, next) {
   console.log(`\x1b[96mEntered HandleStreamRequest with\x1b[39m ${req.originalUrl}`)
+  const onlyInternal = (res.locals.config?.get("externalStreams") != 'true')
   let streams = []
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
@@ -45,10 +46,10 @@ function HandleStreamRequest(req, res, next) {
     let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     console.log('Extra parameters:', res.locals.extraParams)
-    const animeFLVp = animeFLVAPI.GetItemStreams(ID, episode)
-    const animeAV1p = animeAV1API.GetItemStreams(ID, episode)
-    const henaojarap = henaojaraAPI.GetItemStreams(ID, episode)
-    const tioanimep = tioanimeAPI.GetItemStreams(ID, episode)
+    const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode)
+    const animeAV1p = animeAV1API.GetItemStreams(ID, onlyInternal, episode)
+    const henaojarap = henaojaraAPI.GetItemStreams(ID, onlyInternal, episode)
+    const tioanimep = tioanimeAPI.GetItemStreams(ID, onlyInternal, episode)
     CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
@@ -117,22 +118,22 @@ function HandleStreamRequest(req, res, next) {
       const animeFLVp = animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem.sort((a,b)=>(a.type === req.params.type && b.type !== req.params.type)?-1:0)[0];//Sort by type to enhance matching
         console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
-        return animeFLVAPI.GetItemStreams(result.slug, episode)
+        return animeFLVAPI.GetItemStreams(result.slug, onlyInternal, episode)
       })
       const animeAV1p = animeAV1API.SearchAnimeAV1(searchTerm, req.params.type).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem[0];
         console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', result.title)
-        return animeAV1API.GetItemStreams(result.slug, episode)
+        return animeAV1API.GetItemStreams(result.slug, onlyInternal, episode)
       })
       const henaojarap = henaojaraAPI.SearchHenaojara(searchTerm).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem[0];
         console.log('\x1b[36mGot Henaojara entry:\x1b[39m', result.title)
-        return henaojaraAPI.GetItemStreams(result.slug, episode)
+        return henaojaraAPI.GetItemStreams(result.slug, onlyInternal, episode)
       })
       const tioanimep = tioanimeAPI.SearchTioAnime(searchTerm, req.params.type).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem[0];
         console.log('\x1b[36mGot TioAnime entry:\x1b[39m', result.title)
-        return tioanimeAPI.GetItemStreams(result.slug, episode)
+        return tioanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
       })
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
@@ -165,7 +166,7 @@ function HandleStreamRequest(req, res, next) {
  * @param {subRequestMiddleware} [next] - The next middleware function in the chain
  */
 function ParseConfig(req, res, next) {
-  console.log(`\x1b[96mEntered ParseConfig with\x1b[39m ${req.originalUrl}`)
+  //console.log(`\x1b[96mEntered ParseConfig with\x1b[39m ${req.originalUrl}`)
   res.locals.config = new URLSearchParams(decodeURIComponent(req.params.config))
   console.log('Config parameters:', res.locals.config)
   next()

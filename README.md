@@ -7,21 +7,21 @@
 Node.js and express.js based addon to add AnimeFLV, AnimeAV1, Henaojara & TioAnime functionallity to Stremio, not affiliated with AnimeFLV, AnimeAV1 Henaojara or TioAnime. (I'm new to backend so I'm using it as a learning experience).
 
 ## Normal use
-### Install by copying <stremio://pigamer37.alwaysdata.net/manifest.json> on your browser or paste <https://pigamer37.alwaysdata.net/manifest.json> on the Stremio addons search bar :mag: or the Add addon button
+### Install by visiting <https://pigamer37.alwaysdata.net/configure>, or by copying <stremio://pigamer37.alwaysdata.net/manifest.json> on your browser or paste <https://pigamer37.alwaysdata.net/manifest.json> on the Stremio addons search bar :mag: or the Add addon button
 
 ### Features:
 - :tv: Catalog of currently airing anime, to keep up with what is currently being released
 - :mag: Search the AnimeFLV, AnimeAV1, Henaojara & TioAnime databases/catalogs through Stremio's searchbar, or filter them by genre in the Discovery tab
 - :wrench: Compatible with other addons, like Cinemeta, TMDB or kitsu so you can use your preferred metadata provider (see [supported ID's](#endpoints) for technical details)
 - :page_with_curl: See metadata extracted from AnimeFLV, AnimeAV1, Henaojara & TioAnime natively in Stremio, like synopses/overviews, genres, related media, episode lists and release dates for upcoming episodes
-  - :calendar: If you add series to your library (through an AnimeFLV ID), upcoming episodes will show up in your Stremio calendar!
+  - :calendar: If you add series to your library (through an AnimeFLV or TioAnime ID), upcoming episodes will show up in your Stremio calendar!
 - :satellite: Provides stream sources from AnimeFLV, AnimeAV1, Henaojara & TioAnime
 
-This addon provides metadata and streaming options from AnimeFLV, AnimeAV1, Henaojara & TioAnime. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV, AnimeAV1, Henaojara & TioAnime, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV ...", "AnimeAV1 ...", "Henaojara ..." or "TioAnime ..." (the ones marked as external open a player on your browser, working on getting more sources to be watchable directly on Stremio).
+This addon provides metadata and streaming options from AnimeFLV, AnimeAV1, Henaojara & TioAnime. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV, AnimeAV1, Henaojara & TioAnime, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV ...", "AnimeAV1 ...", "Henaojara ..." or "TioAnime ..." (the ones marked as external open a player on your browser, working on getting more sources to be watchable directly on Stremio. You can add them by [configuring the addon](https://pigamer37.alwaysdata.net/configure), as they are not added by default).
 
 > [!TIP]
 > ### Recommendations
-> 1. Right now, the metadata provided by Cinemeta (the default meta and catalog addon), the TMDB meta addon or the Anime kitsu addon is much richer and works well with other addons, as they just use IMDB ID's, TMDB ID's or kitsu ID's respectively to provide and identify content. This addon should work with items provided in these catalogs, so you can get AnimeFLV's, AnimeAV1's, Henaojara's, and TioAnime's streams/sources while getting **their** metadata.
+> 1. Right now, the metadata provided by Cinemeta (the default meta and catalog addon), the TMDB meta addon or the Anime kitsu addon is much richer and works well with other addons, as they just use IMDB ID's, TMDB ID's or kitsu ID's respectively to provide and identify content. This addon should work with items provided by these catalogs, so you can get AnimeFLV's, AnimeAV1's, Henaojara's, and TioAnime's streams/sources while getting **their** metadata.
 > 2. Learning japanese? I have a [Japanese subtitle addon](https://github.com/Pigamer37/buta-no-subs-stremio-addon), and there's also the [Strelingo Addon](https://github.com/Serkali-sudo), which lets you **see two subtitle languages at the same time** (English and Japanese, for example), and uses the former as a provider for Japanese subs.
 
 ## Tips are welcome!
@@ -52,6 +52,9 @@ Parameters
    - `AniList ID`: starts with "anilist:", followed by a number, always. You can specify an episode number if you want. Example: `anilist:21202:2` *should* give results for Konosuba (Season 1 was specified with the AniList ID) Episode 2
    - `MyAnimeList ID`: starts with "mal:", followed by a number, always. You can specify an episode number if you want. Example: `mal:30831:2` *should* give results for Konosuba (Season 1 was specified with the AniList ID) Episode 2
    - `aniDB ID`: starts with "anidb:", followed by a number, always. You can specify an episode number if you want. Example: `anidb:11261:2` *should* give results for Konosuba (Season 1 was specified with the AniList ID) Episode 2
+
+You can add some configuration before the call. Right now, the only available config is:
+  - `externalStreams`: adds external streams (they open on a browser) to the bottom of the results (values other than true are considered false `/externalStreams=true/stream/...`)
 
 ## Run locally
 > [!IMPORTANT]
@@ -119,10 +122,10 @@ Parameters
      - [X] Get Stremio to show `UPCOMING` tags on upcoming episodes and show them on the calendar (undocumented, but reverse engineered)
    - [X] Get and display the item's related entries (prequels/sequels, spinoffs, alternative retellings...)
    - [X] Get episode thumbnails
-   - [X] Get series backgound images
+   - [X] Get series background images
    - [ ] Get series logos
    - [ ] Get episode overviews
-- [ ] Touch up the views (the homepage, mainly)
+- [X] Touch up the views (the homepage, mainly)
 - [ ] Investigate Stremio API
 
 ## Documentation used:
