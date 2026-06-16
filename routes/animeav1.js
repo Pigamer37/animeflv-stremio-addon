@@ -105,14 +105,18 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
+    links=[{name:"AnimeAV1",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
+    if(data.data.related){//Add relation links if they exist
+      links.push(
+        ...data.data.related.map((r) => {
+          return { name: r.title, category: r.relation, url: `stremio:///detail/series/animeav1:${r.slug}` }
+        })
+      )
+    }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
       videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
-      language: "jpn", ...(data.data.related) && {
-        links: data.data.related.map((r) => {
-          return { name: r.title, category: r.relation, url: `stremio:///detail/series/animeav1:${r.slug}` }
-        })
-      },
+      language: "jpn", links,
       runtime: data.data.runtime,
       ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: data.data.startDate.getFullYear() + "-".concat((data.data.endDate!==undefined)?data.data.endDate?.getFullYear():"") },
       ...(data.data.trailers) && { trailers: [ {source: data.data.trailers, type: "Trailer"} ] },
