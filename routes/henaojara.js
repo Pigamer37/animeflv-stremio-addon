@@ -47,8 +47,7 @@ exports.UpdateAiringAnimeFile = function () {
 exports.SearchHenaojara = async function (query, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchHenaojara()")
   const henaojaraURL = (url) ? url
-    : `${encodeURIComponent(HENAOJARA_BASE)}%2Fanimes%3F${(query) ? "buscar%3D" + encodeURIComponent(query).replaceAll('%20','+') + "%26" : ""}${(genreArr) ? encodeURIComponent("genero%3D" + genreArr.join("%2C")) : ""}${(page) ? "%26page%3D" + page : ""}`
-  console.log("Henaojara Search URL:", henaojaraURL)
+    : `${encodeURIComponent(HENAOJARA_BASE)}%2Fanimes%3F${(query) ? "buscar%3D" + encodeURIComponent(query).replaceAll('%20','+') + "%26" : ""}${(genreArr) ? encodeURIComponent("genero%3D" + genreArr.join("%2C")) : ""}${(page) ? "%26pag%3D" + page : ""}`
     return SearchAnimesBySpecificURL(henaojaraURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }

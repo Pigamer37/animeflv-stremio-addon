@@ -116,10 +116,10 @@ function HandleCatalogRequest(req, res, next) {
     //tioanime catalog request
     if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
       let genreArr = res.locals.extraParams.genre
-      //calculate the page to start from, TioAnime uses 24 results per page
+      //calculate the page to start from, TioAnime uses 20 results per page
       //if skip is defined, we can calculate the page and the number of items we already delivered
-      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
-        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
+      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 20) + 1 : undefined,
+        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 20 : undefined
       console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
       catalogPromise = tioanimeAPI.SearchTioAnime(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
         console.log('\x1b[36mGot TioAnime metadata for:\x1b[39m', result.length, "search results")
