@@ -167,12 +167,12 @@ class Metadata {
       if (resp === undefined) reject(new Error("Undefined response!"))
       return resp.json()
     }).then((data) => {
-      if (data?.meta === undefined) throw new Error("Invalid response!")
-      const special=data.meta.videos?.find((el, _i, _this)=>{
+      if (data?.meta?.videos === undefined) throw new Error("Invalid response!")
+      const special=data.meta.videos.find((el, _i, _this)=>{
         const parsedID=el.id.split(":")
-        return ((el.season===0)&&(el.episode===episode))||((parsedID[1]===0)&&(parsedID[2]===episode))//redundant search on keys and ID
+        return ((el.season===0)&&(el.episode===parseInt(episode)))||((parsedID[1]===0)&&(parsedID[2]===parseInt(episode)))//redundant search on keys and ID
       })
-      return new Metadata(special?.id, data.meta.moviedb_id, type, special?.title, special?.overview, special?.released)
+      return new Metadata(special?.id, data.meta.moviedb_id, type, special?.title || special?.name, special?.overview, special?.released)
     })
   }
 }
