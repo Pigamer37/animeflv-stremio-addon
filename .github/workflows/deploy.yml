@@ -41,19 +41,22 @@ jobs:
       with:
         name: node-app
     - name: SFTP upload
-      uses: Dylan700/sftp-upload-action@latest
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      #uses: Dylan700/sftp-upload-action@latest
       with:
-        server: ${{ vars.SSHSERVER }}
         username: ${{ vars.USERNAME }}
-        password: ${{secrets.sshpassword}}
+        server: ${{ vars.SSHSERVER }}
         port: ${{ vars.PORT }}
-        uploads: ${{ vars.FOLDERS }}
-        ignore: |
-          *.git
-          */**/*git*
-          README.md
-          LICENSE
-          vercel.json
-          .gitatributes
-          .gitignore
-          .github
+        remote_path: ${{ vars.DEST_FOLDER }}
+        sftp_only: true
+        password: ${{secrets.sshpassword}}
+        #uploads: ${{ vars.FOLDERS }}
+        #ignore: |
+          #*.git
+          #*/**/*git*
+          #README.md
+          #LICENSE
+          #vercel.json
+          #.gitatributes
+          #.gitignore
+          #.github
