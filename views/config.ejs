@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>
+    <%= manifest?.name || 'AnimeFLV' %>
+  </title>
+  <link rel="shortcut icon" href="<%= manifest?.logo || 'https://www.stremio.com/website/stremio-logo-small.png' %>"
+    type="image/x-icon">
+  <link rel="icon" href="<%= manifest?.logo || 'https://www.stremio.com/website/stremio-logo-small.png' %>"
+    type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@2.1.0/build/pure-min.css"
+    integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH" crossorigin="anonymous">
+</head>
+
+<body>
+  <%- include('./critical_styles'); %>
+    <div class="addon">
+      <% if (manifest) { %>
+        <div class="logo">
+          <img src="<%= manifest?.logo %>" alt="AnimeFLV Logo">
+        </div>
+        <h1 class="name">
+          <%= manifest?.name || 'AnimeFLV Stremio Addon' %>
+        </h1>
+        <h2 class="version">
+          <%= manifest.version %>
+        </h2>
+        <h2 class="description">
+          <%- manifest.description.replaceAll(/https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)/gm, '<a href="$&" target="_blank">$&</a>') %>
+        </h2>
+      <% } %>
+        <div class="separator"></div>
+        <div>
+          <%- include('./content') %>
+        </div>
+        <br>
+    </div>
+
+</body>
+
+</html>

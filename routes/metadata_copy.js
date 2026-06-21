@@ -159,6 +159,22 @@ class Metadata {
   static ParseCinemetaMeta(meta) {
     return new Metadata(meta.id, meta.moviedb_id, meta.type, meta.name, meta.description, meta.released || meta.releaseInfo)
   }
+
+  static GetSpecialMeta(imdbID, episode, type="series"){
+    const reqURL = `${CINEMETA_BASE}/meta/${type}/${imdbID}.json`
+    return fetch(reqURL).then((resp) => {
+      if ((!resp.ok) || resp.status !== 200) reject(new Error(`HTTP error! Status: ${resp.status}`))
+      if (resp === undefined) reject(new Error("Undefined response!"))
+      return resp.json()
+    }).then((data) => {
+      if (data?.meta?.videos === undefined) throw new Error("Invalid response!")
+      const special=data.meta.videos.find((el, _i, _this)=>{
+        const parsedID=el.id.split(":")
+        return ((el.season===0)&&(el.episode===parseInt(episode)))||((parsedID[1]===0)&&(parsedID[2]===parseInt(episode)))//redundant search on keys and ID
+      })
+      return new Metadata(special?.id, data.meta.moviedb_id, type, special?.title || special?.name, special?.overview, special?.released)
+    })
+  }
 }
 
 module.exports = Metadata;

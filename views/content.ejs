@@ -1,0 +1,42 @@
+<div>
+  <div class="separator"></div>
+  <div style="display:flex;flex-direction:column">
+    <label class="label-to-top" style="display:block">Return external streams (they open in a browser) <input type="checkbox" id="externalStreams"<%= (config?.get("externalStreams"))?` checked="true"`:"" %>></label>
+    <label class="label-to-top">Select catalogs that will appear on the Stremio homepage (airing anime for each provider):
+    <div style="display:flex;gap:1em;padding-block-start:1em;flex-wrap:wrap;justify-content:space-evenly">
+      <label style="display:block"><img style="height:1.8cap" src="https://www4.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV"><input style="vertical-align:top" type="checkbox" id="animeflv"<%= (config?.get("onAirCatalogs").includes("animeflv"))?` checked="true"`:"" %>></label>
+      <label style="display:block"><img style="height:1.2em" src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1"> <input style="vertical-align:top" type="checkbox" id="animeav1"<%= (config?.get("onAirCatalogs").includes("animeav1"))?` checked="true"`:"" %>></label>
+      <label style="display:block"><img style="height:1em" src="https://www.henaojara.com/wp-content/uploads/2021/04/INICIO_new.png" alt="Henaojara"> <input style="vertical-align:top" type="checkbox" id="henaojara"<%= (config?.get("onAirCatalogs").includes("henaojara"))?` checked="true"`:"" %>></label>
+      <label style="display:block"><img style="height:1.4em" src="https://tioanime.com/assets/img/logo-dark.png" alt="TioAnime"> <input style="vertical-align:top" type="checkbox" id="tioanime"<%= (config?.get("onAirCatalogs").includes("tioanime"))?` checked="true"`:"" %>></label>
+    </div>
+    </label>
+    <label class="full-width label-to-top" style="display:block" for="manifest_url">Your manifest URL:</label>
+    <textarea class="form-element" id="manifest_url" rows="1"
+      style="resize:none;overflow:hidden;text-align:center;font-size:unset;"
+      readonly>https://pigamer37.alwaysdata.net/manifest.json</textarea>
+      <!-- 'stremio://' + window.location.host + '/' + encodeURIComponent(JSON.stringify(config)) + '/manifest.json' -->
+  </div>
+  <button class="full-width" onclick="{navigator.clipboard.writeText(getElementById('manifest_url').value).then((e)=>{
+          console.log('copied!');const origText=event.target.innerText;event.target.innerText='Copied!';setTimeout(function(){
+            this.innerText=origText
+        ;}.bind(event.target), 3000);}).catch((error)=>{console.error(error);})}">
+    Copy manifest URL
+  </button>
+  <a id="installLink" class="install-link" href="#">
+    <button tabindex="-1" class="full-width">Open In Stremio</button>
+  </a>
+  <script>const ta=document.getElementById('manifest_url');const externalStreams=document.getElementById('externalStreams')
+    const animeflv=document.getElementById('animeflv');const animeav1=document.getElementById('animeav1');const henaojara=document.getElementById('henaojara');const tioanime=document.getElementById('tioanime');
+    const providers=[animeflv,animeav1,henaojara,tioanime]
+    const installLink=document.getElementById('installLink')
+    function genManifLink(){
+      let config=new URLSearchParams();
+      if(providers.some((e)=>e.checked)){config.append("onAirCatalogs",providers.filter(e=>e.checked).map(e=>e.id).join())}
+      if(externalStreams.checked){config.append("externalStreams","true")}
+      ta.innerText=`${window.location.origin}${(config.size>0)?"/"+config.toString():""}/manifest.json`
+      installLink.href=ta.innerText.replace('https://','stremio://')
+      ta.style.minHeight=ta.scrollHeight+"px"
+    }
+    [externalStreams,...providers].forEach((e)=>e.addEventListener('input',()=>genManifLink()))
+    genManifLink()</script>
+</div>

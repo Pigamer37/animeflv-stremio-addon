@@ -47,8 +47,7 @@ exports.UpdateAiringAnimeFile = function () {
 exports.SearchHenaojara = async function (query, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchHenaojara()")
   const henaojaraURL = (url) ? url
-    : `${encodeURIComponent(HENAOJARA_BASE)}%2Fanimes%3F${(query) ? "buscar%3D" + encodeURIComponent(query).replaceAll('%20','+') + "%26" : ""}${(genreArr) ? encodeURIComponent("genero%3D" + genreArr.join("%2C")) : ""}${(page) ? "%26page%3D" + page : ""}`
-  console.log("Henaojara Search URL:", henaojaraURL)
+    : `${encodeURIComponent(HENAOJARA_BASE)}%2Fanimes%3F${(query) ? "buscar%3D" + encodeURIComponent(query).replaceAll('%20','+') + "%26" : ""}${(genreArr) ? encodeURIComponent("genero%3D" + genreArr.join("%2C")) : ""}${(page) ? "%26pag%3D" + page : ""}`
     return SearchAnimesBySpecificURL(henaojaraURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -100,27 +99,31 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
+    links=[{name:"Henaojara",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
+    if(data.data.related){//Add relation links if they exist
+      links.push(
+        ...data.data.related.map((r) => {
+          return { name: r.title, category: r.relation, url: `stremio:///detail/series/henaojara:${r.slug}` }
+        })
+      )
+    }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
       videos, poster: data.data.cover, background: `${HENAOJARA_BASE}/cdn/img/portada/${data.data.slug}.webp?t=0.1`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `henaojara:${slug}`,
-      language: "jpn", ...(data.data.related) && {
-        links: data.data.related.map((r) => {
-          return { name: r.title, category: r.relation, url: `stremio:///detail/series/henaojara:${r.slug}` }
-        })
-      },
+      language: "jpn", links,
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `henaojara:${slug}:1` } }
     }
   })
 }
 //WIP
-exports.GetItemStreams = async function (slug, epNumber = 1) {
+exports.GetItemStreams = async function (slug, onlyInternal=true, epNumber = 1) {
   //if we don't get an episode number, use 1, that's how henaojara works
   return GetEpisodeLinks(slug, epNumber).then((data) => {
     if (!data) throw Error('Empty response!')
     return { data }
   }).then((data) => {
-    return streamParser.GetStreamLinks("Henaojara", "henaojara", data)
+    return streamParser.GetStreamLinks("Henaojara", "henaojara", data, onlyInternal)
   })
 }
 

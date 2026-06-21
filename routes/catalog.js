@@ -116,10 +116,10 @@ function HandleCatalogRequest(req, res, next) {
     //tioanime catalog request
     if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
       let genreArr = res.locals.extraParams.genre
-      //calculate the page to start from, TioAnime uses 24 results per page
+      //calculate the page to start from, TioAnime uses 20 results per page
       //if skip is defined, we can calculate the page and the number of items we already delivered
-      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
-        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
+      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 20) + 1 : undefined,
+        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 20 : undefined
       console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
       catalogPromise = tioanimeAPI.SearchTioAnime(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
         console.log('\x1b[36mGot TioAnime metadata for:\x1b[39m', result.length, "search results")
@@ -213,11 +213,8 @@ function ParseConfig(req, res, next) {
 }
 //Calendar requests
 catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", (req, res) => {
-  console.log("Entered catalog request with", req.params.calendarVideosIds)
-  console.log("FilteredVector:", req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
-    .filter((id) => id.startsWith("animeflv:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))
   let metasDetailed = [], uniqueIDs = [...new Set(req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
-    .filter((id) => id.startsWith("animeflv:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
+    .filter((id) => id.startsWith("animeflv:") /*|| id.startsWith("animeav1:") || id.startsWith("henaojara:")*/ || id.startsWith("tioanime:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
 
   console.log("Unique IDs:", uniqueIDs)
 
@@ -232,6 +229,14 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return animeAV1API.GetAnimeBySlug(ID)
+    } else if (videoID.startsWith("henaojara")) {
+      const ID = idDetails[1]
+      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+      return henaojaraAPI.GetAnimeBySlug(ID)
+    } else if (videoID.startsWith("tioanime")) {
+      const ID = idDetails[1]
+      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+      return tioanimeAPI.GetAnimeBySlug(ID)
     } else {
       let animeIMDBIDPromise
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID

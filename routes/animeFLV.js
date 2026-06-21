@@ -151,21 +151,35 @@ exports.GetAnimeBySlug = async function (slug) {
         available: false //next episode is not available yet
       })
     }
+    if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
+      videos[0].title = videos[0].title.replace(" Ep. 1", "")
+    }
+    links=[{name:"AnimeFLV",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
+    if(data.data.related){//Add relation links if they exist
+      links.push(
+        ...data.data.related.map((r)=>{
+          return { name: r.title, category: r.relation, url: `stremio:///detail/series/animeflv:${r.slug}` }
+        })
+      )
+    }
+    // if(data.data.genres){
+    //   links.push(
+    //     ...data.data.genres.map((r)=>{
+    //       return { name:r, category:"Genres", url:`stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=${r}`}
+    //     })
+    //   )
+    // }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Anime") ? "series" : "movie",
       videos, poster: data.data.cover, background: `${ANIMEFLV_BASE}/uploads/animes/thumbs/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `animeflv:${slug}`,
-      language: "jpn", ...(data.data.related) && {
-        links: data.data.related.map((r) => {
-          return { name: r.title, category: r.relation, url: `stremio:///detail/series/animeflv:${r.slug}` }
-        })
-      }, //both behavior hints can't coexist, if there's an upcoming episode, videos.length > 1
+      language: "jpn", links, //both behavior hints can't coexist, if there's an upcoming episode, videos.length > 1
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `animeflv:${slug}:1` } }
     }
   })
 }
 
-exports.GetItemStreams = async function (slug, epNumber = 1) {
+exports.GetItemStreams = async function (slug, onlyInternal=true, epNumber = 1) {
   //if we don't get an episode number, use 1, that's how animeFLV works
   /*const reqURL = `${ANIMEFLV_API_BASE}/anime/${slug}/episode/${epNumber}`;
   return fetch(reqURL).then((resp) => {
@@ -179,7 +193,7 @@ exports.GetItemStreams = async function (slug, epNumber = 1) {
     return { data }
   })
   /*})*/.then((data) => {
-    return streamParser.GetStreamLinks("AnimeFLV", "animeFLV", data)
+    return streamParser.GetStreamLinks("AnimeFLV", "animeFLV", data, onlyInternal)
   })
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts

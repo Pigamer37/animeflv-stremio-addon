@@ -218,9 +218,9 @@ function ReadManifest() {
         "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..0XN39hJS4zjNV5ES2brUeQ.sjRgcAHGPIUA0GXXbZI2BZLuKUOiT3jfI8ALp-QlUcWNuW_9qcVjARUxKCE6ncTE1rdK9yCma3IlgdCbI8-3ZV1E5WsKdS3LncHDeqlXThTZ9V7Znc1rATu7kJE_NDxE.Y8gIKpiHqAVypGGOvEXVqw"
       },
       "behaviorHints": {
+        "configurable": true,
         "newEpisodeNotifications": true
-      }/*,
-      "behaviorHints": { "configurable": true }*/
+      }
     }
     return manifest;
   })
@@ -228,7 +228,9 @@ function ReadManifest() {
 
 app.get("/manifest.json", (_req, res) => {
   ReadManifest().then((manif) => {
-    //manif.behaviorHints.configurationRequired = true
+    manif.catalogs=manif.catalogs.filter((cat)=>{
+      return (!cat.id.includes("onair"))?true:false
+    })
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
   }).catch((err) => {
@@ -236,8 +238,15 @@ app.get("/manifest.json", (_req, res) => {
   })
 })
 
-app.get("/:config/manifest.json", (_req, res) => {
+app.get("/:config/manifest.json", (req, res) => {
   ReadManifest().then((manif) => {
+    const config=new URLSearchParams(decodeURIComponent(req.params.config))
+    let providers=config?.get("onAirCatalogs")?.split(',')
+    console.log(providers)
+    manif.catalogs=manif.catalogs.filter((cat)=>{
+      if(!cat.id.includes("onair"))return true
+      else return providers.some((prov)=>cat.id.startsWith(prov))
+    })
     //console.log("Params:", decodeURIComponent(req.params[0]))
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
@@ -246,12 +255,10 @@ app.get("/:config/manifest.json", (_req, res) => {
   })
 })
 
-/*app.get("/configure", (req, res) => {
+app.get("/configure", (req, res) => {
   ReadManifest().then((manif) => {
-    let base_url = req.host;
     res.render('config', {
-      logged_in: false,
-      base_url: base_url,
+      config: undefined,
       manifest: manif
     })
   }).catch((err) => {
@@ -261,18 +268,14 @@ app.get("/:config/manifest.json", (_req, res) => {
 //WIP
 app.get("/:config/configure", (req, res) => {
   ReadManifest().then((manif) => {
-    let base_url = req.host;
     res.render('config', {
-      logged_in: true,
-      config: req.params.config,
-      user: req.params.config,
-      base_url: base_url,
+      config: new URLSearchParams(decodeURIComponent(req.params.config)),
       manifest: manif
     })
   }).catch((err) => {
     res.status(500).statusMessage("Error reading file: " + err);
   })
-})*/
+})
 
 const streams = require("./routes/streams");
 app.use(streams);
