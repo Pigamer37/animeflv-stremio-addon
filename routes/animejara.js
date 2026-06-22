@@ -97,7 +97,7 @@ exports.GetAnimeBySlug = async function (slug, type = "series") {
         season: lastS,
         episode: lastNum + 1,
         number: lastNum + 1,
-        thumbnail: "https://imgur.com/3U6r1nF",
+        thumbnail: "https://i.imgur.com/3U6r1nF.jpg",
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
       })
