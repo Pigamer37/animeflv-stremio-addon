@@ -158,15 +158,6 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     
     const downloadObj = JSON.parse(serversDIV.attr("data-dwn") || "null");
 
-    const getServerTitle = (serverDomain) => {
-      const cleanDom = serverDomain.replace("bysesukior", "Filemoon").replace("movearnpre", "Vidhide")
-        .replace("luluvdo", "Lulustream").replace("dhcplay", "Streamwish").replace("listeamed", "Vidguard")
-        .replace("rpmvip", "RPMshare").replace("yourupload", "YourUpload").replace("mp4upload", "MP4Upload")
-        .replace("pdrain", "PDrain").replace("hls", "HLS")
-        .replace(".com", "").replace(".net", "").replace(".org", "").replace(".top", "")
-        .replace(".to", "").replace(".ac", "").replace(".sx", "").replace(".ps", "");
-      return cleanDom.charAt(0).toUpperCase() + cleanDom.slice(1)
-    }
     const hex2a = (hex) => { var str = ''; for (var i = 0; i < hex.length; i += 2) str += String.fromCharCode(parseInt(hex.substr(i, 2), 16)); return str;};
     const serverData = async () => {
       return await fetch(`${HENAOJARA_BASE}/hj`, {
@@ -200,7 +191,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
         const s = hex2a($(el).attr("encrypt"));
         const sURL = new URL(s)
         episodeLinks.servers.push({
-          name: getServerTitle(sURL.hostname),
+          name: streamParser.getServerTitle(sURL.hostname),
           embed: s?.replace("mega.nz/embed#!", "mega.nz/embed/"),
           dub: false
         });
@@ -210,7 +201,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
       for (const s of downloadObj) {
         const sURL = new URL(s)
         episodeLinks.servers.push({
-          name: getServerTitle(sURL.hostname),
+          name: streamParser.getServerTitle(sURL.hostname),
           download: s?.replace("mega.nz/#!", "mega.nz/file/"),
           dub: false
         });

@@ -37,7 +37,7 @@ exports.UpdateAiringAnimeFile = function () {
   return this.GetAiringAnimeFromWeb().then((titles) => {
     console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
     return fsPromises.writeFile('./onair_titlesTIO.json', JSON.stringify(titles))
-  }).then(() => console.log('\x1b[32mOn Air titles "cached" successfully!\x1b[39m')
+  }).then(() => console.log('\x1b[32mOn Air TioAnime titles "cached" successfully!\x1b[39m')
   ).catch((err) => {
     console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
   })

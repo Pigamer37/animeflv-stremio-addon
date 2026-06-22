@@ -38,13 +38,13 @@ exports.UpdateAiringAnimeFile = function () {
   return this.GetAiringAnimeFromWeb().then((titles) => {
     console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
     return fsPromises.writeFile('./onairANIMEJARA_titles.json', JSON.stringify(titles))
-  }).then(() => console.log('\x1b[32mOn Air Animejara titles "cached" successfully!\x1b[39m')
+  }).then(() => console.log('\x1b[32mOn Air AnimeJara titles "cached" successfully!\x1b[39m')
   ).catch((err) => {
     console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
   })
 }
 
-exports.SearchAnimejara = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
+exports.SearchAnimeJara = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimejara()")
   if (type) {
     type = (type === "movie") ? "tipo%3Dpelicula%26" : "tipo%3Dserie%26"
@@ -52,7 +52,7 @@ exports.SearchAnimejara = async function (query, type = undefined, genreArr = un
   const animejaraURL = (url) ? url
     : `${encodeURIComponent(ANIMEJARA_BASE)}%2Fcatalogo%3F${(query) ? "q%3D" + encodeURIComponent(query) + "%26" : ""}${(type) ? type : ""}${(genreArr) ? encodeURIComponent("tag%3D" + genreArr.join("%2C")) : ""}${(page) ? "%26paged%3D" + page : ""}`
   console.log("Animejara Search URL:", animejaraURL)
-    return SearchAnimesBySpecificURL(animejaraURL).then((data) => {
+  return SearchAnimesBySpecificURL(animejaraURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
   }).then((data) => {
@@ -61,14 +61,14 @@ exports.SearchAnimejara = async function (query, type = undefined, genreArr = un
     return data.data.media.slice(gottenItems).map((anime) => {
       return {
         title: anime.title, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
-        slug: anime.slug, poster: anime.cover, overview: anime.synopsis, genres: genreArr
+        slug: anime.slug, poster: anime.cover, overview: anime.synopsis, genres: anime.genres || genreArr
       }
     })
   })
 }
 
-exports.GetAnimeBySlug = async function (slug) {
-  return GetAnimeInfo(slug).then((data) => {
+exports.GetAnimeBySlug = async function (slug, type = "series") {
+  return GetAnimeInfo(slug, type).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
   }).then((data) => {
@@ -78,24 +78,26 @@ exports.GetAnimeBySlug = async function (slug) {
     const videos = data.data.episodes.map((ep) => {
       let d = new Date(Date.now())
       return {
-        id: `animejara:${slug}:${ep.number}`,
-        title: data.data.title + " Ep. " + ep.number,
-        season: 1,
+        id: `animejara:${slug}${(ep.season) ? `:${ep.season}:${ep.number}` : ""}`,//animejara:konosuba:1:2
+        title: ep.name || data.data.title + " Ep. " + ep.number,
+        season: ep.season,
         episode: ep.number,
         number: ep.number,
-        thumbnail: data.data.cover,
+        thumbnail: ep.poster || data.data.cover,
         released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
     })
     if (data.data.next_airing_episode !== undefined) {
+      const lastS = Number(data.data.episodes[epCount - 1].season)
+      const lastNum = Number(data.data.episodes[epCount - 1].number)
       videos.push({
-        id: `animejara:${slug}:${epCount + 1}`,
-        title: `${data.data.title} Ep. ${epCount + 1}`,
-        season: 1,
-        episode: epCount + 1,
-        number: epCount + 1,
-        thumbnail: "https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png",
+        id: `animejara:${slug}:${lastS}:${lastNum + 1}`,
+        title: `${data.data.title} Ep. ${lastNum + 1}`,
+        season: lastS,
+        episode: lastNum + 1,
+        number: lastNum + 1,
+        thumbnail: "https://imgur.com/3U6r1nF",
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
       })
@@ -103,43 +105,46 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
-    return {
-      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
-      videos, poster: data.data.cover, /*background: ,*/ genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animejara:${slug}`,
-      language: "jpn", ...(data.data.related) && {
-        links: data.data.related.map((r) => {
+    links = [{ name: "AnimeJara", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
+    if (data.data.related) {//Add relation links if they exist
+      links.push(
+        ...data.data.related.map((r) => {
           return { name: r.title, category: r.relation, url: `stremio:///detail/series/animejara:${r.slug}` }
         })
-      },
+      )
+    }
+    return {
+      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
+      videos, poster: data.data.cover, /*background: ,*/ genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g, '\n').replaceAll(/\\"/g, '"'), website: data.data.url, id: `animejara:${slug}`,
+      language: "jpn", links,
       ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: data.data.startDate.getFullYear() + "-" },
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
-      ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `animejara:${slug}:1` } }
+      ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `animejara:${slug}` } }
     }
   })
 }
 //WIP
-exports.GetItemStreams = async function (slug, epNumber = 1) {
-  //if we don't get an episode number, use 1, that's how animejara works
-  return GetEpisodeLinks(slug, epNumber).then((data) => {
+exports.GetItemStreams = async function (slug, onlyInternal = true, season = undefined, epNumber = undefined) {
+  return GetEpisodeLinks(slug, season, epNumber).then((data) => {
     if (!data) throw Error('Empty response!')
     return { data }
   }).then((data) => {
-    return streamParser.GetStreamLinks("Animejara", "animejara", data)
+    return streamParser.GetStreamLinks("AnimeJara", "animejara", data, onlyInternal)
   })
 }
 
-async function GetEpisodeLinks(slug, epNumber = 1) {
+async function GetEpisodeLinks(slug, season = undefined, epNumber = undefined) {
   try {
     const episodeData = async () => {
-      if (slug && !epNumber)
-        return await fetch(ANIMEJARA_BASE + "/movie/" + slug).then((resp) => {
-          if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+      if (slug && !season)
+        return await fetch(`${ANIMEJARA_BASE}/movie/${slug}`).then((resp) => {
+          //if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`) //AnimeJara throws 404s
           if (resp === undefined) throw Error(`Undefined response!`)
           return resp.text()
         }).catch(() => null);
-      else if (slug && epNumber)
-        return await fetch(ANIMEJARA_BASE + "/episode/" + slug + "-" + epNumber).then((resp) => {
-          if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+      else if (slug && season)
+        return await fetch(`${ANIMEJARA_BASE}/episode/${slug}-${season}x${epNumber}`).then((resp) => {
+          //if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
           if (resp === undefined) throw Error(`Undefined response!`)
           return resp.text()
         }).catch(() => null);
@@ -156,57 +161,85 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     }
 
     const serversDIV = $("div.botones-idioma > div.boton-idioma"); //may be 1-3 (LATINO, JAPONÉS, CASTELLANO)
-    
-    const serversObj = serversDIV.filter((_, el) => $(el).find(".lang-name").text().includes("JAP"));
-    const downloadObj = metadataJSON?.match(/downloads:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
-    const serversObjDUB = serversDIV.filter((_, el) => !$(el).find(".lang-name").text().includes("JAP"));
-    const downloadObjDUB = metadataJSON?.match(/downloads:\s?.*?DUB:\s?(\[.*?\])/)?.[1];
+
+    let japI, latI, espI;
+    const episodesFind = $("script").map((_, el) => $(el).html()).get().find(script => script?.includes("const enlaces = "));
+    const enlacesArray = episodesFind?.match(/enlaces = (\[.*]);/)?.[1];
+    try {
+      const enlaces = JSON.parse(enlacesArray)
+      enlaces.forEach((e, i) => {
+        const idioma = serversDIV.filter((_, el) => $(el).attr('onclick').includes(`cambiarIdioma(${i}`)).first()
+        if (idioma) {
+          if (idioma.find(".lang-name").text().includes("JAP")) japI = { url: new URL(e), dubLang: "jap" }
+          if (idioma.find(".lang-name").text().includes("LAT")) latI = { url: new URL(e), dubLang: "lat" }
+          if (idioma.find(".lang-name").text().includes("CAS")) espI = { url: new URL(e), dubLang: "esp" }
+        }
+      })
+    } catch(error) {
+      return null
+    }
+
+    async function serverData(url) {
+      return await fetch(url, {
+        "headers": {
+          "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+          "accept-language": "en,en-US;q=0.9,es-ES;q=0.8,es;q=0.7,fr;q=0.6,no;q=0.5",
+          "cache-control": "no-cache",
+          "pragma": "no-cache",
+          "priority": "u=0, i",
+          "sec-ch-ua": "\"Chromium\";v=\"148\", \"Opera\";v=\"132\", \"Not/A)Brand\";v=\"99\"",
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": "\"Linux\"",
+          "sec-fetch-dest": "iframe",
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-site": "cross-site",
+          "sec-fetch-storage-access": "active",
+          "upgrade-insecure-requests": "1",
+          "Referer": "https://animejara.com/"
+        },
+        "method": "GET"
+      }).then((resp) => {
+        if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+        if (resp === undefined) throw Error(`Undefined response!`)
+        return resp.text()
+      }).catch(() => { console.log("Failed to fetch server data"); return null });
+    }
     let servers = [];
-    if (serversObj) {
-      servers = serversObj.split("},")?.map(s => {
-        return {
-          title: s.match(/server:\s?"(.*?)"/)?.[1],
-          code: s.match(/url:\s?"(.*?)"/)?.[1]
-        }
-      });
-    }
-    if (downloadObj) {
-      servers = servers.concat(downloadObj.split("},")?.map(s => {
-        return {
-          title: s.match(/server:\s?"(.*?)"/)?.[1],
-          url: s.match(/url:\s?"(.*?)"/)?.[1]
-        }
-      }));
-    }
-    if (serversObjDUB) {
-      servers = servers.concat(serversObjDUB.split("},")?.map(s => {
-        return {
-          title: s.match(/server:\s?"(.*?)"/)?.[1],
-          code: s.match(/url:\s?"(.*?)"/)?.[1],
-          dub: true
-        }
-      }));
-    }
-    if (downloadObjDUB) {
-      servers = servers.concat(downloadObjDUB.split("},")?.map(s => {
-        return {
-          title: s.match(/server:\s?"(.*?)"/)?.[1],
-          url: s.match(/url:\s?"(.*?)"/)?.[1],
-          dub: true
-        }
-      }));
-    }
 
-    for (const s of servers) {
-      episodeLinks.servers.push({
-        name: s?.title,
-        download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
-        embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/"),
-        dub: s?.dub || false
-      });
-    }
+    const promises = [japI, latI, espI].map((e) => {
+      if(!e) return undefined
+      async function lel(e1) {
+        const $2 = cheerio.load(await serverData(e1.url));
+        if ($2) {
+          const lis = $2("#logo-list > li");
+          lis.each((_, el) => {
+            let match = $(el).attr('onclick')?.match(/playVideo\(&quot;(.*?)&quot/)?.[1]?.trim()
+            if(!match) match = $(el).attr('onclick')?.match(/playVideo\("(.*?)"/)?.[1]?.trim()
+            const sURL = new URL(match);
+            servers.push({
+              title: streamParser.getServerTitle($(el).find('.nombre-server')?.text() || sURL.hostname),
+              code: sURL.toString().replace("https://nyuu.streamhj.top/player/e/v/go.php?v=",""),
+              dub: e1.dubLang !== 'jap',
+              dubLang: e1.dubLang
+            });
+          });
+        }
+      }
+      return lel(e)
+    })
 
-    return episodeLinks;
+    return Promise.allSettled(promises).then((results) => {
+      for (const s of servers) {
+        episodeLinks.servers.push({
+          name: s?.title,
+          download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
+          embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/"),
+          dub: s?.dub || false,
+          dubLang: s?.dubLang
+        })
+      }
+      return episodeLinks
+    })
   } catch (e) {
     console.error("Error on GetEpisodeLinks:", e);
     throw e
@@ -225,20 +258,18 @@ async function GetAnimeInfo(slug, type = "series") {
 
     const $ = cheerio.load(html);
     const scripts = $("script");
-    const nextAiringFind = $("div.fechas-container > div.fechas-lista > div.proximo-item");
-    const nextAiringInfo = nextAiringFind?.find("span")[0]?.text().replace("LATINO", "").replace("JAPONÉS", "").replace("CASTELLANO", "").trim();
 
     const animeInfo = {
       title: $("div.anime-info > h1").text(),
       //alternative_titles: $("#l > div.info > div.info-b > h3").text().split(",") || [],
       status: $("#posterContainer > div").text(),
-      startDate: new Date($("div:stat-item > span").text()),
+      startDate: new Date($("div.stat-item > span").first().text()),
       rating: $("#rating-val").text(),
-      type: ($("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.movie-meta-row > span").text()=="PELÍCULA") ? "movie" : "series",
+      type: ($("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.movie-meta-row > span").text() == "PELÍCULA") ? "movie" : "series",
       cover: $("#mainPosterImg").attr("src"),
       synopsis: $("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.anime-sinopsis-contenedor > div").text(),
       genres: $("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.anime-categorias > span").map((_, el) => $(el).text().trim()).get(),
-      next_airing_episode: nextAiringInfo,
+      //next_airing_episode: nextAiringInfo,
       episodes: [],
       url
     };
@@ -248,56 +279,51 @@ async function GetAnimeInfo(slug, type = "series") {
         animeInfo.episodes.push({
           number: 1,
           slug: slug,
-          url: ANIMEAV1_BASE + "/movie/" + slug
+          url: ANIMEAV1_BASE + "/movie/" + slug,
+          poster: animeInfo.cover
         });
       }
     } else {
+      const nextAiringFind = $("div.fechas-container > div.fechas-lista > div.proximo-item");
+      const nextAiringInfo = nextAiringFind?.first()?.find("span")?.text().replace("LATINO", "").replace("JAPONÉS", "").replace("CASTELLANO", "").trim();
+      animeInfo.next_airing_episode = new Date(nextAiringInfo);
+
       const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("TEMPORADAS_DATA"));
       const episodesArray = episodesFind?.match(/TEMPORADAS_DATA = (\[.*]);/)?.[1];
 
-      const selectedSeason = $("#seasonsNav > div.active");
-      let seasonNumber = Number(selectedSeason.find("div.tab-title")?.text().replace("TEMPORADA", "").trim()) || 1;
-
-      let epCount = 0;
+      let temporadasData;
       try {
-        const epObj = JSON.parse(episodesArray)
-        if (epObj) epCount = epObj.find((season) => season.numero_temporada === seasonNumber)?.episodios.length;
+        temporadasData = JSON.parse(episodesArray)
       } catch (error) {
-        const epCountStr = selectedSeason.find("span")?.text().replace("episodios", "").trim();
+        const tempData = $("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.anime-stats-top > div")
+        const seasonCountStr = tempData?.eq(0)?.text().replace("Temporadas", "").trim();
+        if (seasonCountStr && seasonCountStr !== "") {
+          temporadasData = []
+          $("#seasonsNav > div.season-tab").get().forEach((e, i) => {
+            const seasEpCount = Number(e.find('div.tab-info > span').text().replace("episodios").trim())
+            const seasonNum = Number(e.attr('data-season')) || i + 1;
+            const seasonImg = e.find('img').attr('src');
+            let epArr = []
+            for (let ep = 1; ep < seasEpCount; ep++) { epArr.push({ numero_episodio: ep, poster_episodio: seasonImg }) }
+            temporadasData.push({ numero_temporada: seasonNum, poster_temporada: seasonImg, episodios: epArr })
+          })
+        }
+        const epCountStr = tempData?.eq(1)?.text().replace("Episodios", "").trim();
         if (epCountStr && epCountStr !== "") epCount = Number(epCountStr);
       }
-      
-      for (let i = 1; i <= epCount; i++) {
-        if (animeInfo.episodes instanceof Array) {
+
+      temporadasData?.forEach((s, si) => {
+        s.episodios?.forEach((e, ei) => {
+          const sn = s.numero_temporada || si + 1, en = e.numero_episodio || ei + 1;
           animeInfo.episodes.push({
-            number: i,
-            slug: slug + "-" + seasonNumber + "x" + i,
-            url: ANIMEAV1_BASE + "/episode/" + slug + "-" + seasonNumber + "x" + i
-          });
-        }
-      }
-
-      //Relacionados
-      const relatedEls = $("#seasonsNav > div.season-tab").not(".active");
-      const relatedAnimes = [];
-      relatedEls.each((_, el) => {
-        const title = $(el).find(".tab-title").text().trim();
-        const relation = "TEMPORADAS";//$(el).find(".tab-title").text().trim();
-        if (title) {
-          const slugi = `${slug}#season-${title.replace("TEMPORADA", "").trim()}`;
-          relatedAnimes.push({
-            title,
-            relation,
-            slug: slugi,
-            url: `${ANIMEJARA_BASE}/anime/${slugi}`
-          });
-        }
-      });
-
-      //Asigna la propiedad si hay elementos
-      if (relatedAnimes.length > 0) {
-        animeInfo.related = relatedAnimes;
-      }
+            season: sn,
+            number: en,
+            slug: `${slug}-${sn}x${en}`,
+            url: `${ANIMEJARA_BASE}/episode/${slug}-${sn}x${en}`,
+            poster: e.poster_episodio
+          })
+        })
+      })
     }
 
     return animeInfo;
@@ -325,12 +351,12 @@ async function SearchAnimesBySpecificURL(animejaraURL) {
       media: []
     };
 
-    const pageSelector = $("#m > section > ul.pag > li");
+    const pageSelector = $("#paginacion-container > ul.paginacion > li");
     const getNextAndPrevPages = (selector) => {
       let aTagValue = selector.last().prev().find("a").text();
-      if (aTagValue.includes("Siguiente")) aTagValue = selector.last().prev().prev().find("a").text();
+      if (aTagValue.includes("»")) aTagValue = selector.last().prev().prev().find("a").text();
       let aRef = selector.eq(0).children("a");
-      if (aRef.text().includes("Inicio")) aRef = selector.eq(1).children("a");
+      //if (aRef.text().includes("«")) aRef = selector.eq(1).children("a");
 
       let foundPages = 0;
       let previousPage = "";
@@ -340,29 +366,34 @@ async function SearchAnimesBySpecificURL(animejaraURL) {
       else foundPages = Number(aTagValue);
 
       if (aRef.text() === "1" || foundPages == 1) previousPage = null;
-      else previousPage = ANIMEJARA_BASE + aRef.attr("href");
+      else previousPage = animejaraURL.replace(/&paged=\d+/,"")+`&paged=${aRef.attr('data-page')}`;
 
       if (!selector.last().children("a").text().includes("Último") || foundPages == 1) nextPage = null;
-      else nextPage = ANIMEJARA_BASE + selector.last().prev().find("a").attr("href");
+      else nextPage = animejaraURL.replace(/&paged=\d+/,"")+`&paged=${selector.last().find("a").attr('data-page')}`;
 
       return { foundPages, nextPage, previousPage };
     }
     const { foundPages, nextPage, previousPage } = getNextAndPrevPages(pageSelector)
     const scrapSearchAnimeData = ($) => {
-      const selectedElement = $("#m > section > div > article");
+      const selectedElement = $("#anime-results > div.anime-card-wrapper");
 
       if (selectedElement.length > 0) {
         const mediaVec = [];
 
         selectedElement.each((_, el) => {
+          let dataAnime
+          try {
+            dataAnime = JSON.parse($(el).find("a.anime-card").attr('data-anime'))
+          } catch (error) {}
           mediaVec.push({
-            title: $(el).find("h3").text() || $(el).find("figure > a > img").attr("alt"),
-            cover: $(el).find("figure > a > img").attr("data-src"),
-            //synopsis: $(el).find("div > div > div > p").eq(1).text(),
-            //rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
-            slug: $(el).find("a").attr("href").replace("./anime/", ""),
-            type: $(el).find("figure > a > b").text(),
-            url: ANIMEJARA_BASE + ($(el).find("a").attr("href").replace('.', '') || $(el).find("h3 > a").attr("href").replace('.', '')),
+            title: $(el).find("h3").text() || dataAnime?.titulo,
+            cover: $(el).find("a > div > div.card-poster-wrapper > img").attr("src") || dataAnime?.poster,
+            synopsis: dataAnime?.sinopsis,
+            genres: dataAnime?.categorias,
+            rating: $(el).find("a > div > div.card-poster-wrapper div.card-rating-year > span.card-rating").text().trim() || dataAnime?.rating,
+            slug: $(el).find("a").attr("href").match(/\/([^\/]*)(?:\/)?$/)?.[1],
+            type: $(el).find("a > div > div.card-poster-wrapper div.card-meta > span.meta-type").text() || dataAnime?.tipo,
+            url: $(el).find("a").attr("href"),
           });
         });
         return mediaVec
@@ -390,14 +421,15 @@ async function SearchAnimesBySpecificURL(animejaraURL) {
 }
 
 async function GetOnAir() {
-  return SearchAnimesBySpecificURL(`${decodeURIComponent(ANIMEJARA_BASE)}/inicio`).then((data) => {
+  return SearchAnimesBySpecificURL(`${decodeURIComponent(ANIMEJARA_BASE)}/catalogo?estado=Emision`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
     return data.media.map((anime) => {
       return {
         title: anime.title,
         type: anime.type,
         slug: anime.slug,
-        url: anime.url
+        url: anime.url,
+        genres: anime.genres
       }
     })
   })
