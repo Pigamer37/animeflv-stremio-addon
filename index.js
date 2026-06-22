@@ -94,6 +94,23 @@ function ReadManifest() {
           ]
         },
         {
+          id: "animejara", type: "AnimeJara", name: "search results",
+          extra: [{ name: "search", isRequired: true },
+            {
+              name: "genre",
+              options: ["Accion", "Amor", "Artes+marciales", "Aventura", "Carreras", "Ciencia+ficcion", 
+                "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
+                "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
+                "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
+                "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio+ghibli", "Superpoderes",
+                "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
+              ],
+                optionsLimit: 1, isRequired: false
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "animeflv|genres", type: "AnimeFLV", name: "AnimeFLV",
           extra: [
             {
@@ -159,6 +176,23 @@ function ReadManifest() {
           ]
         },
         {
+          id: "animejara|genres", type: "AnimeJara", name: "AnimeJara",
+          extra: [
+            {
+              name: "genre",
+              options: ["Accion", "Amor", "Artes+marciales", "Aventura", "Carreras", "Ciencia+ficcion", 
+                "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
+                "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
+                "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
+                "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio+ghibli", "Superpoderes",
+                "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
+              ],
+                optionsLimit: 1, isRequired: true
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
         },
         {
@@ -169,6 +203,9 @@ function ReadManifest() {
         },
         {
           id: "tioanime|onair", type: "TioAnime", name: "On Air"
+        },
+        {
+          id: "animejara|onair", type: "AnimeJara", name: "On Air"
         },
         {
           type: "series",
@@ -242,12 +279,10 @@ app.get("/:config/manifest.json", (req, res) => {
   ReadManifest().then((manif) => {
     const config=new URLSearchParams(decodeURIComponent(req.params.config))
     let providers=config?.get("onAirCatalogs")?.split(',')
-    console.log(providers)
     manif.catalogs=manif.catalogs.filter((cat)=>{
       if(!cat.id.includes("onair"))return true
       else return providers.some((prov)=>cat.id.startsWith(prov))
     })
-    //console.log("Params:", decodeURIComponent(req.params[0]))
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
   }).catch((err) => {

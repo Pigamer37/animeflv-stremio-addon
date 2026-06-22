@@ -3,7 +3,7 @@
 <p align="center"><img src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1 logo" width="256"/></p>
 <p align="center"><img src="https://www.henaojara.com/wp-content/uploads/2021/04/INICIO_new.png" alt="Henaojara logo" width="300"/></p>
 <p align="center"><img src="https://tioanime.com/assets/img/logo-dark.png" alt="Henaojara logo" width="256"/></p>
-<p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="256"/></p>
+<p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="300"/></p>
 
 Node.js and express.js based addon to add AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara functionallity to Stremio, not affiliated with AnimeFLV, AnimeAV1 Henaojara, TioAnime or AnimeJara. (I'm new to backend so I'm using it as a learning experience).
 
@@ -99,7 +99,7 @@ You can add some configuration before the call. Right now, the only available co
 > <p align="center"><img src="https://tioanime.com/assets/img/logo-dark.png" alt="Henaojara logo" width="256"/></p>
 > This application/addon uses TioAnime but is not endorsed, certified, or otherwise approved by TioAnime.
 >
-> <p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="256"/></p>
+> <p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="300"/></p>
 > This application/addon uses AnimeJara but is not endorsed, certified, or otherwise approved by AnimeJara.
 >
 > [The unofficial AnimeFLV API](https://animeflv.ahmedrangel.com/api)
