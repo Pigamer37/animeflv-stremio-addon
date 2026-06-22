@@ -117,7 +117,7 @@ exports.GetAnimeBySlug = async function (slug, type = "series") {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
       videos, poster: data.data.cover, /*background: ,*/ genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g, '\n').replaceAll(/\\"/g, '"'), website: data.data.url, id: `animejara:${slug}`,
       language: "jpn", links,
-      ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: data.data.startDate.getFullYear() + "-" },
+      ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: `${data.data.startDate.getFullYear()}${(data.data.status === "FINALIZADO") ? "" : "-"}` },
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `animejara:${slug}` } }
     }
@@ -157,6 +157,7 @@ async function GetEpisodeLinks(slug, season = undefined, epNumber = undefined) {
 
     const episodeLinks = {
       title: $("div.anime-info > h1").text() || $("div.episodio-detalle-header > h1.episodio-title").text(),
+      number: Number($("#content div.episodio-info > div.episodio-meta").text().match(/Episodio (\d+)/)?.[1]),
       servers: []
     }
 
@@ -175,7 +176,7 @@ async function GetEpisodeLinks(slug, season = undefined, epNumber = undefined) {
           if (idioma.find(".lang-name").text().includes("CAS")) espI = { url: new URL(e), dubLang: "esp" }
         }
       })
-    } catch(error) {
+    } catch (error) {
       return null
     }
 
@@ -207,18 +208,18 @@ async function GetEpisodeLinks(slug, season = undefined, epNumber = undefined) {
     let servers = [];
 
     const promises = [japI, latI, espI].map((e) => {
-      if(!e) return undefined
+      if (!e) return undefined
       async function lel(e1) {
         const $2 = cheerio.load(await serverData(e1.url));
         if ($2) {
           const lis = $2("#logo-list > li");
           lis.each((_, el) => {
             let match = $(el).attr('onclick')?.match(/playVideo\(&quot;(.*?)&quot/)?.[1]?.trim()
-            if(!match) match = $(el).attr('onclick')?.match(/playVideo\("(.*?)"/)?.[1]?.trim()
+            if (!match) match = $(el).attr('onclick')?.match(/playVideo\("(.*?)"/)?.[1]?.trim()
             const sURL = new URL(match);
             servers.push({
               title: streamParser.getServerTitle($(el).find('.nombre-server')?.text() || sURL.hostname),
-              code: sURL.toString().replace("https://nyuu.streamhj.top/player/e/v/go.php?v=",""),
+              code: sURL.toString().replace("https://nyuu.streamhj.top/player/e/v/go.php?v=", ""),
               dub: e1.dubLang !== 'jap',
               dubLang: e1.dubLang
             });
@@ -366,10 +367,10 @@ async function SearchAnimesBySpecificURL(animejaraURL) {
       else foundPages = Number(aTagValue);
 
       if (aRef.text() === "1" || foundPages == 1) previousPage = null;
-      else previousPage = animejaraURL.replace(/&paged=\d+/,"")+`&paged=${aRef.attr('data-page')}`;
+      else previousPage = animejaraURL.replace(/&paged=\d+/, "") + `&paged=${aRef.attr('data-page')}`;
 
       if (!selector.last().children("a").text().includes("Último") || foundPages == 1) nextPage = null;
-      else nextPage = animejaraURL.replace(/&paged=\d+/,"")+`&paged=${selector.last().find("a").attr('data-page')}`;
+      else nextPage = animejaraURL.replace(/&paged=\d+/, "") + `&paged=${selector.last().find("a").attr('data-page')}`;
 
       return { foundPages, nextPage, previousPage };
     }
@@ -384,7 +385,7 @@ async function SearchAnimesBySpecificURL(animejaraURL) {
           let dataAnime
           try {
             dataAnime = JSON.parse($(el).find("a.anime-card").attr('data-anime'))
-          } catch (error) {}
+          } catch (error) { }
           mediaVec.push({
             title: $(el).find("h3").text() || dataAnime?.titulo,
             cover: $(el).find("a > div > div.card-poster-wrapper > img").attr("src") || dataAnime?.poster,
