@@ -268,7 +268,7 @@ async function GetAnimeInfo(slug, type = "series") {
       rating: $("#rating-val").text(),
       type: ($("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.movie-meta-row > span").text() == "PELÍCULA") ? "movie" : "series",
       cover: $("#mainPosterImg").attr("src"),
-      synopsis: $("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.anime-sinopsis-contenedor > div").text(),
+      synopsis: $("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.anime-sinopsis-contenedor > div").text().trim(),
       genres: $("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.anime-categorias > span").map((_, el) => $(el).text().trim()).get(),
       //next_airing_episode: nextAiringInfo,
       episodes: [],
@@ -286,8 +286,8 @@ async function GetAnimeInfo(slug, type = "series") {
       }
     } else {
       const nextAiringFind = $("div.fechas-container > div.fechas-lista > div.proximo-item");
-      const nextAiringInfo = nextAiringFind?.first()?.find("span")?.text().replace("LATINO", "").replace("JAPONÉS", "").replace("CASTELLANO", "").trim();
-      animeInfo.next_airing_episode = new Date(nextAiringInfo);
+      const nextAiringInfo = new Date(nextAiringFind?.first()?.find("span")?.text().replace("LATINO", "").replace("JAPONÉS", "").replace("CASTELLANO", "").replace("Enero", "Jan").replace("Abril", "Apr").replace("Agosto", "Aug").replace("Diciembre", "Dec").trim());
+      animeInfo.next_airing_episode = (nextAiringInfo.toString() !== "Invalid Date") ? nextAiringInfo : undefined;//check valid date
 
       const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("TEMPORADAS_DATA"));
       const episodesArray = episodesFind?.match(/TEMPORADAS_DATA = (\[.*]);/)?.[1];
