@@ -35,7 +35,7 @@
       if(providers.some((e)=>e.checked)){config.append("onAirCatalogs",providers.filter(e=>e.checked).map(e=>e.id).join())}
       if(externalStreams.checked){config.append("externalStreams","true")}
       ta.innerText=`${window.location.origin}${(config.size>0)?"/"+config.toString():""}/manifest.json`
-      installLink.href=ta.innerText.replace('https://','stremio://')
+      installLink.href=ta.value.replace('https://','stremio://').replace('http://','stremio://')
       ta.style.minHeight=ta.scrollHeight+"px"
     }
     [externalStreams,...providers].forEach((e)=>e.addEventListener('input',()=>genManifLink()))
