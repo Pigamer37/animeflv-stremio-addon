@@ -98,11 +98,11 @@ function ReadManifest() {
           extra: [{ name: "search", isRequired: true },
             {
               name: "genre",
-              options: ["Accion", "Amor", "Artes+marciales", "Aventura", "Carreras", "Ciencia+ficcion", 
+              options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion", 
                 "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
                 "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
                 "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
-                "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio+ghibli", "Superpoderes",
+                "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
                 "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
               ],
                 optionsLimit: 1, isRequired: false
@@ -180,11 +180,11 @@ function ReadManifest() {
           extra: [
             {
               name: "genre",
-              options: ["Accion", "Amor", "Artes+marciales", "Aventura", "Carreras", "Ciencia+ficcion", 
+              options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion", 
                 "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
                 "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
                 "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
-                "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio+ghibli", "Superpoderes",
+                "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
                 "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
               ],
                 optionsLimit: 1, isRequired: true

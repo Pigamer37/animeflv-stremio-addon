@@ -50,8 +50,7 @@ exports.SearchAnimeJara = async function (query, type = undefined, genreArr = un
     type = (type === "movie") ? "tipo%3Dpelicula%26" : "tipo%3Dserie%26"
   }
   const animejaraURL = (url) ? url
-    : `${encodeURIComponent(ANIMEJARA_BASE)}%2Fcatalogo%3F${(query) ? "q%3D" + encodeURIComponent(query) + "%26" : ""}${(type) ? type : ""}${(genreArr) ? encodeURIComponent("tag%3D" + genreArr.join("%2C")) : ""}${(page) ? "%26paged%3D" + page : ""}`
-  console.log("Animejara Search URL:", animejaraURL)
+    : `${encodeURIComponent(ANIMEJARA_BASE)}%2Fcatalogo%3F${(query) ? "q%3D" + encodeURIComponent(query) + "%26" : ""}${(type) ? type : ""}${(genreArr) ? encodeURIComponent("tag=" + genreArr.join(",")).replaceAll("%20",'+') : ""}${(page) ? "%26paged%3D" + page : ""}`
   return SearchAnimesBySpecificURL(animejaraURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -336,6 +335,7 @@ async function GetAnimeInfo(slug, type = "series") {
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function SearchAnimesBySpecificURL(animejaraURL) {
   try {
+    console.log(decodeURIComponent(animejaraURL))
     const html = await fetch(decodeURIComponent(animejaraURL)).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
