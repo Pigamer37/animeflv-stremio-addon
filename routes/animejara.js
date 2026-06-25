@@ -101,9 +101,7 @@ exports.GetAnimeBySlug = async function (slug, type = "series") {
         available: false //next episode is not available yet
       })
     }
-    if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
-      videos[0].title = videos[0].title.replace(" Ep. 1", "")
-    }
+
     links = [{ name: "AnimeJara", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
     if (data.data.related) {//Add relation links if they exist
       links.push(
@@ -113,7 +111,7 @@ exports.GetAnimeBySlug = async function (slug, type = "series") {
       )
     }
     return {
-      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
+      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "movie" || data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
       videos, poster: data.data.cover, /*background: ,*/ genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g, '\n').replaceAll(/\\"/g, '"'), website: data.data.url, id: `animejara:${slug}`,
       language: "jpn", links,
       ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: `${data.data.startDate.getFullYear()}${(data.data.status === "FINALIZADO") ? "" : "-"}` },
@@ -163,12 +161,12 @@ async function GetEpisodeLinks(slug, season = undefined, epNumber = undefined) {
     const serversDIV = $("div.botones-idioma > div.boton-idioma"); //may be 1-3 (LATINO, JAPONÉS, CASTELLANO)
 
     let japI, latI, espI;
-    const episodesFind = $("script").map((_, el) => $(el).html()).get().find(script => script?.includes("const enlaces = "));
-    const enlacesArray = episodesFind?.match(/enlaces = (\[.*]);/)?.[1];
+    const episodesFind = $("script").map((_, el) => $(el).html()).get().find(script => script?.includes("const enlaces = ") || script?.includes("const movieLinks = "));
+    const enlacesArray = episodesFind?.match(/(?:enlaces|movieLinks) = (\[.*]);/)?.[1];
     try {
       const enlaces = JSON.parse(enlacesArray)
       enlaces.forEach((e, i) => {
-        const idioma = serversDIV.filter((_, el) => $(el).attr('onclick').includes(`cambiarIdioma(${i}`)).first()
+        const idioma = serversDIV.filter((_, el) => $(el).attr('onclick').includes(`cambiarIdioma(${i}`) || $(el).attr('onclick').includes(`cambiarIdiomaMovie(${i}`)).first()
         if (idioma) {
           if (idioma.find(".lang-name").text().includes("JAP")) japI = { url: new URL(e), dubLang: "jap" }
           if (idioma.find(".lang-name").text().includes("LAT")) latI = { url: new URL(e), dubLang: "lat" }
@@ -262,7 +260,7 @@ async function GetAnimeInfo(slug, type = "series") {
     const animeInfo = {
       title: $("div.anime-info > h1").text(),
       //alternative_titles: $("#l > div.info > div.info-b > h3").text().split(",") || [],
-      status: $("#posterContainer > div").text(),
+      status: $("#posterContainer > div").text().trim(),
       startDate: new Date($("div.stat-item > span").first().text()),
       rating: $("#rating-val").text(),
       type: ($("#content > div > div.main-content > div > div.anime-detalle-contenedor > div > div.anime-info > div.movie-meta-row > span").text() == "PELÍCULA") ? "movie" : "series",
@@ -274,16 +272,7 @@ async function GetAnimeInfo(slug, type = "series") {
       url
     };
 
-    if (type === "movie") {
-      if (animeInfo.episodes instanceof Array) {
-        animeInfo.episodes.push({
-          number: 1,
-          slug: slug,
-          url: ANIMEAV1_BASE + "/movie/" + slug,
-          poster: animeInfo.cover
-        });
-      }
-    } else {
+    if (type !== "movie") { //only populate eps if series
       const nextAiringFind = $("div.fechas-container > div.fechas-lista > div.proximo-item");
       const nextAiringInfo = new Date(nextAiringFind?.first()?.find("span")?.text().replace("LATINO", "").replace("JAPONÉS", "").replace("CASTELLANO", "").replace("Enero", "Jan").replace("Abril", "Apr").replace("Agosto", "Aug").replace("Diciembre", "Dec").trim());
       animeInfo.next_airing_episode = (nextAiringInfo.toString() !== "Invalid Date") ? nextAiringInfo : undefined;//check valid date
@@ -314,7 +303,7 @@ async function GetAnimeInfo(slug, type = "series") {
 
       temporadasData?.forEach((s, si) => {
         s.episodios?.forEach((e, ei) => {
-          const sn = s.numero_temporada || si + 1, en = e.numero_episodio || ei + 1;
+          const sn = Number(s.numero_temporada) || si + 1, en = Number(e.numero_episodio) || ei + 1;
           animeInfo.episodes.push({
             season: sn,
             number: en,
@@ -335,9 +324,8 @@ async function GetAnimeInfo(slug, type = "series") {
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function SearchAnimesBySpecificURL(animejaraURL) {
   try {
-    console.log(decodeURIComponent(animejaraURL))
     const html = await fetch(decodeURIComponent(animejaraURL)).then((resp) => {
-      if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+      //if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`) //returns 404 but doesn't fail
       if (resp === undefined) throw Error(`Undefined response!`)
       return resp.text()
     })
@@ -367,10 +355,10 @@ async function SearchAnimesBySpecificURL(animejaraURL) {
       else foundPages = Number(aTagValue);
 
       if (aRef.text() === "1" || foundPages == 1) previousPage = null;
-      else previousPage = animejaraURL.replace(/&paged=\d+/, "") + `&paged=${aRef.attr('data-page')}`;
+      else previousPage = animejaraURL.replace(/%26paged%3D\d+/, "") + `%26paged%3D${aRef.attr('data-page')}`;
 
       if (!selector.last().children("a").text().includes("Último") || foundPages == 1) nextPage = null;
-      else nextPage = animejaraURL.replace(/&paged=\d+/, "") + `&paged=${selector.last().find("a").attr('data-page')}`;
+      else nextPage = animejaraURL.replace(/%26paged%3D\d+/, "") + `%26paged%3D${selector.last().find("a").attr('data-page')}`;
 
       return { foundPages, nextPage, previousPage };
     }
@@ -407,7 +395,7 @@ async function SearchAnimesBySpecificURL(animejaraURL) {
     search.foundPages = foundPages;
     search.nextPage = nextPage;
     search.previousPage = previousPage;
-    const getPage = (url) => new URL(url).searchParams.get("page")
+    const getPage = (url) => new URL(decodeURIComponent(url)).searchParams.get("paged")
     const pageFromQuery = nextPage ? Number(getPage(nextPage)) : previousPage ? Number(getPage(previousPage)) : null;
     const isNextPage = nextPage && pageFromQuery;
     const isPreviousPage = previousPage && pageFromQuery;
