@@ -418,7 +418,7 @@ async function SearchAnimesBySpecificURL(animeAV1URL) {
 }
 
 async function GetOnAir() {
-  return SearchAnimesBySpecificURL("https://animeav1.com/catalogo?status=emision").then((data) => {
+  return SearchAnimesBySpecificURL(`${ANIMEAV1_BASE}/catalogo?status=emision`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
     return data.media.map((anime) => {
       return {

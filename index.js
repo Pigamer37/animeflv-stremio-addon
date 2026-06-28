@@ -244,6 +244,7 @@ function ReadManifest() {
         "henaojara:",
         "tioanime:",
         "animejara:",
+        "jkanime:",
         "tmdb:",
         "anilist:",
         "kitsu:",
