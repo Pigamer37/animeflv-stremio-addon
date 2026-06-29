@@ -135,17 +135,17 @@ exports.GetItemStreams = async function (slug, onlyInternal = true, epNumber = 1
   })
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
-async function GetEpisodeLinks(slug, epNumber = 1) {
+async function GetEpisodeLinks(slug, epNumber = undefined) {
   try {
     const episodeData = async () => {
       if (slug && !epNumber)
-        return await fetch(JKANIME_BASE + "/ver/" + slug).then((resp) => {
+        return await fetch(`${JKANIME_BASE}/${slug}/pelicula`).then((resp) => {
           if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
           if (resp === undefined) throw Error(`Undefined response!`)
           return resp.text()
         }).catch(() => null);
       else if (slug && epNumber)
-        return await fetch(JKANIME_BASE + "/ver/" + slug + "-" + epNumber).then((resp) => {
+        return await fetch(`${JKANIME_BASE}/${slug}/${epNumber}`).then((resp) => {
           if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
           if (resp === undefined) throw Error(`Undefined response!`)
           return resp.text()
