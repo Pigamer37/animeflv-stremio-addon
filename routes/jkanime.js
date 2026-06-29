@@ -65,13 +65,12 @@ exports.SearchJKAnime = async function (query, type = undefined, genreArr = unde
     })
   })
 }
-//TODO
+
 exports.GetAnimeBySlug = async function (slug) {
   return GetAnimeInfo(slug).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
-  })
-  /*})*/.then((data) => {
+  }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
     const epCount = data.data.episodes.length
@@ -115,16 +114,17 @@ exports.GetAnimeBySlug = async function (slug) {
     }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type !== "Pelicula") ? "series" : "movie",
-      videos, poster: data.data.cover, background: videos[0].thumbnail, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `jkanime:${slug}`,
+      videos, poster: data.data.cover, background: videos[0]?.thumbnail, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `jkanime:${slug}`,
       language: "jpn", links,
+      ...(data.data.runtime) && { runtime: data.data.runtime },
       ...(data.data.released) && { released: data.data.released, releaseInfo: `${data.data.released.getFullYear()}${(data.data.status === "Concluido") ? "" : "-"}` },
-      ...(data.data.trailers) && { trailers: [ {source: data.data.trailers, type: "Trailer"} ] },
+      ...(data.data.trailer) && { trailers: [{ source: data.data.trailer, type: "Trailer" }] },
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `jkanime:${slug}:1` } }
     }
   })
 }
-//TODO
+
 exports.GetItemStreams = async function (slug, onlyInternal = true, epNumber = 1) {
   //if we don't get an episode number, use 1, that's how jkanime works
   return GetEpisodeLinks(slug, epNumber).then((data) => {
@@ -196,7 +196,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     throw e
   }
 }
-//Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
+
 async function GetAnimeInfo(slug) {
   try {
     const url = `${JKANIME_BASE}/${slug}`;
@@ -215,64 +215,92 @@ async function GetAnimeInfo(slug) {
     const animeInfo = {
       title: $("div.anime__details__content div.anime_info > h3").text(),
       alternative_titles: [],
-      status: $("div.anime__details__content ul > li > div.enemision").text(),
+      status: $("div.anime__details__content ul > li > div.enemision").first().text(),
       //rating: $("#score").text(),
       type: $("div.anime__details__content ul > li[rel=tipo]").first().text().replace("Tipo:", "").trim(),
       cover: $("div.anime__details__content div.anime_pic > img").attr("src") || `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`,
       synopsis: $("div.anime__details__content div.anime_info > p.scroll").text(),
-      genres: metadataLis.filter((_, el) => el.text()?.includes("Generos:")).first().find('a')
+      genres: metadataLis.filter((_, el) => $(el).text()?.includes("Generos:")).first().find('a')
         .map((_, el) => $(el).text().trim())
         .get(),
       next_airing_episode: nextAiringInfo ? nextAiringInfo + ' ' + new Date().getFullYear() : undefined,
       episodes: [],
       url,
-      runtime: metadataLis.filter((_,el)=>el.text().includes("Duracion:"))?.first()?.text(),
-      released: new Date(metadataLis.filter((_,el)=>el.text().includes("Emitido"))?.first()?.text()?.replace("Emitido:","")?.replaceAll(" de","")?.trim())
+      runtime: metadataLis.filter((_, el) => $(el).text().includes("Duracion:"))?.first()?.text()?.replace("Duracion:","")?.trim(),
+      released: new Date(metadataLis.filter((_, el) => $(el).text().includes("Emitido"))?.first()?.text()?.replace("Emitido:", "")?.replaceAll(" de", "")?.trim())
     };
 
-    $("#episodes-content > div.epcontent").map((i, el) => {
-      if (animeInfo.episodes instanceof Array) {
-        animeInfo.episodes.push({
-          number: Number(el.attr('data-number')) || i + 1,
-          slug: `${slug}/${el.attr('data-number') || i + 1}`,
-          url: JKANIME_BASE + `${slug}/${el.attr('data-number') || i + 1}`,
-          thumbnail: el.filter("div.anime__item__pic")?.first()?.prop("style")?.backgroundImage
-        });
-      }
+    const epArray = await fetch(`${JKANIME_BASE}/ajax/episodes/${$("#guardar-anime").first().attr('data-anime')}/1`, {
+      "headers": {
+        "accept": "application/json, text/javascript, */*; q=0.01",
+        "accept-language": "en,en-US;q=0.9,es-ES;q=0.8,es;q=0.7,fr;q=0.6,no;q=0.5",
+        "cache-control": "no-cache",
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "pragma": "no-cache",
+        "priority": "u=1, i",
+        "sec-ch-ua": "\"Chromium\";v=\"148\", \"Opera\";v=\"132\", \"Not/A)Brand\";v=\"99\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Linux\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "Referer": `${JKANIME_BASE}/${slug}/`
+      },
+      "body": `_token=${$("meta[name=csrf-token]")?.attr('content')}`,
+      "method": "POST"
+    }).then((resp) => {
+      if ((!resp.ok) || resp.status !== 200) return {}
+      if (resp === undefined) return {}
+      return resp.json()
     })
 
-    // $("div.anime__details__content div.anime_info > span").each((i, el) => {
-    //   animeInfo.alternative_titles.push($(el).text());
-    // });
+    if (animeInfo.episodes instanceof Array && epArray) {
+      for (let i = 1; i <= epArray.total; i++) {
+        animeInfo.episodes.push({
+          number: i,
+          slug: `${slug}/${i}`,
+          url: JKANIME_BASE + `${slug}/${i}`,
+          thumbnail: `https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/${epArray.data[i - 1]?.image}`
+        })
+      }
+    }
 
-    const ytID = $("div.temporadas_tab.animetab div.anime_trailer > div.mb-2.animeTrailer")?.attr('data-yt')
+    // $("#c").children().each((_, el) => {
+    //   if ($(el).tagName !== 'b') animeInfo.alternative_titles.push($(el).text());
+    // })
+
+    const ytID = $(".animeTrailer")?.attr('data-yt')
     if (ytID) animeInfo.trailer = `https://www.youtube.com/watch?v=${ytID}`
 
     // Relacionados
-    const relatedParent = $("div.temporadas_tab.animetab > div > div.col.col-lg-6 > h3")?.filter((_,el)=>el.text().includes("relacionados"))?.first().parent()
-    const relatedCategories = relatedParent.filter("h5")
+    const relatedParent = $("div.temporadas_tab.animetab > div > div.col.col-lg-6 > h3")?.first().parent()
+    const relatedCategories = $(relatedParent).find("h5")
     const relatedAnimes = [];
     relatedCategories.each((_, cat) => {
-      const relation = cat.text()
-      let thsNode = cat;
-      do {
-        const nextSib = thsNode.nextSibling()
-        if(nextSib.tagName === 'a') {
-          relatedAnimes.push({
-            title: nextSib.text().trim(),
-            relation,
-            slug: nextSib.attr("href")?.match(/\/([^/]+)(?:\/)?$/)?.[1],
-            url: nextSib.attr("href")
-          });
-        }
-        thsNode = nextSib
-      } while (nextSib.tagName!=='h5');
+      const relation = $(cat).text().trim();
+
+      $(cat).nextUntil("h5").filter("a").each((_, link) => {
+        const $link = $(link);
+        relatedAnimes.push({
+          title: $link.text().trim(),
+          relation,
+          slug: $link.attr("href")?.match(/\/([^/]+)(?:\/)?$/)?.[1],
+          url: $link.attr("href")
+        });
+      });
     });
 
+    $("#relacionados div.anime__item > a").each((_,el)=>{
+      relatedAnimes.push({
+        title: $(el).attr('title'),
+        relation: "TE RECOMENDAMOS",
+        slug: $(el).attr("href")?.match(/\/([^/]+)(?:\/)?$/)?.[1],
+        url: $(el).attr("href")
+      });
+    })
+
     // Asigna la propiedad si hay elementos
-    if (relatedAnimes.length > 0) {
-      animeInfo.related = relatedAnimes;
-    }
+    if (relatedAnimes.length > 0) animeInfo.related = relatedAnimes;
 
     return animeInfo;
   } catch (error) {
@@ -360,7 +388,7 @@ async function SearchAnimesBySpecificURL(jkanimeURL) {
     throw error
   }
 }
-//Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
+
 async function GetOnAir() {
   return SearchAnimesBySpecificURL(`${JKANIME_BASE}/directorio?estado=emision`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
