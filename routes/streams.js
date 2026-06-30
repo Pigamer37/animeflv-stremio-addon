@@ -157,7 +157,7 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot AnimeJara entry:\x1b[39m', result.title)
         return animejaraAPI.GetItemStreams(result.slug, onlyInternal, season, episode)
       })
-      const jkanimep = jkanimeAPI.SearchJKAnime(searchTerm, req.params.type).then((animeFLVitem) => {
+      const jkanimep = jkanimeAPI.SearchJKAnime(searchTerm).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem[0];
         console.log('\x1b[36mGot JKAnime entry:\x1b[39m', result.title)
         return jkanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)

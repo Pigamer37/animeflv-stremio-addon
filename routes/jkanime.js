@@ -45,16 +45,20 @@ exports.UpdateAiringAnimeFile = function () {
 //TODO
 exports.SearchJKAnime = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchJKAnime()")
-  if (type) {
-    type = (type === "movie") ? "type%5B%5D%3D1%26" : "type%5B%5D%3D0%26type%5B%5D%3D2%26type%5B%5D%3D3%26"
+  let jkanimeURL
+  if (url) jkanimeURL = url
+  else if (query) jkanimeURL = `${JKANIME_BASE}/buscar/${query}`
+  else {
+    jkanimeURL = new URL(`${JKANIME_BASE}/directorio`)
+    if (genreArr) jkanimeURL.searchParams.set('genero', genreArr[0])
+    if (type === 'movie') jkanimeURL.searchParams.set('tipo', 'peliculas')
+    if (page) jkanimeURL.searchParams.set('p', page)
   }
-  const jkanimeURL = (url) ? url //this search requires the year, sorting order and status (only one of them) to be added, otherwise it returns empty
-    : `${JKANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(query) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genre%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C2026&status=2&sort=recent`
+  console.log(jkanimeURL)
   return SearchAnimesBySpecificURL(jkanimeURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
-  })
-  /*})*/.then((data) => {
+  }).then((data) => {
     if (data?.data?.media === undefined) throw Error("Invalid response!")
     if (data.data.media.length < 1) throw Error("No search results!")
     return data.data.media.slice(gottenItems).map((anime) => {
@@ -226,8 +230,8 @@ async function GetAnimeInfo(slug) {
       next_airing_episode: nextAiringInfo ? nextAiringInfo + ' ' + new Date().getFullYear() : undefined,
       episodes: [],
       url,
-      runtime: metadataLis.filter((_, el) => $(el).text().includes("Duracion:"))?.first()?.text()?.replace("Duracion:","")?.trim(),
-      released: new Date(metadataLis.filter((_, el) => $(el).text().includes("Emitido"))?.first()?.text()?.replace("Emitido:", "")?.replaceAll(" de", "")?.trim())
+      runtime: metadataLis.filter((_, el) => $(el).text().includes("Duracion:"))?.first()?.text()?.replace("Duracion:", "")?.trim().slice(0, -1),
+      released: new Date(metadataLis.filter((_, el) => $(el).text().includes("Emitido"))?.first()?.text()?.replace("Emitido:", "")?.replaceAll(" de", "")?.replace("Enero", "Jan")?.replace("Abril", "Apr")?.replace("Agosto", "Aug")?.replace("Diciembre", "Dec")?.trim())
     };
 
     const epArray = await fetch(`${JKANIME_BASE}/ajax/episodes/${$("#guardar-anime").first().attr('data-anime')}/1`, {
@@ -290,7 +294,7 @@ async function GetAnimeInfo(slug) {
       });
     });
 
-    $("#relacionados div.anime__item > a").each((_,el)=>{
+    $("#relacionados div.anime__item > a").each((_, el) => {
       relatedAnimes.push({
         title: $(el).attr('title'),
         relation: "TE RECOMENDAMOS",
@@ -308,7 +312,7 @@ async function GetAnimeInfo(slug) {
     throw error
   }
 }
-//Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
+
 async function SearchAnimesBySpecificURL(jkanimeURL) {
   try {
     const html = await fetch(decodeURIComponent(jkanimeURL)).then((resp) => {
@@ -326,52 +330,62 @@ async function SearchAnimesBySpecificURL(jkanimeURL) {
       foundPages: 0,
       media: []
     };
+    let foundPages = 1, nextPage = null, previousPage = null
+    if (jkanimeURL.includes('buscar')) {
+      const animes = $("div.page_directorio div.anime__item")
 
-    const pageSelector = $("#jkanime > div > div.row.justify-content-between.filters-cont > main > nav > ul > li");
-    const getNextAndPrevPages = (selector) => {
-      const aTagValue = selector.last().prev().find("a").text();
-      const aRef = selector.eq(0).children("a").attr("href");
-
-      let foundPages = 0;
-      let previousPage = "";
-      let nextPage = "";
-
-      if (Number(aTagValue) === 0) foundPages = 1;
-      else foundPages = Number(aTagValue);
-
-      if (aRef === "#" || foundPages == 1) previousPage = null;
-      else previousPage = JKANIME_BASE + aRef;
-
-      if (selector.last().children("a").attr("href") === "#" || foundPages == 1) nextPage = null;
-      else nextPage = JKANIME_BASE + selector.last().children("a").attr("href");
-
-      return { foundPages, nextPage, previousPage };
-    }
-    const { foundPages, nextPage, previousPage } = getNextAndPrevPages(pageSelector)
-    const scrapSearchAnimeData = ($) => {
-      const selectedElement = $("main > ul > li");
-
-      if (selectedElement.length > 0) {
-        const mediaVec = [];
-
-        selectedElement.each((_, el) => {
-          mediaVec.push({
-            title: $(el).find("h3").text(),
-            cover: `${JKANIME_BASE}${$(el).find("img").attr("src")}`,
-            //synopsis: $(el).find("div.Description > p").eq(1).text(),
-            //rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
-            slug: $(el).find("a").attr("href").replace("/anime/", ""),
-            //type: $(el).find("a > div > span.Type").text(),
-            url: JKANIME_BASE + ($(el).find("a").attr("href"))
-          });
+      const mediaVec = [];
+      animes.each((_, el) => {
+        mediaVec.push({
+          title: $(el).find('h5').first().text(),
+          cover: $(el).find('.anime__item__pic').first().attr('data-setbg') || `https://cdn.jkdesa.com/assets/images/animes/image/${$(el).find("a").first().attr("href")?.match(/\/([^/]+)(?:\/)?$/)?.[1]}.jpg`,
+          //synopsis: el.synopsis,
+          //rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
+          slug: $(el).find("a").first().attr("href")?.match(/\/([^/]+)(?:\/)?$/)?.[1],
+          type: $(el).find('div.anime__item__text > ul > li.anime').text(),
+          url: $(el).find("a").first().attr("href")
         });
-        return mediaVec
+      });
+
+      search.media.push(...mediaVec);
+    } else {
+      const scripts = $("script");
+      const animesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var animes ="));
+      const animesObj = animesFind?.match(/var animes = ({.*});/)?.[1];
+      const animes = JSON.parse(animesObj);
+      const getNextAndPrevPages = (animes) => {
+        let foundPages = animes.last_page || 1;
+        let previousPage = animes.prev_page_url;
+        let nextPage = animes.next_page_url;
+
+        return { foundPages, nextPage, previousPage };
       }
-      else {
-        return [];
+      ({ foundPages, nextPage, previousPage } = getNextAndPrevPages(animes))
+      const scrapSearchAnimeData = (animes) => {
+        const selectedElement = animes.data;
+        if (selectedElement.length > 0) {
+          const mediaVec = [];
+
+          selectedElement.forEach(el => {
+            mediaVec.push({
+              title: el.title,
+              cover: el.image || `https://cdn.jkdesa.com/assets/images/animes/image/${el.slug}.jpg`,
+              synopsis: el.synopsis,
+              //rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
+              slug: el.slug,
+              type: el.tipo,
+              url: el.url || `${JKANIME_BASE}/${el.slug}/`
+            });
+          });
+          return mediaVec
+        }
+        else {
+          return [];
+        }
       }
+      search.media.push(...scrapSearchAnimeData(animes));
     }
-    search.media.push(...scrapSearchAnimeData($));
+
     search.foundPages = foundPages;
     search.nextPage = nextPage;
     search.previousPage = previousPage;
