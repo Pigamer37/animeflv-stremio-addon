@@ -1,7 +1,7 @@
 # [AnimeFLV, AnimeAV1, Henaojara, TioAnime , AnimeJara & JKAnime Stremio addon](https://pigamer37.alwaysdata.net/manifest.json)
 <p align="center"><img src="https://www3.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV logo" width="256"/></p>
 <p align="center"><img src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1 logo" width="256"/></p>
-<p align="center"><img src="https://www.henaojara.com/wp-content/uploads/2021/04/INICIO_new.png" alt="Henaojara logo" width="300"/></p>
+<p align="center"><img src="https://i.imgur.com/cE0mosE.png" alt="Henaojara logo" width="256"/></p>
 <p align="center"><img src="https://tioanime.com/assets/img/logo-dark.png" alt="Henaojara logo" width="256"/></p>
 <p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="300"/></p>
 <p align="center"><img src="https://cdn.jkdesa.com/assets3/css/img/jkanimenet-dark.png?v=2.0.184" alt="JKAnime logo" width="256"/></p>
@@ -95,7 +95,7 @@ You can add some configuration before the call. Right now, the only available co
 > <p align="center"><img src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1 logo" width="256"/></p>
 > This application/addon uses AnimeAV1 but is not endorsed, certified, or otherwise approved by AnimeAV1.
 >
-> <p align="center"><img src="https://www.henaojara.com/wp-content/uploads/2021/04/INICIO_new.png" alt="Henaojara logo" width="300"/></p>
+> <p align="center"><img src="https://i.imgur.com/cE0mosE.png" alt="Henaojara logo" width="256"/></p>
 > This application/addon uses Henaojara but is not endorsed, certified, or otherwise approved by Henaojara.
 >
 > <p align="center"><img src="https://tioanime.com/assets/img/logo-dark.png" alt="Henaojara logo" width="256"/></p>
