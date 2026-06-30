@@ -158,22 +158,22 @@ async function GetEpisodeLinks(slug, epNumber = undefined) {
     const $ = cheerio.load(await episodeData());
 
     const episodeLinks = {
-      title: $("#jkanime > div > div > aside > h1").text().replace(/\d+$/, "").trim(), //remove ep. number if present
-      number: epNumber || $("#jkanime > div > div > aside > h1").text().match(/\d+$/)?.[0],
+      title: $("div.video_i > a").text().trim(), //remove ep. number if present
+      number: epNumber,// || $("#jkanime > div > div > aside > h1").text().match(/\d+$/)?.[0],
       servers: []
     }
 
     const scripts = $("script");
-    const serversFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var videos ="));
-    const serversObj = serversFind?.match(/var videos = (\[\[.*]])/)?.[1];
+    const serversFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var servers ="));
+    const serversObj = serversFind?.match(/var servers = (\[.*]);/)?.[1];
     if (serversObj) {
       const servers = JSON.parse(serversObj);
       for (const s of servers) {
         episodeLinks.servers.push({
-          name: s?.[0],
+          name: streamParser.getServerTitle(s?.server),
           //download: s?.[1]?.replace("mega.nz/#!", "mega.nz/file/"),
-          embed: s?.[1]?.replace("mega.nz/embed#!", "mega.nz/embed/"),
-          dub: false
+          embed: atob(s?.remote)?.replace("mega.nz/embed#!", "mega.nz/embed/").trim(),
+          dub: s?.lang !== 1
         });
       }
     }
