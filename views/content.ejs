@@ -6,9 +6,10 @@
     <div style="display:flex;gap:1em;padding-block-start:1em;flex-wrap:wrap;justify-content:space-evenly">
       <label style="display:block"><img style="height:1.8cap" src="https://www4.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV"><input style="vertical-align:top" type="checkbox" id="animeflv"<%= (config?.get("onAirCatalogs").includes("animeflv"))?` checked="true"`:"" %>></label>
       <label style="display:block"><img style="height:1.2em" src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1"> <input style="vertical-align:top" type="checkbox" id="animeav1"<%= (config?.get("onAirCatalogs").includes("animeav1"))?` checked="true"`:"" %>></label>
-      <label style="display:block"><img style="height:1em" src="https://www.henaojara.com/wp-content/uploads/2021/04/INICIO_new.png" alt="Henaojara"> <input style="vertical-align:top" type="checkbox" id="henaojara"<%= (config?.get("onAirCatalogs").includes("henaojara"))?` checked="true"`:"" %>></label>
+      <label style="display:block"><img style="height:1.2em" src="https://i.imgur.com/cE0mosE.png" alt="Henaojara"> <input style="vertical-align:top" type="checkbox" id="henaojara"<%= (config?.get("onAirCatalogs").includes("henaojara"))?` checked="true"`:"" %>></label>
       <label style="display:block"><img style="height:1.4em" src="https://tioanime.com/assets/img/logo-dark.png" alt="TioAnime"> <input style="vertical-align:top" type="checkbox" id="tioanime"<%= (config?.get("onAirCatalogs").includes("tioanime"))?` checked="true"`:"" %>></label>
-      <label style="display:block"><img style="height:1.4em" src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara"> <input style="vertical-align:top" type="checkbox" id="animejara"<%= (config?.get("onAirCatalogs").includes("animejara"))?` checked="true"`:"" %>></label>
+      <label style="display:block"><img style="height:1.3em;margin-inline-start:-.6em" src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara"> <input style="vertical-align:top" type="checkbox" id="animejara"<%= (config?.get("onAirCatalogs").includes("animejara"))?` checked="true"`:"" %>></label>
+      <label style="display:block"><img style="height:1.1em" src="https://cdn.jkdesa.com/assets3/css/img/jkanimenet-dark.png?v=2.0.184" alt="JKAnime"> <input style="vertical-align:top" type="checkbox" id="jkanime"<%= (config?.get("onAirCatalogs").includes("jkanime"))?` checked="true"`:"" %>></label>
     </div>
     </label>
     <label class="full-width label-to-top" style="display:block" for="manifest_url">Your manifest URL:</label>
@@ -27,8 +28,8 @@
     <button tabindex="-1" class="full-width">Open In Stremio</button>
   </a>
   <script>const ta=document.getElementById('manifest_url');const externalStreams=document.getElementById('externalStreams')
-    const animeflv=document.getElementById('animeflv');const animeav1=document.getElementById('animeav1');const henaojara=document.getElementById('henaojara');const tioanime=document.getElementById('tioanime');const animejara=document.getElementById('animejara');
-    const providers=[animeflv,animeav1,henaojara,tioanime,animejara]
+    const animeflv=document.getElementById('animeflv');const animeav1=document.getElementById('animeav1');const henaojara=document.getElementById('henaojara');const tioanime=document.getElementById('tioanime');const animejara=document.getElementById('animejara');const jkanime=document.getElementById('jkanime');
+    const providers=[animeflv,animeav1,henaojara,tioanime,animejara,jkanime]
     const installLink=document.getElementById('installLink')
     function genManifLink(){
       let config=new URLSearchParams();

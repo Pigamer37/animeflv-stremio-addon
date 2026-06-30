@@ -23,7 +23,7 @@ function ReadManifest() {
     let manifest = {
       "id": 'com.' + packageJSON.name.replaceAll('-', '.'),
       "version": packageJSON.version,
-      "name": "TioAnimeFLVAV1Jara",
+      "name": "JKTioAnimeFLVAV1Jara",
       "logo": "https://play-lh.googleusercontent.com/ZIjIwO5FJe9R1rplSd4uz54OwBxQhwDcznjljSPl2MgHaCoyF3qG6R4kRMCB40f4l2A=w256",
       "background": "https://images6.alphacoders.com/113/1135890.jpg",
       "description": packageJSON.description,
@@ -80,34 +80,49 @@ function ReadManifest() {
         {
           id: "tioanime", type: "TioAnime", name: "search results",
           extra: [{ name: "search", isRequired: true },
-            {
-              name: "genre",
-              options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
-                "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
-                "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
-                "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
-                "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
-                "yaoi", "yuri"],
-                optionsLimit: 1, isRequired: false
-            },
-            { name: "skip", isRequired: false }
+          {
+            name: "genre",
+            options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
+              "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
+              "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
+              "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
+              "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
+              "yaoi", "yuri"],
+            optionsLimit: 1, isRequired: false
+          },
+          { name: "skip", isRequired: false }
           ]
         },
         {
           id: "animejara", type: "AnimeJara", name: "search results",
           extra: [{ name: "search", isRequired: true },
-            {
-              name: "genre",
-              options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion", 
-                "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
-                "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
-                "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
-                "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
-                "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
-              ],
-                optionsLimit: 1, isRequired: false
-            },
-            { name: "skip", isRequired: false }
+          {
+            name: "genre",
+            options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion",
+              "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
+              "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
+              "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
+              "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
+              "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
+            ],
+            optionsLimit: 1, isRequired: false
+          },
+          { name: "skip", isRequired: false }
+          ]
+        },
+        {
+          id: "jkanime", type: "JKAnime", name: "search results",
+          extra: [{ name: "search", isRequired: true },
+          {
+            name: "genre",
+            options: ["accion", "aventura", "autos", "comedia", "dementia", "demonios", "misterio", "drama",
+              "ecchi", "fantasia", "juegos", "hentai", "historico", "terror", "nios", "magia", "artes-marciales",
+              "mecha", "musica", "parodia", "samurai", "romance", "colegial", "sci-fi", "shoujo", "shoujo-ai",
+              "shounen", "shounen-ai", "space", "deportes", "super-poderes", "vampiros", "yaoi", "yuri", "harem",
+              "cosas-de-la-vida", "sobrenatural", "militar", "policial", "psicologico", "thriller", "seinen", "josei", "latino", "isekai"],
+            optionsLimit: 1, isRequired: false
+          },
+          { name: "skip", isRequired: false }
           ]
         },
         {
@@ -148,12 +163,12 @@ function ReadManifest() {
             {
               name: "genre",
               options: ["accion", "aenime", "anime-latino", "artes-marciales", "aventura", "aventuras", "blu-ray",
-              "carreras", "castellano", "ciencia-ficcion", "comedia", "comida", "cyberpunk", "demencia", "dementia",
-              "demonios", "deportes", "drama", "ecchi", "escolares", "escuela", "espacial", "fantasia", "gore",
-              "harem", "historia-paralela", "historico", "horror", "infantil", "josei", "juegos", "latino", "lucha",
-              "magia", "mecha", "militar", "misterio", "monogatari", "musica", "parodia", "parodias", "policia",
-              "psicologico", "recuentos-de-la-vida", "recuerdos-de-la-vida", "romance", "samurai", "seinen", "shojo",
-              "shonen", "shoujo", "shounen", "shounen-ai", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros", "yaoi", "yuri"],
+                "carreras", "castellano", "ciencia-ficcion", "comedia", "comida", "cyberpunk", "demencia", "dementia",
+                "demonios", "deportes", "drama", "ecchi", "escolares", "escuela", "espacial", "fantasia", "gore",
+                "harem", "historia-paralela", "historico", "horror", "infantil", "josei", "juegos", "latino", "lucha",
+                "magia", "mecha", "militar", "misterio", "monogatari", "musica", "parodia", "parodias", "policia",
+                "psicologico", "recuentos-de-la-vida", "recuerdos-de-la-vida", "romance", "samurai", "seinen", "shojo",
+                "shonen", "shoujo", "shounen", "shounen-ai", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros", "yaoi", "yuri"],
               optionsLimit: 1, isRequired: true
             },
             { name: "skip", isRequired: false }
@@ -170,7 +185,7 @@ function ReadManifest() {
                 "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
                 "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
                 "yaoi", "yuri"],
-                optionsLimit: 1, isRequired: true
+              optionsLimit: 1, isRequired: true
             },
             { name: "skip", isRequired: false }
           ]
@@ -180,14 +195,29 @@ function ReadManifest() {
           extra: [
             {
               name: "genre",
-              options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion", 
+              options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion",
                 "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
                 "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
                 "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
                 "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
                 "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
               ],
-                optionsLimit: 1, isRequired: true
+              optionsLimit: 1, isRequired: true
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
+          id: "jkanime|genres", type: "JKAnime", name: "JKAnime",
+          extra: [
+            {
+              name: "genre",
+              options: ["accion", "aventura", "autos", "comedia", "dementia", "demonios", "misterio", "drama",
+                "ecchi", "fantasia", "juegos", "hentai", "historico", "terror", "nios", "magia", "artes-marciales",
+                "mecha", "musica", "parodia", "samurai", "romance", "colegial", "sci-fi", "shoujo", "shoujo-ai",
+                "shounen", "shounen-ai", "space", "deportes", "super-poderes", "vampiros", "yaoi", "yuri", "harem",
+                "cosas-de-la-vida", "sobrenatural", "militar", "policial", "psicologico", "thriller", "seinen", "josei", "latino", "isekai"],
+              optionsLimit: 1, isRequired: true
             },
             { name: "skip", isRequired: false }
           ]
@@ -206,6 +236,9 @@ function ReadManifest() {
         },
         {
           id: "animejara|onair", type: "AnimeJara", name: "On Air"
+        },
+        {
+          id: "jkanime|onair", type: "JKAnime", name: "On Air"
         },
         {
           type: "series",
@@ -244,6 +277,7 @@ function ReadManifest() {
         "henaojara:",
         "tioanime:",
         "animejara:",
+        "jkanime:",
         "tmdb:",
         "anilist:",
         "kitsu:",
@@ -265,8 +299,8 @@ function ReadManifest() {
 
 app.get("/manifest.json", (_req, res) => {
   ReadManifest().then((manif) => {
-    manif.catalogs=manif.catalogs.filter((cat)=>{
-      return (!cat.id.includes("onair"))?true:false
+    manif.catalogs = manif.catalogs.filter((cat) => {
+      return (!cat.id.includes("onair")) ? true : false
     })
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
@@ -277,11 +311,11 @@ app.get("/manifest.json", (_req, res) => {
 
 app.get("/:config/manifest.json", (req, res) => {
   ReadManifest().then((manif) => {
-    const config=new URLSearchParams(decodeURIComponent(req.params.config))
-    let providers=config?.get("onAirCatalogs")?.split(',')
-    manif.catalogs=manif.catalogs.filter((cat)=>{
-      if(!cat.id.includes("onair"))return true
-      else return providers.some((prov)=>cat.id.startsWith(prov))
+    const config = new URLSearchParams(decodeURIComponent(req.params.config))
+    let providers = config?.get("onAirCatalogs")?.split(',')
+    manif.catalogs = manif.catalogs.filter((cat) => {
+      if (!cat.id.includes("onair")) return true
+      else return providers.some((prov) => cat.id.startsWith(prov))
     })
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
@@ -323,12 +357,12 @@ app.use(catalog);
 
 app.listen(process.env.PORT || 3000, () => {
   console.log(`\x1b[32manimeflv-stremio-addon is listening on port ${process.env.PORT || 3000}\x1b[39m`)
-  if(process.argv.includes('--launch')){
+  if (process.argv.includes('--launch')) {
     const OSC = '\u001B]';
     const BEL = '\u0007';
     const url = `${OSC}8;;stremio://127.0.0.1:${process.env.PORT || 3000}/manifest.json${BEL}Open this link to install the running addon on the Stremio app${OSC}8;;${BEL}`
     console.log(url)
-  } else if(process.argv.includes('--webLaunch')){
+  } else if (process.argv.includes('--webLaunch')) {
     const url = `http://127.0.0.1:${process.env.PORT || 3000}/manifest.json`
     console.log('Open the following for a developement web Stremio session:', `https://staging.strem.io#?addonOpen=${encodeURIComponent(url)}`)
   }
@@ -337,7 +371,8 @@ app.listen(process.env.PORT || 3000, () => {
   const henaojaraAPI = require('./routes/henaojara.js')
   const tioanimeAPI = require('./routes/tioanime.js')
   const animejaraAPI = require('./routes/animejara.js')
-  let imports = [animeFLVAPI, animeAV1API, tioanimeAPI, henaojaraAPI, animejaraAPI]
+  const jkanimeAPI = require('./routes/jkanime.js')
+  let imports = [animeFLVAPI, animeAV1API, tioanimeAPI, henaojaraAPI, animejaraAPI, jkanimeAPI]
   imports.forEach((api) => {
     api.UpdateAiringAnimeFile().then(() => {
       setInterval(api.UpdateAiringAnimeFile.bind(api), 86400000); //Update every 24h

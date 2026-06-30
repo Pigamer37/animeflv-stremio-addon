@@ -1,28 +1,29 @@
-# [AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara Stremio addon](https://pigamer37.alwaysdata.net/manifest.json)
+# [AnimeFLV, AnimeAV1, Henaojara, TioAnime , AnimeJara & JKAnime Stremio addon](https://pigamer37.alwaysdata.net/manifest.json)
 <p align="center"><img src="https://www3.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV logo" width="256"/></p>
 <p align="center"><img src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1 logo" width="256"/></p>
-<p align="center"><img src="https://www.henaojara.com/wp-content/uploads/2021/04/INICIO_new.png" alt="Henaojara logo" width="300"/></p>
+<p align="center"><img src="https://i.imgur.com/cE0mosE.png" alt="Henaojara logo" width="256"/></p>
 <p align="center"><img src="https://tioanime.com/assets/img/logo-dark.png" alt="Henaojara logo" width="256"/></p>
 <p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="300"/></p>
+<p align="center"><img src="https://cdn.jkdesa.com/assets3/css/img/jkanimenet-dark.png?v=2.0.184" alt="JKAnime logo" width="256"/></p>
 
-Node.js and express.js based addon to add AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara functionallity to Stremio, not affiliated with AnimeFLV, AnimeAV1 Henaojara, TioAnime or AnimeJara. (I'm new to backend so I'm using it as a learning experience).
+Node.js and express.js based addon to add AnimeFLV, AnimeAV1, Henaojara, TioAnime, AnimeJara & JKAnime functionallity to Stremio, not affiliated with AnimeFLV, AnimeAV1 Henaojara, TioAnime, AnimeJara or JKANime. (I'm new to backend so I'm using it as a learning experience).
 
 ## Normal use
 ### Install by visiting <https://pigamer37.alwaysdata.net/configure>, or by copying <stremio://pigamer37.alwaysdata.net/manifest.json> on your browser or paste <https://pigamer37.alwaysdata.net/manifest.json> on the Stremio addons search bar :mag: or the Add addon button
 
 ### Features:
 - :tv: Catalog of currently airing anime, to keep up with what is currently being released
-- :mag: Search the AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara databases/catalogs through Stremio's searchbar, or filter them by genre in the Discovery tab
+- :mag: Search the AnimeFLV, AnimeAV1, Henaojara, TioAnime , AnimeJara & JKAnime databases/catalogs through Stremio's searchbar, or filter them by genre in the Discovery tab
 - :wrench: Compatible with other addons, like Cinemeta, TMDB or kitsu so you can use your preferred metadata provider (see [supported ID's](#endpoints) for technical details)
-- :page_with_curl: See metadata extracted from AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara natively in Stremio, like synopses/overviews, genres, related media, episode lists and release dates for upcoming episodes
+- :page_with_curl: See metadata extracted from AnimeFLV, AnimeAV1, Henaojara, TioAnime , AnimeJara & JKAnime natively in Stremio, like synopses/overviews, genres, related media, episode lists and release dates for upcoming episodes
   - :calendar: If you add series to your library (through an AnimeFLV or TioAnime ID), upcoming episodes will show up in your Stremio calendar!
-- :satellite: Provides stream sources from AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara
+- :satellite: Provides stream sources from AnimeFLV, AnimeAV1, Henaojara, TioAnime , AnimeJara & JKAnime
 
-This addon provides metadata and streaming options from AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV ...", "AnimeAV1 ...", "Henaojara ...", "TioAnime ..." or "AnimeJara ..." (the ones marked as external open a player on your browser, working on getting more sources to be watchable directly on Stremio. You can add them by [configuring the addon](https://pigamer37.alwaysdata.net/configure), as they are not added by default).
+This addon provides metadata and streaming options from AnimeFLV, AnimeAV1, Henaojara, TioAnime , AnimeJara & JKAnime. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeFLV, AnimeAV1, Henaojara, TioAnime , AnimeJara & JKAnime, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV ...", "AnimeAV1 ...", "Henaojara ...", "TioAnime ...", "AnimeJara ..." or "JKAnime ..." (the ones marked as external open a player on your browser, working on getting more sources to be watchable directly on Stremio. You can add them by [configuring the addon](https://pigamer37.alwaysdata.net/configure), as they are not added by default).
 
 > [!TIP]
 > ### Recommendations
-> 1. Right now, the metadata provided by Cinemeta (the default meta and catalog addon), the TMDB meta addon or the Anime kitsu addon is much richer and works well with other addons, as they just use IMDB ID's, TMDB ID's or kitsu ID's respectively to provide and identify content. This addon should work with items provided by these catalogs, so you can get AnimeFLV's, AnimeAV1's, Henaojara's, and TioAnime's streams/sources while getting **their** metadata.
+> 1. Right now, the metadata provided by Cinemeta (the default meta and catalog addon), the TMDB meta addon or the Anime kitsu addon is much richer and works well with other addons, as they just use IMDB ID's, TMDB ID's or kitsu ID's respectively to provide and identify content. This addon should work with items provided by these catalogs, so you can get AnimeFLV's, AnimeAV1's, Henaojara's, TioAnime's, AnimeJara's and JKAnime's streams/sources while getting **their** metadata.
 > 2. Learning japanese? I have a [Japanese subtitle addon](https://github.com/Pigamer37/buta-no-subs-stremio-addon), and there's also the [Strelingo Addon](https://github.com/Serkali-sudo), which lets you **see two subtitle languages at the same time** (English and Japanese, for example), and uses the former as a provider for Japanese subs.
 
 ## Tips are welcome!
@@ -36,14 +37,15 @@ Here's the path to call it (parameters are marked by being enclosed in {} and de
 ```
 Parameters
 1. `resource`: stream and meta are very self explanatory, and catalog exposes a list of anime. 
-   - When using catalog as a resource, you can also call `/catalog/{type}/{ID}/search={query}.json` where `query` is what to search for on AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara , or `/catalog/{type}/{ID}/genre={query}.json` where `query` is the genre ([there's a list of genres in the manifest](index.js#L35), and `query` must match one exactly) to search or filter the whole AnimeFLV/AnimeAV1/Henaojara/TioAnime database. It's defined this way to work with Stremio. Use `animeflv`/`animeav1` or `animeflv|genres`/`animeav1|genres`/`henaojara|genres` as the `ID`, or use `animeflv|onair`/`animeav1|onair`/`henaojara|onair` (without search or genre queries) to get a list of currently airing anime.
+   - When using catalog as a resource, you can also call `/catalog/{type}/{ID}/search={query}.json` where `query` is what to search for on AnimeFLV, AnimeAV1, Henaojara, TioAnime , AnimeJara & JKAnime , or `/catalog/{type}/{ID}/genre={query}.json` where `query` is the genre ([there's a list of genres in the manifest](index.js#L35), and `query` must match one exactly) to search or filter the whole AnimeFLV/AnimeAV1/Henaojara/TioAnime database. It's defined this way to work with Stremio. Use `animeflv`/`animeav1`... or `animeflv|genres`/`animeav1|genres`/`henaojara|genres`... as the `ID`, or use `animeflv|onair`/`animeav1|onair`/`henaojara|onair`... (without search or genre queries) to get a list of currently airing anime.
 2. `type`: should not matter, but to make sure, use 'movie' or 'series' depending on what the item is
-3. `ID`: Except for IMDB & AnimeJara, different seasons have different ID's. Here we have some options:
+3. `ID`: Except for IMDB , AnimeJara & JKAnime, different seasons have different ID's. Here we have some options:
    - `AnimeFLV ID`: starts with "animeflv:", followed by the series AnimeFLV slug, always. This is the "native" ID type and the one the catalogs the addon offers use. You can specify an episode number if you want. Example: `animeflv:kono-subarashii-sekai-ni-shukufuku-wo:2` *should* give results for Konosuba (Season 1 was specified with the AnimeFLV slug) Episode 2
    - `AnimeAV1 ID`: starts with "animeav1:", followed by the series AnimeAV1 slug, always. This is the "native" ID type and the one the catalogs the addon offers use. You can specify an episode number if you want. Example: `animeav1:kono-subarashii-sekai-ni-shukufuku-wo:2` *should* give results for Konosuba (Season 1 was specified with the AnimeAV1 slug) Episode 2
    - `Henaojara ID`: starts with "henaojara:", followed by the series Henaojara slug, always. This is the "native" ID type and the one the catalogs the addon offers use. You can specify an episode number if you want. Example: `henaojara:kono-subarashii-sekai-ni-shukufuku-wo:2` *should* give results for Konosuba (Season 1 was specified with the Henaojara slug) Episode 2
    - `TioAnime ID`: starts with "tioanime:", followed by the series TioAnime slug, always. This is the "native" ID type and the one the catalogs the addon offers use. You can specify an episode number if you want. Example: `tioanime:kono-subarashii-sekai-ni-shukufuku-wo:2` *should* give results for Konosuba (Season 1 was specified with the TioAnime slug) Episode 2
    - `AnimeJara ID`: starts with "animejara:", followed by the series AnimeJara slug, always. If you are looking for a series, you can specify the season and episode numbers. Example: `animejara:konosuba:1:2` *should* give results for Konosuba (Season 1) Episode 2
+   - `JKAnime ID`: starts with "jkanime:", followed by the series JKAnime slug, always. This is the "native" ID type and the one the catalogs the addon offers use. You can specify an episode number if you want. Example: `jkanime:kono-subarashii-sekai-ni-shukufuku-wo:2` *should* give results for Konosuba (Season 1 was specified with the JKAnime slug) Episode 2
    
    > [!NOTE]
    > These 3 native ID's usually are the same (like in the example), but sometimes they may differ between them (specially on AnimeJara).
@@ -93,7 +95,7 @@ You can add some configuration before the call. Right now, the only available co
 > <p align="center"><img src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1 logo" width="256"/></p>
 > This application/addon uses AnimeAV1 but is not endorsed, certified, or otherwise approved by AnimeAV1.
 >
-> <p align="center"><img src="https://www.henaojara.com/wp-content/uploads/2021/04/INICIO_new.png" alt="Henaojara logo" width="300"/></p>
+> <p align="center"><img src="https://i.imgur.com/cE0mosE.png" alt="Henaojara logo" width="256"/></p>
 > This application/addon uses Henaojara but is not endorsed, certified, or otherwise approved by Henaojara.
 >
 > <p align="center"><img src="https://tioanime.com/assets/img/logo-dark.png" alt="Henaojara logo" width="256"/></p>
@@ -101,6 +103,9 @@ You can add some configuration before the call. Right now, the only available co
 >
 > <p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="300"/></p>
 > This application/addon uses AnimeJara but is not endorsed, certified, or otherwise approved by AnimeJara.
+>
+> <p align="center"><img src="https://cdn.jkdesa.com/assets3/css/img/jkanimenet-dark.png?v=2.0.184" alt="JKAnime logo" width="256"/></p>
+> This application/addon uses JKAnime but is not endorsed, certified, or otherwise approved by JKAnime.
 >
 > [The unofficial AnimeFLV API](https://animeflv.ahmedrangel.com/api)
 > This application/addon uses the unofficial AnimeFLV API (or its adapted code) but is not endorsed, certified, or otherwise approved by it.

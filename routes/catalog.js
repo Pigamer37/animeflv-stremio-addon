@@ -10,6 +10,7 @@ const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
 const tioanimeAPI = require('./tioanime.js')
 const animejaraAPI = require('./animejara.js')
+const jkanimeAPI = require('./jkanime.js')
 
 /**
  * Tipical express middleware callback.
@@ -187,6 +188,43 @@ function HandleCatalogRequest(req, res, next) {
         })
       })
     }
+  } else if (req.params.videoId.startsWith("jkanime")) {
+    //jkanime catalog request
+    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
+      let genreArr = res.locals.extraParams.genre
+      //calculate the page to start from, JKAnime uses 30 results per page
+      //if skip is defined, we can calculate the page and the number of items we already delivered
+      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 30) + 1 : undefined,
+        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 30 : undefined
+      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+      catalogPromise = jkanimeAPI.SearchJKAnime(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
+        console.log('\x1b[36mGot JKAnime metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `jkanime:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    } else {
+      catalogPromise = jkanimeAPI.GetAiringAnime().then((result) => {
+        console.log('\x1b[36mGot JKAnime metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `jkanime:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    }
   } else {
     if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
       let genreArr = res.locals.extraParams.genre
@@ -252,7 +290,7 @@ function ParseConfig(req, res, next) {
 //Calendar requests
 catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", (req, res) => {
   let metasDetailed = [], uniqueIDs = [...new Set(req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
-    .filter((id) => id.startsWith("animeflv:") /*|| id.startsWith("animeav1:") || id.startsWith("henaojara:")*/ || id.startsWith("tioanime:") || id.startsWith("animejara:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
+    .filter((id) => id.startsWith("animeflv:") /*|| id.startsWith("animeav1:") || id.startsWith("henaojara:")*/ || id.startsWith("tioanime:") || id.startsWith("animejara:") || id.startsWith("jkanime:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
 
   console.log("Unique IDs:", uniqueIDs)
 
@@ -279,6 +317,10 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return animejaraAPI.GetAnimeBySlug(ID, "series") //only series have upcoming eps
+    } else if (videoID.startsWith("jkanime")) {
+      const ID = idDetails[1]
+      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+      return jkanimeAPI.GetAnimeBySlug(ID) //only series have upcoming eps
     } else {
       let animeIMDBIDPromise
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID

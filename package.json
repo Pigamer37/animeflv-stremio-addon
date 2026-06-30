@@ -1,12 +1,12 @@
 {
   "name": "animeflv-stremio-addon",
-  "version": "1.3.2",
-  "description": "Add AnimeFLV, AnimeAV1, Henaojara, TioAnime & AnimeJara functionallity to Stremio, including catalogs, streams and metadata, even showing upcoming episodes in the calendar! Not affiliated with AnimeFLV, AnimeAV1, Henaojara or TioAnime. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
+  "version": "1.4.0",
+  "description": "Add AnimeFLV, AnimeAV1, Henaojara, TioAnime, AnimeJara & JKAnime functionallity to Stremio, including catalogs, streams and metadata, even showing upcoming episodes in the calendar! Not affiliated with AnimeFLV, AnimeAV1, Henaojara, TioAnime, AnimeJara or JKAnime. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
   "main": "index.js",
   "scripts": {
-    "devStart": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore README",
-    "devStartApp": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore README --launch",
-    "devStartWeb": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore README --webLaunch",
+    "devStart": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore onairJK_titles.json --ignore README",
+    "devStartApp": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore onairJK_titles.json --ignore README --launch",
+    "devStartWeb": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore onairJK_titles.json --ignore README --webLaunch",
     "start": "node index.js"
   },
   "repository": {
