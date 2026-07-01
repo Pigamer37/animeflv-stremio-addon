@@ -54,7 +54,6 @@ exports.SearchJKAnime = async function (query, type = undefined, genreArr = unde
     if (type === 'movie') jkanimeURL.searchParams.set('tipo', 'peliculas')
     if (page) jkanimeURL.searchParams.set('p', page)
   }
-  console.log(jkanimeURL)
   return SearchAnimesBySpecificURL(jkanimeURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }

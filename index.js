@@ -305,7 +305,7 @@ app.get("/manifest.json", (_req, res) => {
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
   }).catch((err) => {
-    res.status(500).statusMessage("Error reading file: " + err);
+    if(!res.headersSent) res.status(500).send("Error reading file: " + err);
   })
 })
 
@@ -320,7 +320,7 @@ app.get("/:config/manifest.json", (req, res) => {
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
   }).catch((err) => {
-    res.status(500).statusMessage("Error reading file: " + err);
+    if(!res.headersSent) res.status(500).send("Error reading file: " + err);
   })
 })
 
@@ -331,7 +331,7 @@ app.get("/configure", (req, res) => {
       manifest: manif
     })
   }).catch((err) => {
-    res.status(500).statusMessage("Error reading file: " + err);
+    if(!res.headersSent) res.status(500).send("Error reading file: " + err);
   })
 })
 //WIP
@@ -342,7 +342,7 @@ app.get("/:config/configure", (req, res) => {
       manifest: manif
     })
   }).catch((err) => {
-    res.status(500).statusMessage("Error reading file: " + err);
+    if(!res.headersSent) res.status(500).send("Error reading file: " + err);
   })
 })
 

@@ -340,7 +340,7 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
           })
         })
       }).then((metadata) => {
-        const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
+        const searchTerm = ((season !== undefined) && (season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
         return animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
           console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
           return animeFLVAPI.GetAnimeBySlug(animeFLVitem[0].slug)
