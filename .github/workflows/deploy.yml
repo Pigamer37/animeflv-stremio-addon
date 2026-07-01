@@ -60,3 +60,9 @@ jobs:
           #.gitatributes
           #.gitignore
           #.github
+    - name: Restart app
+      uses: satak/webrequest-action@master
+      with:
+        url: https://api.alwaysdata.com/v1/site/1234/restart/
+        method: POST
+        username: '${{ secrets.APIKEY }} account=[${{ vars.USERNAME }}]'
