@@ -4,7 +4,7 @@
     <label class="label-to-top" style="display:block">Return external streams (they open in a browser) <input type="checkbox" id="externalStreams"<%= (config?.get("externalStreams"))?` checked="true"`:"" %>></label>
     <label class="label-to-top">Select catalogs that will appear on the Stremio homepage (airing anime for each provider):
     <div style="display:flex;gap:1em;padding-block-start:1em;flex-wrap:wrap;justify-content:space-evenly">
-      <label style="display:block"><img style="height:1.8cap" src="https://www4.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV"><input style="vertical-align:top" type="checkbox" id="animeflv"<%= (config?.get("onAirCatalogs").includes("animeflv"))?` checked="true"`:"" %>></label>
+      <!-- <label style="display:block"><img style="height:1.8cap" src="https://www4.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV"><input style="vertical-align:top" type="checkbox" id="animeflv"<%= (config?.get("onAirCatalogs").includes("animeflv"))?` checked="true"`:"" %>></label> -->
       <label style="display:block"><img style="height:1.2em" src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1"> <input style="vertical-align:top" type="checkbox" id="animeav1"<%= (config?.get("onAirCatalogs").includes("animeav1"))?` checked="true"`:"" %>></label>
       <label style="display:block"><img style="height:1.2em" src="https://i.imgur.com/cE0mosE.png" alt="Henaojara"> <input style="vertical-align:top" type="checkbox" id="henaojara"<%= (config?.get("onAirCatalogs").includes("henaojara"))?` checked="true"`:"" %>></label>
       <label style="display:block"><img style="height:1.4em" src="https://tioanime.com/assets/img/logo-dark.png" alt="TioAnime"> <input style="vertical-align:top" type="checkbox" id="tioanime"<%= (config?.get("onAirCatalogs").includes("tioanime"))?` checked="true"`:"" %>></label>
@@ -28,8 +28,8 @@
     <button tabindex="-1" class="full-width">Open In Stremio</button>
   </a>
   <script>const ta=document.getElementById('manifest_url');const externalStreams=document.getElementById('externalStreams')
-    const animeflv=document.getElementById('animeflv');const animeav1=document.getElementById('animeav1');const henaojara=document.getElementById('henaojara');const tioanime=document.getElementById('tioanime');const animejara=document.getElementById('animejara');const jkanime=document.getElementById('jkanime');
-    const providers=[animeflv,animeav1,henaojara,tioanime,animejara,jkanime]
+    /*const animeflv=document.getElementById('animeflv');*/const animeav1=document.getElementById('animeav1');const henaojara=document.getElementById('henaojara');const tioanime=document.getElementById('tioanime');const animejara=document.getElementById('animejara');const jkanime=document.getElementById('jkanime');
+    const providers=[/*animeflv,*/animeav1,henaojara,tioanime,animejara,jkanime]
     const installLink=document.getElementById('installLink')
     function genManifLink(){
       let config=new URLSearchParams();

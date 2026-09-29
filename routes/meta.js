@@ -30,9 +30,8 @@ function HandleMetaRequest(req, res, next) {
   console.log(`\x1b[96mEntered HandleMetaRequest with\x1b[39m ${req.originalUrl}`)
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
-  if (videoID?.startsWith("animeflv")) {
+  /*if (videoID?.startsWith("animeflv")) {
     const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
-    let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     animeFLVAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', animeMeta.name)
@@ -47,9 +46,8 @@ function HandleMetaRequest(req, res, next) {
         next()
       }
     })
-  } else if (videoID?.startsWith("animeav1")){
+  } else*/ if (videoID?.startsWith("animeav1")){
     const ID = idDetails[1]
-    let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     animeAV1API.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot AnimeAV1 metadata for:\x1b[39m', animeMeta.name)
@@ -66,7 +64,6 @@ function HandleMetaRequest(req, res, next) {
     })
   } else if (videoID?.startsWith("henaojara")){
     const ID = idDetails[1]
-    let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     henaojaraAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot Henaojara metadata for:\x1b[39m', animeMeta.name)
@@ -83,7 +80,6 @@ function HandleMetaRequest(req, res, next) {
     })
   } else if (videoID?.startsWith("tioanime")){
     const ID = idDetails[1]
-    let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     tioanimeAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot TioAnime metadata for:\x1b[39m', animeMeta.name)
@@ -101,7 +97,6 @@ function HandleMetaRequest(req, res, next) {
   } else if (videoID?.startsWith("animejara")){
     const ID = idDetails[1] 
     let season = idDetails[2] //undefined if we don't get an season number in the query, which is fine
-    let episode = idDetails[3] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     animejaraAPI.GetAnimeBySlug(ID, req.params.type).then((animeMeta) => {
       console.log('\x1b[36mGot AnimeJara metadata for:\x1b[39m', animeMeta.name)
@@ -118,7 +113,6 @@ function HandleMetaRequest(req, res, next) {
     })
   } else if (videoID?.startsWith("jkanime")){
     const ID = idDetails[1]
-    let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     jkanimeAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot JKAnime metadata for:\x1b[39m', animeMeta.name)

@@ -28,22 +28,22 @@ function ReadManifest() {
       "background": "https://images6.alphacoders.com/113/1135890.jpg",
       "description": packageJSON.description,
       "catalogs": [
-        {
-          id: "animeflv", type: "AnimeFLV", name: "search results",
-          extra: [{ name: "search", isRequired: true },
-          {
-            name: "genre",
-            options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
-              "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
-              "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
-              "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
-              "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
-              "yaoi", "yuri"],
-            optionsLimit: 1, isRequired: false
-          },
-          { name: "skip", isRequired: false }
-          ]
-        },
+        // {
+        //   id: "animeflv", type: "AnimeFLV", name: "search results",
+        //   extra: [{ name: "search", isRequired: true },
+        //   {
+        //     name: "genre",
+        //     options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
+        //       "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
+        //       "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
+        //       "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
+        //       "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
+        //       "yaoi", "yuri"],
+        //     optionsLimit: 1, isRequired: false
+        //   },
+        //   { name: "skip", isRequired: false }
+        //   ]
+        // },
         {
           id: "animeav1", type: "AnimeAV1", name: "search results",
           extra: [{ name: "search", isRequired: true },
@@ -125,22 +125,22 @@ function ReadManifest() {
           { name: "skip", isRequired: false }
           ]
         },
-        {
-          id: "animeflv|genres", type: "Anime", name: "AnimeFLV",
-          extra: [
-            {
-              name: "genre",
-              options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
-                "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
-                "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
-                "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
-                "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
-                "yaoi", "yuri"],
-              optionsLimit: 1, isRequired: true
-            },
-            { name: "skip", isRequired: false }
-          ]
-        },
+        // {
+        //   id: "animeflv|genres", type: "Anime", name: "AnimeFLV",
+        //   extra: [
+        //     {
+        //       name: "genre",
+        //       options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
+        //         "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
+        //         "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
+        //         "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
+        //         "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
+        //         "yaoi", "yuri"],
+        //       optionsLimit: 1, isRequired: true
+        //     },
+        //     { name: "skip", isRequired: false }
+        //   ]
+        // },
         {
           id: "animeav1|genres", type: "Anime", name: "AnimeAV1",
           extra: [
@@ -222,9 +222,9 @@ function ReadManifest() {
             { name: "skip", isRequired: false }
           ]
         },
-        {
-          id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
-        },
+        // {
+        //   id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
+        // },
         {
           id: "animeav1|onair", type: "AnimeAV1", name: "On Air"
         },
@@ -272,7 +272,7 @@ function ReadManifest() {
       ],
       "idPrefixes": [
         "tt",
-        "animeflv:",
+        // "animeflv:",
         "animeav1:",
         "henaojara:",
         "tioanime:",
@@ -370,13 +370,13 @@ app.listen(process.env.PORT || 3000, () => {
     const url = `http://127.0.0.1:${process.env.PORT || 3000}/manifest.json`
     console.log('Open the following for a developement web Stremio session:', `https://staging.strem.io#?addonOpen=${encodeURIComponent(url)}`)
   }
-  const animeFLVAPI = require('./routes/animeFLV.js')
+  // const animeFLVAPI = require('./routes/animeFLV.js')
   const animeAV1API = require('./routes/animeav1.js')
   const henaojaraAPI = require('./routes/henaojara.js')
   const tioanimeAPI = require('./routes/tioanime.js')
   const animejaraAPI = require('./routes/animejara.js')
   const jkanimeAPI = require('./routes/jkanime.js')
-  let imports = [animeFLVAPI, animeAV1API, tioanimeAPI, henaojaraAPI, animejaraAPI, jkanimeAPI]
+  let imports = [/*animeFLVAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI, animejaraAPI, jkanimeAPI]
   imports.forEach((api) => {
     api.UpdateAiringAnimeFile().then(() => {
       setInterval(api.UpdateAiringAnimeFile.bind(api), 86400000); //Update every 24h

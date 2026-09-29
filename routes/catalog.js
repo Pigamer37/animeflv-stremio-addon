@@ -225,43 +225,43 @@ function HandleCatalogRequest(req, res, next) {
         })
       })
     }
-  } else {
-    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
-      let genreArr = res.locals.extraParams.genre
-      //calculate the page to start from, AnimeFLV uses 24 results per page
-      //if skip is defined, we can calculate the page and the number of items we already delivered
-      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
-        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
-      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
-      catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr, undefined, page, gottenItems).then((result) => {
-        console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
-        return result.map((anime) => {
-          return {
-            id: `animeflv:${anime.slug}`,
-            type: anime.type,
-            name: anime.title,
-            poster: anime.poster,
-            description: anime.overview,
-            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
-          }
-        })
-      })
-    } else {
-      catalogPromise = animeFLVAPI.GetAiringAnime().then((result) => {
-        console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
-        return result.map((anime) => {
-          return {
-            id: `animeflv:${anime.slug}`,
-            type: anime.type,
-            name: anime.title,
-            poster: anime.poster,
-            description: anime.overview,
-            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
-          }
-        })
-      })
-    }
-  }
+  }// else {
+  //   if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
+  //     let genreArr = res.locals.extraParams.genre
+  //     //calculate the page to start from, AnimeFLV uses 24 results per page
+  //     //if skip is defined, we can calculate the page and the number of items we already delivered
+  //     let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
+  //       gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
+  //     console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+  //     catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr, undefined, page, gottenItems).then((result) => {
+  //       console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
+  //       return result.map((anime) => {
+  //         return {
+  //           id: `animeflv:${anime.slug}`,
+  //           type: anime.type,
+  //           name: anime.title,
+  //           poster: anime.poster,
+  //           description: anime.overview,
+  //           genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+  //         }
+  //       })
+  //     })
+  //   } else {
+  //     catalogPromise = animeFLVAPI.GetAiringAnime().then((result) => {
+  //       console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
+  //       return result.map((anime) => {
+  //         return {
+  //           id: `animeflv:${anime.slug}`,
+  //           type: anime.type,
+  //           name: anime.title,
+  //           poster: anime.poster,
+  //           description: anime.overview,
+  //           genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+  //         }
+  //       })
+  //     })
+  //   }
+  // }
   catalogPromise.then((metas) => {
     res.header('Cache-Control', "max-age=259200, stale-while-revalidate=86400, stale-if-error=259200")
     res.json({ metas, message: "Got Anime metadata!" });
