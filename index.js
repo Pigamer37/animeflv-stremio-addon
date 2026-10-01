@@ -93,23 +93,23 @@ function ReadManifest() {
           { name: "skip", isRequired: false }
           ]
         },
-        {
-          id: "animejara", type: "AnimeJara", name: "search results",
-          extra: [{ name: "search", isRequired: true },
-          {
-            name: "genre",
-            options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion",
-              "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
-              "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
-              "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
-              "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
-              "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
-            ],
-            optionsLimit: 1, isRequired: false
-          },
-          { name: "skip", isRequired: false }
-          ]
-        },
+        // {
+        //   id: "animejara", type: "AnimeJara", name: "search results",
+        //   extra: [{ name: "search", isRequired: true },
+        //   {
+        //     name: "genre",
+        //     options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion",
+        //       "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
+        //       "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
+        //       "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
+        //       "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
+        //       "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
+        //     ],
+        //     optionsLimit: 1, isRequired: false
+        //   },
+        //   { name: "skip", isRequired: false }
+        //   ]
+        // },
         {
           id: "jkanime", type: "JKAnime", name: "search results",
           extra: [{ name: "search", isRequired: true },
@@ -190,23 +190,23 @@ function ReadManifest() {
             { name: "skip", isRequired: false }
           ]
         },
-        {
-          id: "animejara|genres", type: "Anime", name: "AnimeJara",
-          extra: [
-            {
-              name: "genre",
-              options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion",
-                "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
-                "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
-                "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
-                "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
-                "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
-              ],
-              optionsLimit: 1, isRequired: true
-            },
-            { name: "skip", isRequired: false }
-          ]
-        },
+        // {
+        //   id: "animejara|genres", type: "Anime", name: "AnimeJara",
+        //   extra: [
+        //     {
+        //       name: "genre",
+        //       options: ["Accion", "Amor", "Artes marciales", "Aventura", "Carreras", "Ciencia ficcion",
+        //         "Comedia", "Crimen", "Demonios", "Deportes", "Drama", "Ecchi", "Escolar", "Espacial", "Espadachin",
+        //         "Familia", "Fantasia", "Gore", "Harem", "Historico", "Isekai", "Josei", "Juegos", "Magia", "Mecha",
+        //         "Militar", "Misterio", "Musica", "Parodia", "Psicologico", "Recuerdos", "Robots", "Romance",
+        //         "Samurai", "Seinen", "Shoujo", "Shounen", "Sobrenatural", "Studio ghibli", "Superpoderes",
+        //         "Suspenso", "Terror", "Vampiros", "Yaoi", "Yuri", "Zombies"
+        //       ],
+        //       optionsLimit: 1, isRequired: true
+        //     },
+        //     { name: "skip", isRequired: false }
+        //   ]
+        // },
         {
           id: "jkanime|genres", type: "Anime", name: "JKAnime",
           extra: [
@@ -234,9 +234,9 @@ function ReadManifest() {
         {
           id: "tioanime|onair", type: "TioAnime", name: "On Air"
         },
-        {
-          id: "animejara|onair", type: "AnimeJara", name: "On Air"
-        },
+        // {
+        //   id: "animejara|onair", type: "AnimeJara", name: "On Air"
+        // },
         {
           id: "jkanime|onair", type: "JKAnime", name: "On Air"
         },
@@ -276,7 +276,7 @@ function ReadManifest() {
         "animeav1:",
         "henaojara:",
         "tioanime:",
-        "animejara:",
+        // "animejara:",
         "jkanime:",
         "tmdb:",
         "anilist:",
@@ -374,9 +374,9 @@ app.listen(process.env.PORT || 3000, () => {
   const animeAV1API = require('./routes/animeav1.js')
   const henaojaraAPI = require('./routes/henaojara.js')
   const tioanimeAPI = require('./routes/tioanime.js')
-  const animejaraAPI = require('./routes/animejara.js')
+  // const animejaraAPI = require('./routes/animejara.js') // Cloudflare protected
   const jkanimeAPI = require('./routes/jkanime.js')
-  let imports = [/*animeFLVAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI, animejaraAPI, jkanimeAPI]
+  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI, jkanimeAPI]
   imports.forEach((api) => {
     api.UpdateAiringAnimeFile().then(() => {
       setInterval(api.UpdateAiringAnimeFile.bind(api), 86400000); //Update every 24h

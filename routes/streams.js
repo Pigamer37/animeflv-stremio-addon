@@ -9,7 +9,7 @@ const relationsAPI = require('./relations.js')
 const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
 const tioanimeAPI = require('./tioanime.js')
-const animejaraAPI = require('./animejara.js')
+// const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
 const fuzzysort = require('fuzzysort')
 
@@ -58,7 +58,8 @@ function HandleStreamRequest(req, res, next) {
     const animeAV1p = animeAV1API.GetItemStreams(ID, onlyInternal, episode)
     const henaojarap = henaojaraAPI.GetItemStreams(ID, onlyInternal, episode)
     const tioanimep = tioanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode)
+    // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode)
+    const animejarap = Promise.resolve([])
     const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode)
     CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
@@ -155,11 +156,12 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot TioAnime entry:\x1b[39m', result.title)
         return tioanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
       })
-      const animejarap = animejaraAPI.SearchAnimeJara(searchTerm, req.params.type).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem[0];
-        console.log('\x1b[36mGot AnimeJara entry:\x1b[39m', result.title)
-        return animejaraAPI.GetItemStreams(result.slug, onlyInternal, season, episode)
-      })
+      // const animejarap = animejaraAPI.SearchAnimeJara(searchTerm, req.params.type).then((animeFLVitem) => {
+      //   const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem[0];
+      //   console.log('\x1b[36mGot AnimeJara entry:\x1b[39m', result.title)
+      //   return animejaraAPI.GetItemStreams(result.slug, onlyInternal, season, episode)
+      // })
+      const animejarap = Promise.resolve([])
       const jkanimep = jkanimeAPI.SearchJKAnime(searchTerm).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         if (!result) throw Error('No search results!')
