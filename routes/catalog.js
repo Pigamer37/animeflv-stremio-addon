@@ -151,43 +151,43 @@ function HandleCatalogRequest(req, res, next) {
         })
       })
     }
-  } else if (req.params.videoId.startsWith("animejara")) {
-    //animejara catalog request
-    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
-      let genreArr = res.locals.extraParams.genre
-      //calculate the page to start from, TioAnime uses 20 results per page
-      //if skip is defined, we can calculate the page and the number of items we already delivered
-      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 20) + 1 : undefined,
-        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 20 : undefined
-      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
-      catalogPromise = animejaraAPI.SearchAnimeJara(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
-        console.log('\x1b[36mGot AnimeJara metadata for:\x1b[39m', result.length, "search results")
-        return result.map((anime) => {
-          return {
-            id: `animejara:${anime.slug}`,
-            type: anime.type,
-            name: anime.title,
-            poster: anime.poster,
-            description: anime.overview,
-            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
-          }
-        })
-      })
-    } else {
-      catalogPromise = animejaraAPI.GetAiringAnime().then((result) => {
-        console.log('\x1b[36mGot AnimeJara metadata for:\x1b[39m', result.length, "search results")
-        return result.map((anime) => {
-          return {
-            id: `animejara:${anime.slug}`,
-            type: anime.type,
-            name: anime.title,
-            poster: anime.poster,
-            description: anime.overview,
-            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
-          }
-        })
-      })
-    }
+  // } else if (req.params.videoId.startsWith("animejara")) {
+  //   //animejara catalog request
+  //   if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
+  //     let genreArr = res.locals.extraParams.genre
+  //     //calculate the page to start from, TioAnime uses 20 results per page
+  //     //if skip is defined, we can calculate the page and the number of items we already delivered
+  //     let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 20) + 1 : undefined,
+  //       gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 20 : undefined
+  //     console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+  //     catalogPromise = animejaraAPI.SearchAnimeJara(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
+  //       console.log('\x1b[36mGot AnimeJara metadata for:\x1b[39m', result.length, "search results")
+  //       return result.map((anime) => {
+  //         return {
+  //           id: `animejara:${anime.slug}`,
+  //           type: anime.type,
+  //           name: anime.title,
+  //           poster: anime.poster,
+  //           description: anime.overview,
+  //           genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+  //         }
+  //       })
+  //     })
+  //   } else {
+  //     catalogPromise = animejaraAPI.GetAiringAnime().then((result) => {
+  //       console.log('\x1b[36mGot AnimeJara metadata for:\x1b[39m', result.length, "search results")
+  //       return result.map((anime) => {
+  //         return {
+  //           id: `animejara:${anime.slug}`,
+  //           type: anime.type,
+  //           name: anime.title,
+  //           poster: anime.poster,
+  //           description: anime.overview,
+  //           genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+  //         }
+  //       })
+  //     })
+  //   }
   } else if (req.params.videoId.startsWith("jkanime")) {
     //jkanime catalog request
     if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
@@ -225,43 +225,43 @@ function HandleCatalogRequest(req, res, next) {
         })
       })
     }
-  } else {
-    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
-      let genreArr = res.locals.extraParams.genre
-      //calculate the page to start from, AnimeFLV uses 24 results per page
-      //if skip is defined, we can calculate the page and the number of items we already delivered
-      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
-        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
-      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
-      catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr, undefined, page, gottenItems).then((result) => {
-        console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
-        return result.map((anime) => {
-          return {
-            id: `animeflv:${anime.slug}`,
-            type: anime.type,
-            name: anime.title,
-            poster: anime.poster,
-            description: anime.overview,
-            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
-          }
-        })
-      })
-    } else {
-      catalogPromise = animeFLVAPI.GetAiringAnime().then((result) => {
-        console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
-        return result.map((anime) => {
-          return {
-            id: `animeflv:${anime.slug}`,
-            type: anime.type,
-            name: anime.title,
-            poster: anime.poster,
-            description: anime.overview,
-            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
-          }
-        })
-      })
-    }
-  }
+  }// else {
+  //   if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
+  //     let genreArr = res.locals.extraParams.genre
+  //     //calculate the page to start from, AnimeFLV uses 24 results per page
+  //     //if skip is defined, we can calculate the page and the number of items we already delivered
+  //     let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined,
+  //       gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : undefined
+  //     console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+  //     catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr, undefined, page, gottenItems).then((result) => {
+  //       console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
+  //       return result.map((anime) => {
+  //         return {
+  //           id: `animeflv:${anime.slug}`,
+  //           type: anime.type,
+  //           name: anime.title,
+  //           poster: anime.poster,
+  //           description: anime.overview,
+  //           genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+  //         }
+  //       })
+  //     })
+  //   } else {
+  //     catalogPromise = animeFLVAPI.GetAiringAnime().then((result) => {
+  //       console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', result.length, "search results")
+  //       return result.map((anime) => {
+  //         return {
+  //           id: `animeflv:${anime.slug}`,
+  //           type: anime.type,
+  //           name: anime.title,
+  //           poster: anime.poster,
+  //           description: anime.overview,
+  //           genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+  //         }
+  //       })
+  //     })
+  //   }
+  // }
   catalogPromise.then((metas) => {
     res.header('Cache-Control', "max-age=259200, stale-while-revalidate=86400, stale-if-error=259200")
     res.json({ metas, message: "Got Anime metadata!" });
@@ -297,11 +297,11 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
   Promise.allSettled(uniqueIDs.map((item) => {
     const idDetails = item.split(':')
     const videoID = idDetails[0]
-    if (videoID.startsWith("animeflv")) {
+    /*if (videoID.startsWith("animeflv")) {
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return animeFLVAPI.GetAnimeBySlug(ID)
-    } else if (videoID.startsWith("animeav1")) {
+    } else*/ if (videoID.startsWith("animeav1")) {
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return animeAV1API.GetAnimeBySlug(ID)
@@ -313,10 +313,10 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return tioanimeAPI.GetAnimeBySlug(ID)
-    } else if (videoID.startsWith("animejara")) {
-      const ID = idDetails[1]
-      console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
-      return animejaraAPI.GetAnimeBySlug(ID, "series") //only series have upcoming eps
+    // } else if (videoID.startsWith("animejara")) {
+    //   const ID = idDetails[1]
+    //   console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
+    //   return animejaraAPI.GetAnimeBySlug(ID, "series") //only series have upcoming eps
     } else if (videoID.startsWith("jkanime")) {
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
