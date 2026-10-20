@@ -56,14 +56,14 @@ describe("title matching for Cinemeta/Kitsu lookups", () => {
     for (const t of ["Tanaka-kun wa Itsumo Kedaruge Specials", "One Piece Especiales", "One Piece - Wano Especial", "Shingeki no Kyojin OVA's Latino"]) assert.ok(matching.IsSpecial(t), t)
     for (const t of ["Tanaka-kun wa Itsumo Kedaruge", "Spy x Family"]) assert.ok(!matching.IsSpecial(t), t)
   })
-  it("matches Henaojara entries only for the same show and season", () => {
-    const same = (a, b) => matching.NormalizeHenaojaraTitle(a) === matching.NormalizeHenaojaraTitle(b)
-    assert.ok(same("Spy x Family 1080p", "Spy x Family"))
-    assert.ok(same("Spy x Family Season 2", "Spy x Family 2"))
-    assert.ok(same("Shingeki no Kyojin Castellano", "Shingeki no Kyojin"))
-    assert.ok(!same("Spy x Family Season 2", "Spy x Family"))
-    assert.ok(!same("One Piece Stampede", "ONE PIECE"))
-    assert.ok(!same("One Piece: Heart of Gold", "ONE PIECE"))
+  it("keeps only entries that can be the requested season (Henaojara lists each season separately)", () => {
+    assert.ok(matching.SameSeason("Spy x Family", "1"))
+    assert.ok(matching.SameSeason("Spy x Family 1080p", undefined))
+    assert.ok(matching.SameSeason("Spy x Family Season 2", "2"))
+    assert.ok(!matching.SameSeason("Spy x Family Season 2", "1"))
+    assert.ok(!matching.SameSeason("Spy x Family Part 2", undefined))
+    assert.ok(!matching.SameSeason("Shingeki no Kyojin 3 Parte 2 Castellano", "3"))
+    assert.ok(matching.SameSeason("Shingeki no Kyojin Temporada 3", "3"))
   })
   it("tries each search term until one succeeds", async () => {
     const tried = []
