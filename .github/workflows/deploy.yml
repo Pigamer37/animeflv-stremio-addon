@@ -11,10 +11,23 @@ on:
     - main
   workflow_dispatch:
 jobs:
+  test:
+    name: Offline tests
+    if: github.repository == 'Pigamer37/animeflv-stremio-addon' #forks don't have the deploy secrets
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6.1.0
+    - uses: actions/setup-node@v7.0.0
+      with:
+        node-version: ${{ vars.NODE_VERSION }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm test
   build:
     name: Build the app (add deps)
     environment: alwaysdata
     runs-on: ubuntu-latest
+    needs: test
     steps:
     - name: Checkout repo
       uses: actions/checkout@v6.1.0

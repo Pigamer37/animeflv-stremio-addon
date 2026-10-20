@@ -1,0 +1,51 @@
+name: Tests
+on:
+  push:
+    paths-ignore:
+    - 'README.md'
+    - 'LICENSE'
+  pull_request:
+  schedule:
+  - cron: '23 9 * * *' #daily: the sites change their HTML without notice
+  workflow_dispatch:
+jobs:
+  offline:
+    name: Offline tests (recorded pages)
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6.1.0
+    - uses: actions/setup-node@v7.0.0
+      with:
+        node-version: 22
+        cache: 'npm'
+    - run: npm ci
+    - run: npm test
+  live:
+    name: Live tests (real sites)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+    - uses: actions/checkout@v6.1.0
+    - uses: actions/setup-node@v7.0.0
+      with:
+        node-version: 22
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run test:live
+    - name: Open or update an issue when a source breaks
+      if: failure() && github.event_name == 'schedule'
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        title="Live tests failing: a source may have changed"
+        number=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+        if [ -n "$number" ]; then
+          gh issue comment "$number" --body "Still failing: $RUN_URL"
+        else
+          gh issue create --title "$title" --body "The daily live tests failed, so at least one site probably changed its HTML. See which source failed: $RUN_URL"
+        fi
