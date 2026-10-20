@@ -78,6 +78,21 @@ function ReadManifest() {
           ]
         },
         {
+          id: "latanime", type: "LatAnime", name: "search results",
+          extra: [{ name: "search", isRequired: true },
+          {
+            name: "genre",
+            options: ["accion", "aventura", "carreras", "ciencia-ficcion", "comedia", "cyberpunk", "deportes", "drama",
+              "ecchi", "escolares", "fantasia", "gore", "harem", "horror", "josei", "lucha", "magia", "mecha", "militar",
+              "misterio", "musica", "parodias", "psicologico", "recuerdos-de-la-vida", "seinen", "shojo", "shonen",
+              "sobrenatural", "vampiros", "yaoi", "yuri", "latino", "espacial", "historico", "samurai", "artes-marciales",
+              "demonios", "romance", "dementia", "policia", "castellano", "historia-paralela", "donghua", "suspenso", "isekai"],
+            optionsLimit: 1, isRequired: false
+          },
+          { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "tioanime", type: "TioAnime", name: "search results",
           extra: [{ name: "search", isRequired: true },
           {
@@ -175,6 +190,21 @@ function ReadManifest() {
           ]
         },
         {
+          id: "latanime|genres", type: "Anime", name: "LatAnime",
+          extra: [
+            {
+              name: "genre",
+              options: ["accion", "aventura", "carreras", "ciencia-ficcion", "comedia", "cyberpunk", "deportes", "drama",
+                "ecchi", "escolares", "fantasia", "gore", "harem", "horror", "josei", "lucha", "magia", "mecha", "militar",
+                "misterio", "musica", "parodias", "psicologico", "recuerdos-de-la-vida", "seinen", "shojo", "shonen",
+                "sobrenatural", "vampiros", "yaoi", "yuri", "latino", "espacial", "historico", "samurai", "artes-marciales",
+                "demonios", "romance", "dementia", "policia", "castellano", "historia-paralela", "donghua", "suspenso", "isekai"],
+              optionsLimit: 1, isRequired: true
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "tioanime|genres", type: "Anime", name: "TioAnime",
           extra: [
             {
@@ -234,6 +264,9 @@ function ReadManifest() {
         {
           id: "tioanime|onair", type: "TioAnime", name: "On Air"
         },
+        {
+          id: "latanime|onair", type: "LatAnime", name: "On Air"
+        },
         // {
         //   id: "animejara|onair", type: "AnimeJara", name: "On Air"
         // },
@@ -261,7 +294,7 @@ function ReadManifest() {
       ],
       "resources": [
         "stream",
-        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ "animeflv:","animeav1:","henaojara:","tioanime:","animejara:","jkanime:","anilist:","mal:","anidb:"] },
+        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ "animeflv:","animeav1:","henaojara:","tioanime:","animejara:","jkanime:","latanime:","anilist:","mal:","anidb:"] },
         "catalog"
       ],
       "types": [
@@ -278,6 +311,7 @@ function ReadManifest() {
         "tioanime:",
         // "animejara:",
         "jkanime:",
+        "latanime:",
         "tmdb:",
         "anilist:",
         "kitsu:",
@@ -376,7 +410,8 @@ app.listen(process.env.PORT || 3000, () => {
   const tioanimeAPI = require('./routes/tioanime.js')
   // const animejaraAPI = require('./routes/animejara.js') // Cloudflare protected
   const jkanimeAPI = require('./routes/jkanime.js')
-  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI, jkanimeAPI]
+  const latanimeAPI = require('./routes/latanime.js')
+  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI, jkanimeAPI, latanimeAPI]
   imports.forEach((api) => {
     api.UpdateAiringAnimeFile().then(() => {
       setInterval(api.UpdateAiringAnimeFile.bind(api), 86400000); //Update every 24h
