@@ -141,7 +141,7 @@ function HandleStreamRequest(req, res, next) {
       const searchTerms = [...new Set([romaji, metadata.title].filter(Boolean))].map((title) => ((season) && (parseInt(season) !== 1) && (parseInt(season) !== 0)) ? `${title} ${season}` : title)
       console.log('Search terms:', searchTerms)
       //Regular-season episodes must not match a site's separate "Specials"/OVA entry (issue #55)
-      const notSpecial = (items) => (req.params.type === "series" && parseInt(season) !== 0) ? items.filter((i) => !/\b(specials?|ova)\b/i.test(i.title)) : items
+      const notSpecial = (items) => (req.params.type === "series" && parseInt(season) !== 0) ? items.filter((i) => !/\b(specials?|especial(es)?|ova)\b/i.test(i.title)) : items
       //Runs a source's search/match/streams chain with each search term until one succeeds
       const firstMatch = (searchFn) => searchTerms.reduce((prev, searchTerm) => prev.catch(() => searchFn(searchTerm)), Promise.reject(Error('No search terms!')))
       // const animeFLVp = animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
@@ -156,8 +156,12 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', result.title)
         return animeAV1API.GetItemStreams(result.slug, onlyInternal, episode)
       }))
+      //Henaojara lists every season, movie, special and dub as its own entry and fuzzy matching picks the wrong one,
+      //so require the same title once dub/quality tags and the words "season"/"temporada" are ignored
+      const normalizeTitle = (title) => title.toLowerCase().replace(/\b(latino|castellano|1080p|season|temporada)\b/g, "").replace(/[^a-z0-9]/g, "")
       const henaojarap = firstMatch((searchTerm) => henaojaraAPI.SearchHenaojara(searchTerm).then(notSpecial).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem.sort((a,b)=>(a.type === req.params.type && b.type !== req.params.type)?-1:0)[0];
+        const result = animeFLVitem.find((i) => (!i.type || i.type === req.params.type) && normalizeTitle(i.title) === normalizeTitle(searchTerm))
+        if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot Henaojara entry:\x1b[39m', result.title)
         return henaojaraAPI.GetItemStreams(result.slug, onlyInternal, episode)
       }))
