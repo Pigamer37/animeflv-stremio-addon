@@ -71,6 +71,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
     const epCount = data.data.episodes.length
+    const lastNumber = data.data.episodes[epCount - 1]?.number ?? 0
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover)
     const videos = data.data.episodes.map((ep) => {
@@ -82,17 +83,17 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: ep.thumbnail,
-        released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
+        released: ep.released || new Date(d.setDate(d.getDate() - (lastNumber - ep.number))), //estimated when unknown
         available: true
       }
     })
     if (data.data.next_airing_episode !== undefined) {
       videos.push({
-        id: `jkanime:${slug}:${epCount + 1}`,
-        title: `${data.data.title} Ep. ${epCount + 1}`,
+        id: `jkanime:${slug}:${lastNumber + 1}`,
+        title: `${data.data.title} Ep. ${lastNumber + 1}`,
         season: 1,
-        episode: epCount + 1,
-        number: epCount + 1,
+        episode: lastNumber + 1,
+        number: lastNumber + 1,
         thumbnail: `https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png`,
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
@@ -254,13 +255,18 @@ async function GetAnimeInfo(slug) {
       return resp.json()
     })
 
-    if (animeInfo.episodes instanceof Array && epArray) {
-      for (let i = 1; i <= epArray.total; i++) {
+    if (animeInfo.episodes instanceof Array && epArray?.total) {
+      //some shows start at episode 0 (numbered 0..total-1); page 1 holds the oldest ones, so it tells where numbering
+      //starts and has the real release dates for those episodes
+      const firstNumber = Number(epArray.data?.[0]?.number ?? 1)
+      const byNumber = new Map((epArray.data || []).map((ep) => [Number(ep.number), ep]))
+      for (let i = firstNumber; i < firstNumber + epArray.total; i++) {
         animeInfo.episodes.push({
           number: i,
           slug: `${slug}/${i}`,
           url: JKANIME_BASE + `${slug}/${i}`,
-          thumbnail: `https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/${epArray.data[i - 1]?.image}`
+          thumbnail: `https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/${byNumber.get(i)?.image}`,
+          released: byNumber.get(i)?.timestamp ? new Date(byNumber.get(i).timestamp.replace(" ", "T") + "-05:00") : undefined
         })
       }
     }

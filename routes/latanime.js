@@ -79,7 +79,9 @@ exports.GetAnimeBySlug = async function (slug) {
   if (!title) throw Error("Invalid response!")
   const epNumbers = [...new Set($("a[href*='/ver/']").map((_, a) => Number($(a).attr("href").match(/-episodio-(\d+)$/)?.[1])).get().filter((n) => n > 0))].sort((a, b) => a - b)
   const poster = $("meta[property='og:image']").attr("content")
-  const isMovie = epNumbers.length <= 1
+  //an airing series with its first episode out also has a single episode, so that alone doesn't make a movie
+  const finished = /\bFinalizado\b/.test($("body").clone().find("nav, header, footer").remove().end().text())
+  const isMovie = /pel[ií]cula|\bmovie\b|\bfilm\b/i.test(`${title} ${slug}`) || (epNumbers.length <= 1 && finished)
   const d = new Date(Date.now())
   const videos = epNumbers.map((n) => ({
     id: `latanime:${slug}:${n}`,

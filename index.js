@@ -415,10 +415,14 @@ app.listen(process.env.PORT || 3000, () => {
   const latanimeAPI = require('./routes/latanime.js')
   let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI, jkanimeAPI, latanimeAPI]
   const REFRESH = 6 * 3600000 //newly airing shows appear within hours; each refresh is a few requests per site
+  //When the code is newer than a saved list (a deploy), that list was built by the old code: refresh it right away
+  const codeTime = Promise.all(["routes", "lib"].map((dir) => fsPromises.readdir(dir).then((files) =>
+    Promise.all(files.map((f) => fsPromises.stat(`${dir}/${f}`).then((st) => st.mtimeMs)))))).then((times) => Math.max(...times.flat()))
   imports.forEach((api) => {
-    //After a restart, wait until the saved list is due instead of refreshing every source at once (~280 requests
-    //on each restart)
-    fsPromises.stat(api.AiringCacheFile).then((file) => Math.max(0, REFRESH - (Date.now() - file.mtimeMs))).catch(() => 0).then((wait) => {
+    //After a plain restart, wait until the saved list is due instead of refreshing every source at once (~280
+    //requests on each restart)
+    Promise.all([fsPromises.stat(api.AiringCacheFile), codeTime]).then(([file, code]) =>
+      (file.mtimeMs < code) ? 0 : Math.max(0, REFRESH - (Date.now() - file.mtimeMs))).catch(() => 0).then((wait) => {
       setTimeout(() => {
         api.UpdateAiringAnimeFile().then(() => setInterval(api.UpdateAiringAnimeFile.bind(api), REFRESH))
       }, wait)

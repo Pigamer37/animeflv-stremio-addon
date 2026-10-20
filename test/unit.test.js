@@ -153,3 +153,15 @@ describe("SettleLimited (On Air metadata without getting rate limited)", () => {
     assert.deepEqual(await SettleLimited([], 4, async () => 1), [])
   })
 })
+
+describe("GetStreamLinks episode names", () => {
+  const { GetStreamLinks } = require("../lib/streamParsing.js")
+  const linksFor = (number) => GetStreamLinks("JKAnime", "jkanime", { data: { title: "Show", number, servers: [{ name: "Voe", embed: "https://voe.sx/e/x" }] } }, false)
+  it("names episode 0 (some shows start there)", async () => {
+    assert.match((await linksFor(0))[0].description, /^Show Ep\. 0\n/)
+  })
+  it("omits the number when there isn't one", async () => {
+    assert.match((await linksFor(undefined))[0].description, /^Show\n/)
+    assert.match((await linksFor(NaN))[0].description, /^Show\n/)
+  })
+})
