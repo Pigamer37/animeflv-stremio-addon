@@ -96,8 +96,9 @@ function HandleStreamRequest(req, res, next) {
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
-      animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID)
-      romajiPromise = relationsAPI.GetRomajiTitle(videoID, ID)
+      const mappings = relationsAPI.GetAniZipMappings(videoID, ID) //one ani.zip call for both the IMDB ID and the romaji title
+      animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID, mappings)
+      romajiPromise = relationsAPI.GetRomajiTitle(videoID, ID, mappings)
     } else {
       if (!res.headersSent) {
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
@@ -106,7 +107,9 @@ function HandleStreamRequest(req, res, next) {
     }
 
     console.log('Extra parameters:', res.locals.extraParams)
-    romajiPromise = (parseInt(season) === 0) ? Promise.resolve() : romajiPromise?.catch((err) => console.error('\x1b[31mFailed getting romaji title:\x1b[39m ' + err))
+    romajiPromise = romajiPromise?.catch((err) => console.error('\x1b[31mFailed getting romaji title:\x1b[39m ' + err))
+    //a special (season 0) is searched by its own title (from Cinemeta): the romaji is the main series' title
+    if (parseInt(season) === 0) romajiPromise = Promise.resolve()
     animeIMDBIDPromise.then((imdbID) => {
       if (!imdbID || imdbID === "null") throw Error("No IMDB ID")
       let metaProm
@@ -156,11 +159,12 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', result.title)
         return animeAV1API.GetItemStreams(result.slug, onlyInternal, episode)
       }))
-      //Henaojara lists every season, movie, special and dub as its own entry and fuzzy matching picks the wrong one,
-      //so require the same title once dub/quality tags and the words "season"/"temporada" are ignored
-      const normalizeTitle = (title) => title.toLowerCase().replace(/\b(latino|castellano|1080p|season|temporada)\b/g, "").replace(/[^a-z0-9]/g, "")
+      //Henaojara lists every season, movie and dub as its own entry: keep only the ones that can be the requested one
+      //(same type, no "Season/Part N" of another season), fuzzy match among them, and don't fall back to the first result
+      const sameSeason = (title) => { const n = title.match(/\b(?:season|temporada|part|parte)\s*(\d+)/i)?.[1]; return !n || Number(n) === (parseInt(season) || 1) }
       const henaojarap = firstMatch((searchTerm) => henaojaraAPI.SearchHenaojara(searchTerm).then(notSpecial).then((animeFLVitem) => {
-        const result = animeFLVitem.find((i) => (!i.type || i.type === req.params.type) && normalizeTitle(i.title) === normalizeTitle(searchTerm))
+        const candidates = animeFLVitem.filter((i) => (!i.type || i.type === req.params.type) && sameSeason(i.title))
+        const result = fuzzysort.go(searchTerm, candidates, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot Henaojara entry:\x1b[39m', result.title)
         return henaojaraAPI.GetItemStreams(result.slug, onlyInternal, episode)
