@@ -3,6 +3,7 @@ const TIOANIME_BASE = "https://tioanime.com"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const { SettleLimited } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
 exports.GetAiringAnimeFromWeb = async function () {
@@ -11,16 +12,14 @@ exports.GetAiringAnimeFromWeb = async function () {
     return { data }
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
-    const promises = data.data.map((entry) => {
+    return SettleLimited(data.data, 4, (entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
           title: anime.name, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
-    })
-
-    return Promise.allSettled(promises).then((results) =>
+    }).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value)
     )
   })
@@ -48,8 +47,9 @@ exports.SearchTioAnime = async function (query, type = undefined, genreArr = und
   if (type) {
     type = (type === "movie") ? "type%5B%5D%3D1%26" : "type%5B%5D%3D0%26type%5B%5D%3D2%26type%5B%5D%3D3%26"
   }
+//the query is encoded twice because the whole URL is decoded once before fetching
   const tioanimeURL = (url) ? url //this search requires the year, sorting order and status (only one of them) to be added, otherwise it returns empty
-    : `${TIOANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(query) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genre%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C2026&status=2&sort=recent`
+    : `${TIOANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(encodeURIComponent(query)) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genre%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C${new Date().getFullYear() + 1}&status=2&sort=recent`
   return SearchAnimesBySpecificURL(tioanimeURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -105,7 +105,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
-    links=[{name:"TioAnime",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
+    const links = [{name:"TioAnime",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
     if(data.data.related){//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {
@@ -153,9 +153,10 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
       else return null;
     }
 
-    if (!(await episodeData())) return null;
+    const html = await episodeData(); //fetch the page once
+    if (!html) return null;
 
-    const $ = cheerio.load(await episodeData());
+    const $ = cheerio.load(html);
 
     const episodeLinks = {
       title: $("#tioanime > div > div > aside > h1").text().replace(/\d+$/, "").trim(), //remove ep. number if present
@@ -232,9 +233,9 @@ async function GetAnimeInfo(slug) {
     const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var episodes ="));
     const episodesArray = episodesFind?.match(/episodes = (\[.*])/)?.[1];
     
-    const epObj = JSON.parse(episodesArray)
+    const epObj = JSON.parse(episodesArray || "null")
     if (epObj) {
-      for (ep of epObj) {
+      for (const ep of epObj) {
         if (animeInfo.episodes instanceof Array) {
           animeInfo.episodes.push({
             number: ep,

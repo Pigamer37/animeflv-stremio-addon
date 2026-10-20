@@ -102,7 +102,7 @@ exports.GetAnimeBySlug = async function (slug, type = "series") {
       })
     }
 
-    links = [{ name: "AnimeJara", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
+    const links = [{ name: "AnimeJara", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
     if (data.data.related) {//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {
@@ -148,9 +148,10 @@ async function GetEpisodeLinks(slug, season = undefined, epNumber = undefined) {
       else return null;
     }
 
-    if (!(await episodeData())) return null;
+    const html = await episodeData(); //fetch the page once
+    if (!html) return null;
 
-    const $ = cheerio.load(await episodeData());
+    const $ = cheerio.load(html);
 
     let optSeason = $("#content div.episodio-info > div.episodio-meta").text().match(/Temporada \d+/)?.[0]
     if (optSeason === "Temporada 1") optSeason = ""

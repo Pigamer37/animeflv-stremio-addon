@@ -3,6 +3,7 @@ const JKANIME_BASE = "https://jkanime.net"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const { CollectPages, SettleLimited } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
 exports.GetAiringAnimeFromWeb = async function () {
@@ -11,16 +12,14 @@ exports.GetAiringAnimeFromWeb = async function () {
     return { data }
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
-    const promises = data.data.map((entry) => {
+    return SettleLimited(data.data, 4, (entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
           title: anime.name, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
-    })
-
-    return Promise.allSettled(promises).then((results) =>
+    }).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value)
     )
   })
@@ -47,7 +46,7 @@ exports.SearchJKAnime = async function (query, type = undefined, genreArr = unde
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchJKAnime()")
   let jkanimeURL
   if (url) jkanimeURL = url
-  else if (query) jkanimeURL = `${JKANIME_BASE}/buscar/${query}`
+  else if (query) jkanimeURL = `${JKANIME_BASE}/buscar/${encodeURIComponent(encodeURIComponent(query))}` //the URL is decoded once before fetching
   else {
     jkanimeURL = new URL(`${JKANIME_BASE}/directorio`)
     if (genreArr) jkanimeURL.searchParams.set('genero', genreArr[0])
@@ -107,7 +106,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
-    links = [{ name: "JKAnime", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
+    const links = [{ name: "JKAnime", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
     if (data.data.related) {//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {
@@ -156,9 +155,10 @@ async function GetEpisodeLinks(slug, epNumber = undefined) {
       else return null;
     }
 
-    if (!(await episodeData())) return null;
+    const html = await episodeData(); //fetch the page once
+    if (!html) return null;
 
-    const $ = cheerio.load(await episodeData());
+    const $ = cheerio.load(html);
 
     const episodeLinks = {
       title: $("div.video_i > a").first().text().trim(), //remove ep. number if present
@@ -172,8 +172,7 @@ async function GetEpisodeLinks(slug, epNumber = undefined) {
     if (serversObj) {
       const servers = JSON.parse(serversObj);
       for (const s of servers) {
-        dubLang = undefined
-        if (s?.lang === 3) dubLang = "lat"
+        const dubLang = (s?.lang === 3) ? "lat" : undefined
         episodeLinks.servers.push({
           name: streamParser.getServerTitle(s?.server),
           //download: s?.[1]?.replace("mega.nz/#!", "mega.nz/file/"),
@@ -406,7 +405,7 @@ async function SearchAnimesBySpecificURL(jkanimeURL) {
 }
 
 async function GetOnAir() {
-  return SearchAnimesBySpecificURL(`${JKANIME_BASE}/directorio?estado=emision`).then((data) => {
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${JKANIME_BASE}/directorio?estado=emision&p=${page}`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
     return data.media.map((anime) => {
       return {
@@ -416,5 +415,5 @@ async function GetOnAir() {
         url: anime.url
       }
     })
-  })
+  }))
 }

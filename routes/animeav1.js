@@ -3,6 +3,7 @@ const ANIMEAV1_BASE = "https://animeav1.com"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const { CollectPages, SettleLimited } = require("../lib/pagination.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
@@ -12,16 +13,14 @@ exports.GetAiringAnimeFromWeb = async function () {
     return { data }
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
-    const promises = data.data.map((entry) => {
+    return SettleLimited(data.data, 4, (entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
           title: anime.name, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
-    })
-
-    return Promise.allSettled(promises).then((results) =>
+    }).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value)
     )
   })
@@ -50,8 +49,9 @@ exports.SearchAnimeAV1 = async function (query, type = undefined, genreArr = und
     type = (type === "movie") ? "category%3Dpelicula%26" : "category%3Dtv-anime%26category%3Dova%26category%3Despecial%26"
   }
 //https://animeav1.com/catalogo?search=one-piece&category=tv-anime&genre=accion&page=2
+//the query is encoded twice because the whole URL is decoded once before fetching
   const animeAV1URL = (url) ? url
-    : `${encodeURIComponent(ANIMEAV1_BASE)}%2Fcatalogo%3F${(query) ? "search%3D" + encodeURIComponent(query) + "%26" : ""}${(type) ? type : ""}${(genreArr) ? "genre%3D" + genreArr.join("%26genre%3D") : ""}${(page) ? "%26page%3D" + page : ""}`
+    : `${encodeURIComponent(ANIMEAV1_BASE)}%2Fcatalogo%3F${(query) ? "search%3D" + encodeURIComponent(encodeURIComponent(query)) + "%26" : ""}${(type) ? type : ""}${(genreArr) ? "genre%3D" + genreArr.join("%26genre%3D") : ""}${(page) ? "%26page%3D" + page : ""}`
   return SearchAnimesBySpecificURL(animeAV1URL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -105,7 +105,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
-    links=[{name:"AnimeAV1",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
+    const links = [{name:"AnimeAV1",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
     if(data.data.related){//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {
@@ -154,9 +154,10 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
       else return null;
     }
 
-    if (!(await episodeData())) return null;
+    const html = await episodeData(); //fetch the page once
+    if (!html) return null;
 
-    const $ = cheerio.load(await episodeData());
+    const $ = cheerio.load(html);
 
     const episodeLinks = {
       title: $("body > div > div.container > main > article > div > div > header > div > div > a").text(),
@@ -167,10 +168,10 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     const scripts = $("script");
     const metadataJSON = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("kit.start(app, element, {"));
     
-    const serversObj = metadataJSON?.match(/embeds:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
-    const downloadObj = metadataJSON?.match(/downloads:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
-    const serversObjDUB = metadataJSON?.match(/embeds:\s?.*?DUB:\s?(\[.*?\])/)?.[1];
-    const downloadObjDUB = metadataJSON?.match(/downloads:\s?.*?DUB:\s?(\[.*?\])/)?.[1];
+    const serversObj = exports.ServerList(metadataJSON, "embeds", "SUB");
+    const downloadObj = exports.ServerList(metadataJSON, "downloads", "SUB");
+    const serversObjDUB = exports.ServerList(metadataJSON, "embeds", "DUB");
+    const downloadObjDUB = exports.ServerList(metadataJSON, "downloads", "DUB");
     let servers = [];
     if (serversObj) {
       servers = serversObj.split("},")?.map(s => {
@@ -421,7 +422,7 @@ async function SearchAnimesBySpecificURL(animeAV1URL) {
 }
 
 async function GetOnAir() {
-  return SearchAnimesBySpecificURL(`${ANIMEAV1_BASE}/catalogo?status=emision`).then((data) => {
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${ANIMEAV1_BASE}/catalogo?status=emision&page=${page}`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
     return data.media.map((anime) => {
       return {
@@ -431,5 +432,15 @@ async function GetOnAir() {
         url: anime.url
       }
     })
-  })
+  }))
+}
+
+/**
+ * Gets one server array from the page's script, e.g. ServerList(script, "embeds", "DUB") from
+ * `embeds:{DUB:[...],SUB:[...]},downloads:{SUB:[...]}`. The language is only looked up inside its own block,
+ * so an episode without dubbed embeds doesn't pick up the dubbed downloads instead.
+ */
+exports.ServerList = function (script, block, lang) {
+  const blockBody = script?.match(new RegExp(`${block}:\\s?\\{((?:\\w+:\\s?\\[.*?\\],?)*)\\}`))?.[1]
+  return blockBody?.match(new RegExp(`\\b${lang}:\\s?(\\[.*?\\])`))?.[1]
 }

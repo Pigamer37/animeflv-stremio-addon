@@ -2,6 +2,21 @@ const ID_RELATIONS_API_BASE = "https://relations.yuna.moe/api/v2"
 const ANI_ZIP_API_BASE = "https://api.ani.zip/mappings"
 const ANILIST_API_BASE = "https://graphql.anilist.co"
 
+const matching = require("../lib/matching.js")
+const animeAV1API = require("./animeav1.js")
+const jkanimeAPI = require("./jkanime.js")
+const tioanimeAPI = require("./tioanime.js")
+
+//Sources whose meta can stand in for an anime ID's (AniList, MAL, AniDB...), in order of preference
+const NATIVE_META_SOURCES = [
+  { name: "AnimeAV1", search: (term) => animeAV1API.SearchAnimeAV1(term), meta: (slug) => animeAV1API.GetAnimeBySlug(slug) },
+  { name: "JKAnime", search: (term) => jkanimeAPI.SearchJKAnime(term), meta: (slug) => jkanimeAPI.GetAnimeBySlug(slug) },
+  { name: "TioAnime", search: (term) => tioanimeAPI.SearchTioAnime(term), meta: (slug) => tioanimeAPI.GetAnimeBySlug(slug) },
+]
+
+//AnimeFLV used to provide these metas, but it no longer serves videos
+exports.GetNativeMeta = (searchTerms) => matching.FindNativeMeta(searchTerms, NATIVE_META_SOURCES)
+
 //One api.ani.zip call has every ID we need for a show: IMDB (for its metadata) and AniList (for its romaji title).
 //Callers that need both share the same promise, so it's only requested once
 exports.GetAniZipMappings = async function (IDType, ID) {

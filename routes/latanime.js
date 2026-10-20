@@ -3,6 +3,7 @@ const LATANIME_BASE = "https://latanime.org"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const { CollectPages } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
 /**
@@ -24,16 +25,10 @@ exports.ParseTitle = function (title) {
 }
 
 exports.GetAiringAnimeFromWeb = async function () {
-  return SearchAnimesBySpecificURL(`${LATANIME_BASE}/emision`).then((data) => {
+  //the listing already has title, type and poster; opening every series page was slow and dropped the ones that failed
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${LATANIME_BASE}/emision?p=${page}`)).then((data) => {
     if (!data || data.length < 1) throw Error("Invalid response!")
-    const promises = data.map((entry) => {
-      return this.GetAnimeBySlug(entry.slug).then((anime) => {
-        return { title: anime.name, type: entry.type, slug: entry.slug, poster: anime.poster, overview: anime.description }
-      })
-    })
-    return Promise.allSettled(promises).then((results) =>
-      results.filter((prom) => (prom.value)).map((source) => source.value)
-    )
+    return data.map(({ title, type, slug, poster }) => ({ title, type, slug, poster }))
   })
 }
 

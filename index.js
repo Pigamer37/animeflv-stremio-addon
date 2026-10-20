@@ -294,7 +294,7 @@ function ReadManifest() {
       ],
       "resources": [
         "stream",
-        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ "animeflv:","animeav1:","henaojara:","tioanime:","animejara:","jkanime:","latanime:","anilist:","mal:","anidb:"] },
+        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ /*"animeflv:",*/"animeav1:","henaojara:","tioanime:",/*"animejara:",*/"jkanime:","latanime:","anilist:","mal:","anidb:"] },
         "catalog"
       ],
       "types": [
@@ -346,7 +346,7 @@ app.get("/manifest.json", (_req, res) => {
 app.get("/:config/manifest.json", (req, res) => {
   ReadManifest().then((manif) => {
     const config = new URLSearchParams(decodeURIComponent(req.params.config))
-    let providers = config?.get("onAirCatalogs")?.split(',')
+    let providers = config?.get("onAirCatalogs")?.split(',') || []
     manif.catalogs = manif.catalogs.filter((cat) => {
       if (!cat.id.includes("onair")) return true
       else return providers.some((prov) => cat.id.startsWith(prov))

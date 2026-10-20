@@ -3,6 +3,7 @@ const HENAOJARA_BASE = "https://ww1.henaojara.net"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const { CollectPages, SettleLimited } = require("../lib/pagination.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
@@ -12,16 +13,14 @@ exports.GetAiringAnimeFromWeb = async function () {
     return { data }
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
-    const promises = data.data.map((entry) => {
+    return SettleLimited(data.data, 4, (entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
           title: anime.name, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
-    })
-
-    return Promise.allSettled(promises).then((results) =>
+    }).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value)
     )
   })
@@ -46,8 +45,9 @@ exports.UpdateAiringAnimeFile = function () {
 
 exports.SearchHenaojara = async function (query, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchHenaojara()")
+//the query is encoded twice because the whole URL is decoded once before fetching
   const henaojaraURL = (url) ? url
-    : `${encodeURIComponent(HENAOJARA_BASE)}%2Fanimes%3F${(query) ? "buscar%3D" + encodeURIComponent(query).replaceAll('%20','+') + "%26" : ""}${(genreArr) ? encodeURIComponent("genero%3D" + genreArr.join("%2C")) : ""}${(page) ? "%26pag%3D" + page : ""}`
+    : `${encodeURIComponent(HENAOJARA_BASE)}%2Fanimes%3F${(query) ? "buscar%3D" + encodeURIComponent(encodeURIComponent(query).replaceAll('%20','+')) + "%26" : ""}${(genreArr) ? "genero%3D" + genreArr.join("%2C") : ""}${(page) ? "%26pag%3D" + page : ""}`
     return SearchAnimesBySpecificURL(henaojaraURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -99,7 +99,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
-    links=[{name:"Henaojara",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
+    const links = [{name:"Henaojara",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
     if(data.data.related){//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {
@@ -147,9 +147,10 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
       else return null;
     }
 
-    if (!(await episodeData())) return null;
+    const html = await episodeData(); //fetch the page once
+    if (!html) return null;
 
-    const $ = cheerio.load(await episodeData());
+    const $ = cheerio.load(html);
 
     const episodeLinks = {
       title: $("#l > div > h1").text().replace(/episodio \d+$/i, "").trim(),
@@ -186,15 +187,17 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
         return resp.text()
       }).catch(() => {console.log("Failed to fetch server data"); return null});
     }
-    const $2 = cheerio.load(await serverData());
+    const serverHTML = await serverData();
+    const $2 = (serverHTML) ? cheerio.load(serverHTML) : null;
     
     if ($2) {
       const lis = $2("li");
       lis.each((_, el) => {
+        if (!$(el).attr("encrypt")) return
         const s = hex2a($(el).attr("encrypt"));
-        const sURL = new URL(s)
+        if (!URL.canParse(s)) return //skip a broken server instead of losing every stream
         episodeLinks.servers.push({
-          name: streamParser.getServerTitle(sURL.hostname),
+          name: streamParser.getServerTitle(new URL(s).hostname),
           embed: s?.replace("mega.nz/embed#!", "mega.nz/embed/"),
           dub: dubLang !== undefined,
           dubLang
@@ -254,9 +257,9 @@ async function GetAnimeInfo(slug) {
     const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var eps ="));
     const episodesArray = episodesFind?.match(/eps = (\[\[.*\].*])/)?.[1];
 
-    const epObj = JSON.parse(episodesArray)
+    const epObj = JSON.parse(episodesArray || "null")
     if (epObj) {
-      for (ep of epObj) {
+      for (const ep of epObj) {
         if (animeInfo.episodes instanceof Array) {
           animeInfo.episodes.push({
             number: ep[0],
@@ -381,7 +384,7 @@ async function SearchAnimesBySpecificURL(henaojaraURL) {
 }
 
 async function GetOnAir() {
-  return SearchAnimesBySpecificURL(`${decodeURIComponent(HENAOJARA_BASE)}/animes?estado=en-emision`).then((data) => {
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${decodeURIComponent(HENAOJARA_BASE)}/animes?estado=en-emision&pag=${page}`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
     return data.media.map((anime) => {
       return {
@@ -391,5 +394,5 @@ async function GetOnAir() {
         url: anime.url
       }
     })
-  })
+  }))
 }

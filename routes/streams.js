@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
 const fuzzysort = require('fuzzysort')
+const matching = require('../lib/matching.js')
 
 /**
  * Tipical express middleware callback.
@@ -106,6 +107,7 @@ function HandleStreamRequest(req, res, next) {
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
         res.json({ streams, message: "Wrong ID format, check manifest for errors" }); next()
       }
+      return
     }
 
     console.log('Extra parameters:', res.locals.extraParams)
@@ -143,12 +145,12 @@ function HandleStreamRequest(req, res, next) {
       })
     }).then((metadata) => Promise.resolve(romajiPromise).then((romaji) => {
       //Sites list anime by their romaji title, so try it first and fall back to the provider's (usually English) title
-      const searchTerms = [...new Set([romaji, metadata.title].filter(Boolean))].map((title) => ((season) && (parseInt(season) !== 1) && (parseInt(season) !== 0)) ? `${title} ${season}` : title)
+      const searchTerms = matching.BuildSearchTerms(romaji, metadata.title, season)
       console.log('Search terms:', searchTerms)
       //Regular-season episodes must not match a site's separate "Specials"/OVA entry (issue #55)
-      const notSpecial = (items) => (req.params.type === "series" && parseInt(season) !== 0) ? items.filter((i) => !/\b(specials?|especial(es)?|ova)\b/i.test(i.title)) : items
+      const notSpecial = (items) => (req.params.type === "series" && parseInt(season) !== 0) ? items.filter((i) => !matching.IsSpecial(i.title)) : items
       //Runs a source's search/match/streams chain with each search term until one succeeds
-      const firstMatch = (searchFn) => searchTerms.reduce((prev, searchTerm) => prev.catch(() => searchFn(searchTerm)), Promise.reject(Error('No search terms!')))
+      const firstMatch = (searchFn) => matching.FirstMatch(searchTerms, searchFn)
       // const animeFLVp = animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
       //   const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem.sort((a,b)=>(a.type === req.params.type && b.type !== req.params.type)?-1:0)[0];//Sort by type to enhance matching
       //   console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
@@ -163,7 +165,7 @@ function HandleStreamRequest(req, res, next) {
       }))
       //Henaojara lists every season, movie and dub as its own entry: keep only the ones that can be the requested one
       //(same type, no "Season/Part N" of another season), fuzzy match among them, and don't fall back to the first result
-      const sameSeason = (title) => { const n = title.match(/\b(?:season|temporada|part|parte)\s*(\d+)/i)?.[1]; return !n || Number(n) === (parseInt(season) || 1) }
+      const sameSeason = (title) => matching.SameSeason(title, season)
       const henaojarap = firstMatch((searchTerm) => henaojaraAPI.SearchHenaojara(searchTerm).then(notSpecial).then((animeFLVitem) => {
         const candidates = animeFLVitem.filter((i) => (!i.type || i.type === req.params.type) && sameSeason(i.title))
         const result = fuzzysort.go(searchTerm, candidates, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
@@ -172,7 +174,8 @@ function HandleStreamRequest(req, res, next) {
         return henaojaraAPI.GetItemStreams(result.slug, onlyInternal, episode)
       }))
       const tioanimep = firstMatch((searchTerm) => tioanimeAPI.SearchTioAnime(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem[0];
+        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
+        if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot TioAnime entry:\x1b[39m', result.title)
         return tioanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
       }))
@@ -265,6 +268,7 @@ function SearchParamsRegex(extraParams) {
 }
 
 function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise) {
+  let lastInternal, lastInternalFLV, lastInternalAV1, lastInternalHena, lastInternalTio, lastInternalJara, lastInternalJK, lastInternalLat
   return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise]).then((results) => {
     let combinedStreams = []
     if (results[0].value) {

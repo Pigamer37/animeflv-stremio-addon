@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
 const fuzzysort = require('fuzzysort')
+const matching = require('../lib/matching.js')
 
 /**
  * Tipical express middleware callback.
@@ -145,80 +146,54 @@ function HandleMetaRequest(req, res, next) {
       }
     })
   } else {
-    let episode, season, animeIMDBIDPromise
+    let episode, season, animeIMDBIDPromise, aniZipID
     if (videoID?.startsWith("tt")) { //If we got an IMDB ID/TMDB ID
       const ID = videoID //We want the IMDB ID as is
       season = idDetails[1] //undefined if we don't get a season number in the query, which is fine
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with IMDB ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = Promise.resolve(ID)
+      aniZipID = ["imdb", ID]
     } else if (videoID?.startsWith("tmdb")) {
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       season = idDetails[2] //undefined if we don't get a season number in the query, which is fine
       episode = idDetails[3] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with TMDB ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = Metadata.GetIMDBIDFromTMDBID(ID, req.params.type)
+      aniZipID = ["themoviedb", ID]
     } else if (videoID.match(/^(?:kitsu|mal|anidb|anilist)$/)) { //If we got a kitsu, mal, anilist or anidb ID
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID)
+      aniZipID = [videoID, ID]
     } else {
       if (!res.headersSent) {
         res.header('Cache-Control', "max-age=31557600, stale-while-revalidate=31557600, stale-if-error=31557600")
         res.json({ meta: {}, message: "Wrong ID format, check manifest for errors" }); next()
       }
+      return
     }
 
     console.log('Extra parameters:', res.locals.extraParams)
-    animeIMDBIDPromise.then((imdbID) => {
+    //AnimeFLV used to answer these but it no longer serves videos, so find the show on the active sources.
+    //Many anime have no IMDB mapping, so the romaji title (straight from the anime ID) is enough on its own
+    const romajiPromise = relationsAPI.GetRomajiTitle(...aniZipID).catch((err) => console.error('\x1b[31mFailed getting romaji title:\x1b[39m ' + err))
+    const titlePromise = animeIMDBIDPromise.then((imdbID) => {
       if (!imdbID || imdbID === "null") throw Error("No IMDB ID")
-      console.log(`\x1b[33mGetting TMDB metadata for IMDB ID:\x1b[39m`, imdbID)
-      return Metadata.GetTMDBMeta(imdbID).then((TMDBmeta) => {
-        console.log('\x1b[36mGot TMDB metadata:\x1b[39m', TMDBmeta.shortPrint())
-        return TMDBmeta
-      }).catch((reason) => {
-        console.error("\x1b[31mDidn't get TMDB metadata because:\x1b[39m " + reason + ", \x1b[33mtrying Cinemeta...\x1b[39m")
-        return Metadata.GetCinemetaMeta(imdbID, req.params.type).then((Cinemeta) => {
-          console.log('\x1b[36mGot Cinemeta metadata:\x1b[39m', Cinemeta.shortPrint())
-          return Cinemeta
-        })
-      }).catch((err) => { //only catches error from TMDB or Cinemeta API calls, which we want
-        console.error('\x1b[31mFailed on metadata:\x1b[39m ' + err)
-        if (!res.headersSent) {
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ meta: {}, message: "Failed getting media info" })
-          next()
-        }
-        throw err //We throw the error so we can catch it later
-      })
-    }).then((metadata) => {
-      const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
-      animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem[0];
-        console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
-        return animeFLVAPI.GetAnimeBySlug(result.slug).then((animeMeta) => {
-          console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', animeMeta.name)
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ meta: animeMeta, message: "Got AnimeFLV metadata!" });
-          next()
-        })
-      }).catch((err) => {
-        if (err.message == "No search results!" && !res.headersSent) {
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ meta: {}, message: "No search results!" })
-          next()
-        }
-        console.error('\x1b[31mFailed on animeFLV search because:\x1b[39m ' + err)
-        if (!res.headersSent) {
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ meta: {}, message: "Failed getting animeFLV info" });
-          next()
-        }
-      })
+      return Metadata.GetTMDBMeta(imdbID).catch(() => Metadata.GetCinemetaMeta(imdbID, req.params.type))
+    }).then((metadata) => metadata.title).catch((err) => console.error('\x1b[31mFailed on metadata:\x1b[39m ' + err))
+    Promise.all([romajiPromise, titlePromise]).then(([romaji, title]) => {
+      const searchTerms = matching.BuildSearchTerms(romaji, title, season)
+      console.log('Search terms:', searchTerms)
+      return relationsAPI.GetNativeMeta(searchTerms)
+    }).then((animeMeta) => {
+      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.json({ meta: animeMeta, message: "Got anime metadata!" })
+      next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on metadata search because:\x1b[39m ' + err)
-      if (!res.headersSent && err.message !== "Got an AnimeFLV ID/slug") {
+      if (!res.headersSent) {
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
         res.json({ meta: {}, message: "Failed getting media info" });
         next()

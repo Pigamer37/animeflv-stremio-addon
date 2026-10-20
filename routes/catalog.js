@@ -11,6 +11,7 @@ const henaojaraAPI = require('./henaojara.js')
 const tioanimeAPI = require('./tioanime.js')
 const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
+const matching = require('../lib/matching.js')
 const latanimeAPI = require('./latanime.js')
 
 /**
@@ -300,6 +301,7 @@ function HandleCatalogRequest(req, res, next) {
   //     })
   //   }
   // }
+  if (!catalogPromise) catalogPromise = Promise.reject(Error(`Unknown catalog ${req.params.videoId}`))
   catalogPromise.then((metas) => {
     res.header('Cache-Control', "max-age=259200, stale-while-revalidate=86400, stale-if-error=259200")
     res.json({ metas, message: "Got Anime metadata!" });
@@ -328,7 +330,7 @@ function ParseConfig(req, res, next) {
 //Calendar requests
 catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", (req, res) => {
   let metasDetailed = [], uniqueIDs = [...new Set(req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
-    .filter((id) => id.startsWith("animeflv:") /*|| id.startsWith("animeav1:") || id.startsWith("henaojara:")*/ || id.startsWith("tioanime:") || id.startsWith("animejara:") || id.startsWith("jkanime:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
+    .filter((id) => /*id.startsWith("animeflv:") || id.startsWith("animeav1:") || id.startsWith("henaojara:") ||*/ id.startsWith("tioanime:") /*|| id.startsWith("animejara:")*/ || id.startsWith("jkanime:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
 
   console.log("Unique IDs:", uniqueIDs)
 
@@ -360,30 +362,15 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return jkanimeAPI.GetAnimeBySlug(ID) //only series have upcoming eps
     } else {
-      let animeIMDBIDPromise
+      //AnimeFLV used to provide these metas, but it no longer serves videos: find the show on the active sources
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
-      animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID)
-      animeIMDBIDPromise.then((imdbID) => {
+      const romajiPromise = relationsAPI.GetRomajiTitle(videoID, ID).catch(() => undefined)
+      const titlePromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID).then((imdbID) => {
         if (!imdbID || imdbID === "null") throw Error("No IMDB ID")
-        console.log(`\x1b[33mGetting TMDB metadata for IMDB ID:\x1b[39m`, imdbID)
-        return Metadata.GetTMDBMeta(imdbID).then((TMDBmeta) => {
-          console.log('\x1b[36mGot TMDB metadata:\x1b[39m', TMDBmeta.shortPrint())
-          return TMDBmeta
-        }).catch((reason) => {
-          console.error("\x1b[31mDidn't get TMDB metadata because:\x1b[39m " + reason + ", \x1b[33mtrying Cinemeta...\x1b[39m")
-          return Metadata.GetCinemetaMeta(imdbID, req.params.type).then((Cinemeta) => {
-            console.log('\x1b[36mGot Cinemeta metadata:\x1b[39m', Cinemeta.shortPrint())
-            return Cinemeta
-          })
-        })
-      }).then((metadata) => {
-        const searchTerm = ((season !== undefined) && (season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
-        return animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
-          console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
-          return animeFLVAPI.GetAnimeBySlug(animeFLVitem[0].slug)
-        })
-      })
+        return Metadata.GetTMDBMeta(imdbID).catch(() => Metadata.GetCinemetaMeta(imdbID, "series"))
+      }).then((metadata) => metadata.title).catch(() => undefined)
+      return Promise.all([romajiPromise, titlePromise]).then(([romaji, title]) => relationsAPI.GetNativeMeta(matching.BuildSearchTerms(romaji, title)))
     }
   })).then((promises) => {
     console.log("Promises allSettled")

@@ -4,7 +4,7 @@ require('dotenv').config()
  * Gets auth headers for TMDB API requests
  * @return {Object} { "Authorization": `Bearer ${process.env.TMDB_API_READ_TOKEN}` }
  */
-GetTMDBAuthToken = function () {
+function GetTMDBAuthToken () {
   return { "Authorization": `Bearer ${process.env.TMDB_API_READ_TOKEN}` }
 }
 const TMDB_API_BASE = "https://api.themoviedb.org/3"
@@ -28,7 +28,7 @@ class Metadata {
     else if (typeof releaseDate === 'string') { this.releaseDate = new Date(releaseDate) }
   }
   shortPrint() {
-    return `${this.title}, a ${(this.type === "tv") ? "series" : this.type} released ${this.releaseDate.toDateString()}`;
+    return `${this.title}, a ${(this.type === "tv") ? "series" : this.type} released ${this.releaseDate?.toDateString() || "on an unknown date"}`;
   }
   fullPrint() {
     return `${this.title}, a` + (adult !== undefined) ? "n adult" : "" +
