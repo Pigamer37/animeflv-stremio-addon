@@ -3,8 +3,10 @@ const TIOANIME_BASE = "https://tioanime.com"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
-const { SettleLimited } = require("../lib/pagination.js");
+const { CollectPages, SettleLimited } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
+
+exports.AiringCacheFile = './onair_titlesTIO.json'
 
 exports.GetAiringAnimeFromWeb = async function () {
   return GetOnAir().then((data) => {
@@ -26,7 +28,7 @@ exports.GetAiringAnimeFromWeb = async function () {
 }
 
 exports.GetAiringAnime = async function () {
-  return fsPromises.readFile('./onair_titlesTIO.json').then((data) => JSON.parse(data)).catch((err) => {
+  return fsPromises.readFile(exports.AiringCacheFile).then((data) => JSON.parse(data)).catch((err) => {
     console.error('\x1b[31mFailed reading titles cache:\x1b[39m ' + err)
     return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
   })
@@ -35,7 +37,7 @@ exports.GetAiringAnime = async function () {
 exports.UpdateAiringAnimeFile = function () {
   return this.GetAiringAnimeFromWeb().then((titles) => {
     console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
-    return fsPromises.writeFile('./onair_titlesTIO.json', JSON.stringify(titles))
+    return fsPromises.writeFile(exports.AiringCacheFile, JSON.stringify(titles))
   }).then(() => console.log('\x1b[32mOn Air TioAnime titles "cached" successfully!\x1b[39m')
   ).catch((err) => {
     console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
@@ -114,7 +116,7 @@ exports.GetAnimeBySlug = async function (slug) {
       )
     }
     return {
-      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Anime") ? "series" : "movie",
+      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (/pel[ií]cula/i.test(data.data.type)) ? "movie" : "series", //the page says "TV", "OVA", "Especial" or "Película"
       videos, poster: data.data.cover, background: `${TIOANIME_BASE}/uploads/animes/thumbs/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `tioanime:${slug}`,
       language: "jpn", links,
       ...(data.data.year) && { releaseInfo: data.data.year },
@@ -364,29 +366,9 @@ async function SearchAnimesBySpecificURL(tioanimeURL) {
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function GetOnAir() {
-  try {
-    const onAirData = await fetch(decodeURIComponent(TIOANIME_BASE)).then((resp) => {
-      if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-      if (resp === undefined) throw Error(`Undefined response!`)
-      return resp.text()
-    }).catch(() => null);
-    const $ = cheerio.load(onAirData);
-
-    const onAir = [];
-    if ($("#tioanime > div > section:nth-child(3) > ul > li").length > 0) {
-      $("#tioanime > div > section:nth-child(3) > ul > li").each((_, el) => {
-        const temp = {
-          title: $(el).find("h3").text(),
-          //type: $(el).find("a").children("span").text(),
-          slug: $(el).find("a").attr("href").replace("/anime/", ""),
-          url: TIOANIME_BASE + $(el).find("a").attr("href")
-        }
-        onAir.push(temp);
-      })
-    }
-    return onAir;
-  } catch (e) {
-    console.error("Error on GetOnAir:", e)
-    throw e
-  }
+  //the home page only shows the shows with the latest episodes (12); the airing directory lists every one (70+)
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${TIOANIME_BASE}/directorio?status=1&p=${page}`).then((data) => {
+    if (!data || data.media === undefined) throw Error("Invalid response!")
+    return data.media.map(({ title, slug, url }) => ({ title, slug, url }))
+  }))
 }

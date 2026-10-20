@@ -69,6 +69,12 @@ describe("server (offline)", () => {
     })
   }
 
+  it("lets Stremio cache an empty answer for minutes, not a day", async () => {
+    //e.g. an episode that just aired and isn't uploaded yet: it must show up as soon as the sites have it
+    const resp = await server.get("/stream/series/tt13706018:1:1.json")
+    assert.match(resp.headers.get("cache-control"), /max-age=300\b/)
+  })
+
   it("never crashes on those requests", async () => {
     await new Promise((r) => setTimeout(r, 500)) //let rejected promises surface in the log
     const bad = server.output().split("\n").filter((l) => /Unhandled|TypeError|ReferenceError|SyntaxError/.test(l))

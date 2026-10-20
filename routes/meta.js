@@ -5,6 +5,7 @@ require('dotenv').config()//process.env.var
 
 const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
+const { CLIENT_CACHE } = require('../lib/http.js')
 const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
@@ -37,13 +38,13 @@ function HandleMetaRequest(req, res, next) {
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     animeFLVAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', animeMeta.name)
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.meta)
       res.json({ meta: animeMeta, message: "Got AnimeFLV metadata!" })
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on AnimeFLV slug search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.failure)
         res.json({ meta: {}, message: "Failed getting AnimeFLV info" });
         next()
       }
@@ -53,13 +54,13 @@ function HandleMetaRequest(req, res, next) {
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     animeAV1API.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot AnimeAV1 metadata for:\x1b[39m', animeMeta.name)
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.meta)
       res.json({ meta: animeMeta, message: "Got AnimeAV1 metadata!" })
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on AnimeAV1 slug search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.failure)
         res.json({ meta: {}, message: "Failed getting AnimeAV1 info" });
         next()
       }
@@ -69,13 +70,13 @@ function HandleMetaRequest(req, res, next) {
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     henaojaraAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot Henaojara metadata for:\x1b[39m', animeMeta.name)
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.meta)
       res.json({ meta: animeMeta, message: "Got Henaojara metadata!" })
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on Henaojara slug search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.failure)
         res.json({ meta: {}, message: "Failed getting Henaojara info" });
         next()
       }
@@ -85,13 +86,13 @@ function HandleMetaRequest(req, res, next) {
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     latanimeAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot LatAnime metadata for:\x1b[39m', animeMeta.name)
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.meta)
       res.json({ meta: animeMeta, message: "Got LatAnime metadata!" })
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on LatAnime slug search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.failure)
         res.json({ meta: {}, message: "Failed getting LatAnime info" });
         next()
       }
@@ -101,13 +102,13 @@ function HandleMetaRequest(req, res, next) {
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     tioanimeAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot TioAnime metadata for:\x1b[39m', animeMeta.name)
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.meta)
       res.json({ meta: animeMeta, message: "Got TioAnime metadata!" })
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on TioAnime slug search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.failure)
         res.json({ meta: {}, message: "Failed getting TioAnime info" });
         next()
       }
@@ -118,13 +119,13 @@ function HandleMetaRequest(req, res, next) {
   //   console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
   //   animejaraAPI.GetAnimeBySlug(ID, req.params.type).then((animeMeta) => {
   //     console.log('\x1b[36mGot AnimeJara metadata for:\x1b[39m', animeMeta.name)
-  //     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+  //     res.header('Cache-Control', CLIENT_CACHE.meta)
   //     res.json({ meta: animeMeta, message: "Got AnimeJara metadata!" })
   //     next()
   //   }).catch((err) => {
   //     console.error('\x1b[31mFailed on AnimeJara slug search because:\x1b[39m ' + err)
   //     if (!res.headersSent) {
-  //       res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+  //       res.header('Cache-Control', CLIENT_CACHE.failure)
   //       res.json({ meta: {}, message: "Failed getting AnimeJara info" });
   //       next()
   //     }
@@ -134,13 +135,13 @@ function HandleMetaRequest(req, res, next) {
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     jkanimeAPI.GetAnimeBySlug(ID).then((animeMeta) => {
       console.log('\x1b[36mGot JKAnime metadata for:\x1b[39m', animeMeta.name)
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.meta)
       res.json({ meta: animeMeta, message: "Got JKAnime metadata!" })
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on JKAnime slug search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.failure)
         res.json({ meta: {}, message: "Failed getting JKAnime info" });
         next()
       }
@@ -188,13 +189,13 @@ function HandleMetaRequest(req, res, next) {
       console.log('Search terms:', searchTerms)
       return relationsAPI.GetNativeMeta(searchTerms)
     }).then((animeMeta) => {
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.meta)
       res.json({ meta: animeMeta, message: "Got anime metadata!" })
       next()
     }).catch((err) => {
       console.error('\x1b[31mFailed on metadata search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.failure)
         res.json({ meta: {}, message: "Failed getting media info" });
         next()
       }

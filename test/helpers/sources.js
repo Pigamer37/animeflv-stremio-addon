@@ -4,7 +4,7 @@ const assert = require("node:assert/strict")
 exports.SOURCES = [
   { name: "AnimeAV1", home: "https://animeav1.com/", prefix: "animeav1", file: "../../routes/animeav1.js", search: "SearchAnimeAV1", query: "spy x family", slug: "spy-x-family", onAirPageSize: 20 },
   { name: "Henaojara", home: "https://ww1.henaojara.net/", prefix: "henaojara", file: "../../routes/henaojara.js", search: "SearchHenaojara", query: "spy x family", slug: "spy-x-family", onAirPageSize: 24 },
-  { name: "TioAnime", home: "https://tioanime.com/", prefix: "tioanime", file: "../../routes/tioanime.js", search: "SearchTioAnime", query: "spy x family", slug: "spy-x-family" },
+  { name: "TioAnime", home: "https://tioanime.com/", prefix: "tioanime", file: "../../routes/tioanime.js", search: "SearchTioAnime", query: "spy x family", slug: "spy-x-family", onAirPageSize: 20 },
   { name: "JKAnime", home: "https://jkanime.net/", prefix: "jkanime", file: "../../routes/jkanime.js", search: "SearchJKAnime", query: "spy x family", slug: "spy-x-family", onAirPageSize: 30 },
   { name: "LatAnime", home: "https://latanime.org/buscar?q=naruto", prefix: "latanime", file: "../../routes/latanime.js", search: "SearchLatAnime", query: "spy x family", slug: "spy-x-family-latino", onAirPageSize: 30 },
 ]

@@ -2,6 +2,8 @@
 const express = require("express")
 const app = express()
 
+require("./lib/http.js").Install() //shared cache, per-site limits and a browser User-Agent for every request to the sites
+
 //const { addonBuilder, serveHTTP, publishToCentral } = require('stremio-addon-sdk')
 
 function setCORS(_req, res, next) {
@@ -412,9 +414,14 @@ app.listen(process.env.PORT || 3000, () => {
   const jkanimeAPI = require('./routes/jkanime.js')
   const latanimeAPI = require('./routes/latanime.js')
   let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI, jkanimeAPI, latanimeAPI]
+  const REFRESH = 6 * 3600000 //newly airing shows appear within hours; each refresh is a few requests per site
   imports.forEach((api) => {
-    api.UpdateAiringAnimeFile().then(() => {
-      setInterval(api.UpdateAiringAnimeFile.bind(api), 86400000); //Update every 24h
+    //After a restart, wait until the saved list is due instead of refreshing every source at once (~280 requests
+    //on each restart)
+    fsPromises.stat(api.AiringCacheFile).then((file) => Math.max(0, REFRESH - (Date.now() - file.mtimeMs))).catch(() => 0).then((wait) => {
+      setTimeout(() => {
+        api.UpdateAiringAnimeFile().then(() => setInterval(api.UpdateAiringAnimeFile.bind(api), REFRESH))
+      }, wait)
     })
   })
 });
