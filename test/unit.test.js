@@ -165,3 +165,35 @@ describe("GetStreamLinks episode names", () => {
     assert.match((await linksFor(NaN))[0].description, /^Show\n/)
   })
 })
+
+describe("search catalogs paging", () => {
+  //JKAnime and LatAnime return every match on one page: page 2 must be empty, not page 1 again (Stremio keeps asking)
+  for (const [file, fn] of [["../routes/jkanime.js", "SearchJKAnime"], ["../routes/latanime.js", "SearchLatAnime"]]) {
+    it(`${fn} returns nothing past the first page of a text search`, async () => {
+      const realFetch = globalThis.fetch
+      globalThis.fetch = async () => { throw Error("should not fetch") }
+      try { assert.deepEqual(await require(file)[fn]("naruto", undefined, undefined, undefined, 2), []) } finally { globalThis.fetch = realFetch }
+    })
+  }
+})
+
+describe("JKAnime next episode date", () => {
+  const { NextAiringDate } = require("../routes/jkanime.js")
+  it("reads any Spanish month and picks the upcoming year", () => {
+    const now = new Date()
+    for (const [text, month] of [["Martes 27 de Octubre", 9], ["Lunes 5 de Enero", 0], ["Viernes 14 de Septiembre", 8]]) {
+      const date = NextAiringDate(text)
+      assert.equal(date.getMonth(), month, text)
+      assert.ok(date > now - 8 * 86400000, `${text} is in the past: ${date}`)
+    }
+  })
+  it("reads it from the page's paragraph, which also mentions the last episode", () => {
+    const date = NextAiringDate("Último episodio: Chitose-kun wa Ramune Bin no Naka Part 2 - 2 NuevoMartes 27 Octubre")
+    assert.equal(date.getMonth(), 9)
+    assert.equal(date.getDate(), 27)
+  })
+  it("returns nothing when it can't read the date", () => {
+    assert.equal(NextAiringDate(undefined), undefined)
+    assert.equal(NextAiringDate("Próximamente"), undefined)
+  })
+})

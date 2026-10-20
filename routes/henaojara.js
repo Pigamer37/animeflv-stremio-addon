@@ -73,6 +73,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
     const epCount = data.data.episodes.length
+    const nextNumber = Math.max(0, ...data.data.episodes.map((ep) => Number(ep.number) || 0)) + 1 //lists can start at 0 or skip numbers
     const videos = data.data.episodes.map((ep) => {
       let d = new Date(Date.now())
       return {
@@ -88,11 +89,11 @@ exports.GetAnimeBySlug = async function (slug) {
     })
     if (data.data.next_airing_episode !== undefined) {
       videos.push({
-        id: `henaojara:${slug}:${epCount + 1}`,
-        title: `${data.data.title} Ep. ${epCount + 1}`,
+        id: `henaojara:${slug}:${nextNumber}`,
+        title: `${data.data.title} Ep. ${nextNumber}`,
         season: 1,
-        episode: epCount + 1,
-        number: epCount + 1,
+        episode: nextNumber,
+        number: nextNumber,
         thumbnail: "https://i.imgur.com/3U6r1nF.jpg",
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
@@ -208,6 +209,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     }
     if (downloadObj) {
       for (const s of downloadObj) {
+        if (!URL.canParse(s)) continue
         const sURL = new URL(s)
         episodeLinks.servers.push({
           name: streamParser.getServerTitle(sURL.hostname),
@@ -264,7 +266,7 @@ async function GetAnimeInfo(slug) {
       for (const ep of epObj) {
         if (animeInfo.episodes instanceof Array) {
           animeInfo.episodes.push({
-            number: ep[0],
+            number: Number(ep[0]),
             slug: slug + "-" + ep[0],
             url: HENAOJARA_BASE + "/ver/" + slug + "-" + ep[0]
           });

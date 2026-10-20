@@ -27,6 +27,9 @@ exports.checkMeta = async function (src) {
   assert.ok(meta.videos.length >= 12, `expected at least 12 episodes, got ${meta.videos.length}`)
   assert.ok(meta.videos.every((v) => v.id.startsWith(`${src.prefix}:${src.slug}:`)), "episode with a foreign id")
   assert.ok(meta.poster, "meta without poster")
+  assert.ok(meta.videos.every((v) => typeof v.episode === "number" && typeof v.number === "number"), "episode numbers must be numbers")
+  assert.ok(meta.videos.every((v) => !String(v.thumbnail).includes("undefined")), "broken episode thumbnail")
+  assert.ok(meta.videos.every((v) => v.released === undefined || !isNaN(new Date(v.released))), "invalid release date")
 }
 
 exports.checkStreams = async function (src) {

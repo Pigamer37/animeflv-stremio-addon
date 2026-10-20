@@ -51,7 +51,7 @@ exports.SearchTioAnime = async function (query, type = undefined, genreArr = und
   }
 //the query is encoded twice because the whole URL is decoded once before fetching
   const tioanimeURL = (url) ? url //this search requires the year, sorting order and status (only one of them) to be added, otherwise it returns empty
-    : `${TIOANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(encodeURIComponent(query)) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genre%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C${new Date().getFullYear() + 1}&status=2&sort=recent`
+    : `${TIOANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(encodeURIComponent(query)) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genero%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C${new Date().getFullYear() + 1}&status=2&sort=recent`
   return SearchAnimesBySpecificURL(tioanimeURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -77,8 +77,9 @@ exports.GetAnimeBySlug = async function (slug) {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
     const epCount = data.data.episodes.length
+    const nextNumber = Math.max(0, ...data.data.episodes.map((ep) => Number(ep.number) || 0)) + 1 //lists can start at 0 or skip numbers
     const imgPattern = /\/(\d+).jpg$/g
-    const matches = imgPattern.exec(data.data.cover)
+    const matches = imgPattern.exec(data.data.cover) || [] //covers without a numeric file name just get no thumbnails
     const videos = data.data.episodes.map((ep) => {
       let d = new Date(Date.now())
       return {
@@ -87,18 +88,18 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: ep.number,
         number: ep.number,
-        thumbnail: `${TIOANIME_BASE}/uploads/thumbs/${matches[1]}.jpg`,
+        thumbnail: (matches[1]) ? `${TIOANIME_BASE}/uploads/thumbs/${matches[1]}.jpg` : undefined,
         released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
     })
     if (data.data.next_airing_episode !== undefined) {
       videos.push({
-        id: `tioanime:${slug}:${epCount + 1}`,
-        title: `${data.data.title} Ep. ${epCount + 1}`,
+        id: `tioanime:${slug}:${nextNumber}`,
+        title: `${data.data.title} Ep. ${nextNumber}`,
         season: 1,
-        episode: epCount + 1,
-        number: epCount + 1,
+        episode: nextNumber,
+        number: nextNumber,
         thumbnail: `https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png`,
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
@@ -117,7 +118,7 @@ exports.GetAnimeBySlug = async function (slug) {
     }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (/pel[ií]cula/i.test(data.data.type)) ? "movie" : "series", //the page says "TV", "OVA", "Especial" or "Película"
-      videos, poster: data.data.cover, background: `${TIOANIME_BASE}/uploads/animes/thumbs/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `tioanime:${slug}`,
+      videos, poster: data.data.cover, background: (matches[1]) ? `${TIOANIME_BASE}/uploads/animes/thumbs/${matches[1]}.jpg` : data.data.cover, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `tioanime:${slug}`,
       language: "jpn", links,
       ...(data.data.year) && { releaseInfo: data.data.year },
       //both behavior hints can't coexist, if there's an upcoming episode, videos.length > 1

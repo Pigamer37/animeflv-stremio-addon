@@ -59,6 +59,7 @@ describe("server (offline)", () => {
     ["/stream/series/animeflv:naruto:1.json", "streams"],
     ["/meta/series/unknown:x.json", "meta"],
     ["/catalog/series/calendar-videos/calendarVideosIds=kitsu:11538,mal:32093.json", "metasDetailed"],
+    ["/onAirCatalogs=latanime/catalog/series/calendar-videos/calendarVideosIds=kitsu:11538.json", "metasDetailed"], //configured installs
   ]
   for (const [route, key] of emptyAnswers) {
     it(`answers ${route} without the network`, async () => {

@@ -53,6 +53,7 @@ exports.UpdateAiringAnimeFile = function () {
 
 exports.SearchLatAnime = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchLatAnime()")
+  if (query && page > 1) return [] //text searches return every match at once; asking again only repeats page 1
   let latanimeURL
   if (url) latanimeURL = new URL(url)
   else if (query) {

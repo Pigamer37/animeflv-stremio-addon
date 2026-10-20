@@ -86,6 +86,13 @@ You can add some configuration before the call. Right now, the only available co
 > [!TIP]
 > When running locally, your IP and the server's IP are the same, so you can uncomment [the code on `streamParsing.js`](lib/streamParsing.js#L30) that extracts StreamTape, Streamwish, Okru & Mixdrop links and they should work inside of Stremio (see [TO DO](#to-do)).
 
+## If a site blocks the server
+Requests to the sites are cached, limited to 2 at a time per site and paused when a site asks to wait (see `lib/http.js`), which keeps normal traffic under their rate limits. Some sites, though, block whole IP ranges: JKAnime and LatAnime's search answer 403 to datacenter IPs such as GitHub's. If that happens to your server, route the requests through a proxy without changing any code (Node 22.21+ or 24.5+):
+```
+NODE_USE_ENV_PROXY=1 HTTPS_PROXY=http://user:password@proxy-host:port npm start
+```
+Add `NO_PROXY=api.themoviedb.org,graphql.anilist.co` to keep the metadata APIs on the direct connection.
+
 ## Tests
 Tests use Node's built-in test runner, no extra dependencies:
 - `npm test`: offline tests, run on every push and pull request. They cover the matching rules, the scrapers against pages recorded from each site (`test/fixtures/`), and the server with the network disabled.

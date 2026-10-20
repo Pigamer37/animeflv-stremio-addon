@@ -93,6 +93,30 @@ describe("lib/http.js", () => {
     }
   })
 
+  it("keeps a 404 only briefly: an episode page that 404s now may be uploaded in minutes", async () => {
+    let clock = 0
+    const site = fakeSite({ statuses: [404, 200] })
+    const fetch = CreateFetch(site.fetch, { now: () => clock }) //default TTLs: episode pages are kept an hour
+    await fetch("https://tioanime.com/ver/show-13")
+    clock = 3 * 60 * 1000
+    assert.equal((await fetch("https://tioanime.com/ver/show-13")).status, 200)
+    assert.equal(site.calls.length, 2)
+  })
+
+  it("handles responses without a body (204)", async () => {
+    const fetch = CreateFetch(async () => new Response(null, { status: 204 }))
+    assert.equal((await fetch("https://a.com/x")).status, 204)
+  })
+
+  it("understands a Retry-After given as a date", async () => {
+    let clock = Date.parse("2026-10-21T10:00:00Z")
+    const site = fakeSite({ statuses: [429, 200], headers: { "retry-after": "Wed, 21 Oct 2026 10:05:00 GMT" } })
+    const fetch = CreateFetch(site.fetch, { now: () => clock })
+    await fetch("https://a.com/x")
+    assert.equal((await fetch("https://a.com/y")).status, 429) //paused for 5 minutes
+    assert.equal(site.calls.length, 1)
+  })
+
   it("caches a 404, which is a stable answer", async () => {
     const site = fakeSite({ statuses: [404, 200] })
     const fetch = CreateFetch(site.fetch)

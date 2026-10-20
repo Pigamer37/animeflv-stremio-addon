@@ -77,8 +77,9 @@ exports.GetAnimeBySlug = async function (slug) {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
     const epCount = data.data.episodes.length
+    const nextNumber = Math.max(0, ...data.data.episodes.map((ep) => Number(ep.number) || 0)) + 1 //lists can start at 0 or skip numbers
     const imgPattern = /\/(\d+).jpg$/g
-    const matches = imgPattern.exec(data.data.cover)
+    const matches = imgPattern.exec(data.data.cover) || [] //covers without a numeric file name just get no thumbnails
     const videos = data.data.episodes.map((ep) => {
       let d = new Date(Date.now())
       return {
@@ -87,18 +88,18 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: ep.number,
         number: ep.number,
-        thumbnail: `https://cdn.animeav1.com/screenshots/${matches[1]}/${ep.number}.jpg`,//`https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
+        thumbnail: (matches[1]) ? `https://cdn.animeav1.com/screenshots/${matches[1]}/${ep.number}.jpg` : undefined,//`https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
         released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
     })
     if (data.data.next_airing_episode !== undefined) {
       videos.push({
-        id: `animeav1:${slug}:${epCount + 1}`,
-        title: `${data.data.title} Ep. ${epCount + 1}`,
+        id: `animeav1:${slug}:${nextNumber}`,
+        title: `${data.data.title} Ep. ${nextNumber}`,
         season: 1,
-        episode: epCount + 1,
-        number: epCount + 1,
+        episode: nextNumber,
+        number: nextNumber,
         thumbnail: "https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png",
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
@@ -117,7 +118,7 @@ exports.GetAnimeBySlug = async function (slug) {
     }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
-      videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
+      videos, poster: data.data.cover, background: (matches[1]) ? `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg` : data.data.cover, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
       language: "jpn", links,
       runtime: data.data.runtime,
       ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: data.data.startDate.getFullYear() + "-".concat((data.data.endDate!==undefined)?data.data.endDate?.getFullYear():"") },
@@ -274,7 +275,7 @@ async function GetAnimeInfo(slug) {
       //next_airing_episode: nextAiringInfo ? JSON.parse(nextAiringInfo)?.[3] : undefined,
       episodes: [],
       url,
-      ...(metadataObj?.match(/runtime:\s?(.*?),/)?.[1] !== "null") && { runtime: `${metadataObj?.match(/runtime:\s?(.*?),/)?.[1]}m` || undefined },
+      ...(/^\d+$/.test(metadataObj?.match(/runtime:\s?(.*?),/)?.[1] || "")) && { runtime: `${metadataObj.match(/runtime:\s?(.*?),/)[1]}m` },
       ...(metadataObj?.match(/trailer:\s?"(.*?)",/)?.[1]) && { trailers: metadataObj?.match(/trailer:\s?"(.*?)",/)?.[1] || undefined }
     };
     

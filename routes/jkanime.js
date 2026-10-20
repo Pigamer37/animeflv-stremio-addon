@@ -39,6 +39,7 @@ exports.UpdateAiringAnimeFile = function () {
 //TODO
 exports.SearchJKAnime = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchJKAnime()")
+  if (query && page > 1) return [] //text searches return every match at once; asking again only repeats page 1
   let jkanimeURL
   if (url) jkanimeURL = url
   else if (query) jkanimeURL = `${JKANIME_BASE}/buscar/${encodeURIComponent(encodeURIComponent(query))}` //the URL is decoded once before fetching
@@ -115,7 +116,7 @@ exports.GetAnimeBySlug = async function (slug) {
       videos, poster: data.data.cover, background: videos[0]?.thumbnail, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `jkanime:${slug}`,
       language: "jpn", links,
       ...(data.data.runtime) && { runtime: data.data.runtime },
-      ...(data.data.released) && { released: data.data.released, releaseInfo: `${data.data.released.getFullYear()}${(data.data.status === "Concluido") ? "" : "-"}` },
+      ...(data.data.released && !isNaN(data.data.released)) && { released: data.data.released, releaseInfo: `${data.data.released.getFullYear()}${(data.data.status === "Concluido") ? "" : "-"}` },
       ...(data.data.trailer) && { trailers: [{ source: data.data.trailer, type: "Trailer" }] },
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `jkanime:${slug}:1` } }
@@ -224,7 +225,7 @@ async function GetAnimeInfo(slug) {
       genres: metadataLis.filter((_, el) => $(el).text()?.includes("Generos:")).first().find('a')
         .map((_, el) => $(el).text().trim())
         .get(),
-      next_airing_episode: nextAiringInfo ? nextAiringInfo + ' ' + new Date().getFullYear() : undefined,
+      next_airing_episode: NextAiringDate(nextAiringInfo),
       episodes: [],
       url,
       runtime: metadataLis.filter((_, el) => $(el).text().includes("Duracion:"))?.first()?.text()?.replace("Duracion:", "")?.trim().slice(0, -1),
@@ -265,8 +266,8 @@ async function GetAnimeInfo(slug) {
           number: i,
           slug: `${slug}/${i}`,
           url: JKANIME_BASE + `${slug}/${i}`,
-          thumbnail: `https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/${byNumber.get(i)?.image}`,
-          released: byNumber.get(i)?.timestamp ? new Date(byNumber.get(i).timestamp.replace(" ", "T") + "-05:00") : undefined
+          thumbnail: (byNumber.get(i)?.image) ? `https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/${byNumber.get(i).image}` : undefined, //only page 1 is fetched
+          released: byNumber.get(i)?.timestamp ? new Date(byNumber.get(i).timestamp.replace(" ", "T") + "Z") : undefined //read as UTC: never later than the real upload
         })
       }
     }
@@ -420,3 +421,17 @@ async function GetOnAir() {
     })
   }))
 }
+
+const SPANISH_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+//"Martes 27 de Octubre" (no year) -> the next such date, or undefined if it can't be read
+function NextAiringDate(text) {
+  //the paragraph also holds the last episode ("... - 2 Nuevo"), so take the first "<day> [de] <month>" that is a real month
+  const match = [...(text?.toLowerCase() || "").matchAll(/(\d{1,2})\s+(?:de\s+)?([a-záéíóú]+)/g)].find((m) => SPANISH_MONTHS.includes(m[2]))
+  if (!match) return undefined
+  const month = SPANISH_MONTHS.indexOf(match[2])
+  const now = new Date()
+  const date = new Date(now.getFullYear(), month, Number(match[1]))
+  if (date < now - 7 * 86400000) date.setFullYear(date.getFullYear() + 1) //e.g. "5 de Enero" read in December
+  return date
+}
+exports.NextAiringDate = NextAiringDate
