@@ -167,10 +167,10 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     const scripts = $("script");
     const metadataJSON = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("kit.start(app, element, {"));
     
-    const serversObj = metadataJSON?.match(/embeds:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
-    const downloadObj = metadataJSON?.match(/downloads:\s?.*?SUB:\s?(\[.*?\])/)?.[1];
-    const serversObjDUB = metadataJSON?.match(/embeds:\s?.*?DUB:\s?(\[.*?\])/)?.[1];
-    const downloadObjDUB = metadataJSON?.match(/downloads:\s?.*?DUB:\s?(\[.*?\])/)?.[1];
+    const serversObj = ServerList(metadataJSON, "embeds", "SUB");
+    const downloadObj = ServerList(metadataJSON, "downloads", "SUB");
+    const serversObjDUB = ServerList(metadataJSON, "embeds", "DUB");
+    const downloadObjDUB = ServerList(metadataJSON, "downloads", "DUB");
     let servers = [];
     if (serversObj) {
       servers = serversObj.split("},")?.map(s => {
@@ -432,4 +432,14 @@ async function GetOnAir() {
       }
     })
   })
+}
+
+/**
+ * One server array from the page's script, e.g. ServerList(script, "embeds", "DUB") from
+ * `embeds:{DUB:[...],SUB:[...]},downloads:{SUB:[...]}`. The language is only looked up inside its own block:
+ * a lazy `embeds:.*?DUB:` crossed into the downloads block when an episode had no dubbed embeds.
+ */
+function ServerList(script, block, lang) {
+  const blockBody = script?.match(new RegExp(`${block}:\\s?\\{((?:\\w+:\\s?\\[.*?\\],?)*)\\}`))?.[1]
+  return blockBody?.match(new RegExp(`\\b${lang}:\\s?(\\[.*?\\])`))?.[1]
 }
