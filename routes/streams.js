@@ -100,6 +100,7 @@ function HandleStreamRequest(req, res, next) {
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
         res.json({ streams, message: "Wrong ID format, check manifest for errors" }); next()
       }
+      return //nothing else to do, and there's no promise to continue with
     }
 
     console.log('Extra parameters:', res.locals.extraParams)
