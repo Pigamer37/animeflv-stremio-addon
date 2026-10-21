@@ -4,6 +4,7 @@ const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
 const episodes = require("../lib/episodes.js");
+const { CollectPages, SettleLimited } = require("../lib/pagination.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
@@ -15,16 +16,15 @@ exports.GetAiringAnimeFromWeb = async function () {
     return { data }
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
-    const promises = data.data.map((entry) => {
+    //4 at a time: opening every airing show's page at once gets the addon rate limited (HTTP 429)
+    return SettleLimited(data.data, 4, (entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
           title: anime.name, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
-    })
-
-    return Promise.allSettled(promises).then((results) =>
+    }).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value)
     )
   })
@@ -429,7 +429,8 @@ async function SearchAnimesBySpecificURL(animeAV1URL) {
 }
 
 async function GetOnAir() {
-  return SearchAnimesBySpecificURL(`${ANIMEAV1_BASE}/catalogo?status=emision`).then((data) => {
+  //airing lists span several pages (AnimeAV1: 66 shows over 4); only the first one used to be read
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${ANIMEAV1_BASE}/catalogo?status=emision&page=${page}`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
     return data.media.map((anime) => {
       return {
@@ -439,7 +440,7 @@ async function GetOnAir() {
         url: anime.url
       }
     })
-  })
+  }))
 }
 
 /**

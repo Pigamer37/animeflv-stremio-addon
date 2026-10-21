@@ -4,6 +4,7 @@ const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
 const episodes = require("../lib/episodes.js");
+const { CollectPages, SettleLimited } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
 exports.AiringCacheFile = './onair_titlesTIO.json'
@@ -14,16 +15,15 @@ exports.GetAiringAnimeFromWeb = async function () {
     return { data }
   }).then((data) => {
     if (data?.data === undefined) throw Error("Invalid response!")
-    const promises = data.data.map((entry) => {
+    //4 at a time: opening every airing show's page at once gets the addon rate limited (HTTP 429)
+    return SettleLimited(data.data, 4, (entry) => {
       return this.GetAnimeBySlug(entry.slug).then((anime) => {
         return {
           title: anime.name, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
           slug: entry.slug, poster: anime.poster, overview: anime.description
         }
       })
-    })
-
-    return Promise.allSettled(promises).then((results) =>
+    }).then((results) =>
       results.filter((prom) => (prom.value)).map((source) => source.value)
     )
   })
@@ -377,29 +377,9 @@ async function SearchAnimesBySpecificURL(tioanimeURL) {
 }
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function GetOnAir() {
-  try {
-    const onAirData = await fetch(TIOANIME_BASE).then((resp) => {
-      if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-      if (resp === undefined) throw Error(`Undefined response!`)
-      return resp.text()
-    }).catch(() => null);
-    const $ = cheerio.load(onAirData);
-
-    const onAir = [];
-    if ($("#tioanime > div > section:nth-child(3) > ul > li").length > 0) {
-      $("#tioanime > div > section:nth-child(3) > ul > li").each((_, el) => {
-        const temp = {
-          title: $(el).find("h3").text(),
-          //type: $(el).find("a").children("span").text(),
-          slug: $(el).find("a").attr("href").replace("/anime/", ""),
-          url: TIOANIME_BASE + $(el).find("a").attr("href")
-        }
-        onAir.push(temp);
-      })
-    }
-    return onAir;
-  } catch (e) {
-    console.error("Error on GetOnAir:", e)
-    throw e
-  }
+  //the home page only shows the shows with the latest episodes (12); the airing directory lists every one (70+)
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${TIOANIME_BASE}/directorio?status=1&p=${page}`).then((data) => {
+    if (!data || data.media === undefined) throw Error("Invalid response!")
+    return data.media.map(({ title, slug, url }) => ({ title, slug, url }))
+  }))
 }
