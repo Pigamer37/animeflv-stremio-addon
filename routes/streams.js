@@ -155,7 +155,8 @@ function HandleStreamRequest(req, res, next) {
         return henaojaraAPI.GetItemStreams(result.slug, onlyInternal, episode)
       })
       const tioanimep = tioanimeAPI.SearchTioAnime(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem[0];
+        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj; //no first-result fallback: it served another show's streams
+        if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot TioAnime entry:\x1b[39m', result.title)
         return tioanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
       })
