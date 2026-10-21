@@ -45,6 +45,7 @@ exports.UpdateAiringAnimeFile = function () {
 //TODO
 exports.SearchJKAnime = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchJKAnime()")
+  if (query && page > 1) return [] //text searches return every match at once; asking again only repeated page 1
   let jkanimeURL
   if (url) jkanimeURL = url
   else if (query) jkanimeURL = `${JKANIME_BASE}/buscar/${query}`
