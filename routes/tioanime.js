@@ -49,7 +49,7 @@ exports.SearchTioAnime = async function (query, type = undefined, genreArr = und
     type = (type === "movie") ? "type%5B%5D%3D1%26" : "type%5B%5D%3D0%26type%5B%5D%3D2%26type%5B%5D%3D3%26"
   }
   const tioanimeURL = (url) ? url //this search requires the year, sorting order and status (only one of them) to be added, otherwise it returns empty
-    : `${TIOANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(query) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genre%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C2026&status=2&sort=recent`
+    : `${TIOANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(query) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genero%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C${new Date().getFullYear() + 1}&status=2&sort=recent`
   return SearchAnimesBySpecificURL(tioanimeURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -114,7 +114,7 @@ exports.GetAnimeBySlug = async function (slug) {
       )
     }
     return {
-      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Anime") ? "series" : "movie",
+      name: data.data.title, alternative_titles: data.data.alternative_titles, type: (/pel[ií]cula/i.test(data.data.type)) ? "movie" : "series", //the page says "TV", "OVA", "Especial" or "Película"
       videos, poster: data.data.cover, background: `${TIOANIME_BASE}/uploads/animes/thumbs/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `tioanime:${slug}`,
       language: "jpn", links,
       ...(data.data.year) && { releaseInfo: data.data.year },
