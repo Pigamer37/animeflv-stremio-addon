@@ -105,7 +105,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
-    links=[{name:"TioAnime",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
+    const links = [{name:"TioAnime",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
     if(data.data.related){//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {
@@ -234,7 +234,7 @@ async function GetAnimeInfo(slug) {
     
     const epObj = JSON.parse(episodesArray)
     if (epObj) {
-      for (ep of epObj) {
+      for (const ep of epObj) {
         if (animeInfo.episodes instanceof Array) {
           animeInfo.episodes.push({
             number: ep,

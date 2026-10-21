@@ -107,7 +107,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
-    links = [{ name: "JKAnime", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
+    const links = [{ name: "JKAnime", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
     if (data.data.related) {//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {
@@ -172,8 +172,7 @@ async function GetEpisodeLinks(slug, epNumber = undefined) {
     if (serversObj) {
       const servers = JSON.parse(serversObj);
       for (const s of servers) {
-        dubLang = undefined
-        if (s?.lang === 3) dubLang = "lat"
+        const dubLang = (s?.lang === 3) ? "lat" : undefined
         episodeLinks.servers.push({
           name: streamParser.getServerTitle(s?.server),
           //download: s?.[1]?.replace("mega.nz/#!", "mega.nz/file/"),

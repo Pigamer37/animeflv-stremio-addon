@@ -105,7 +105,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (videos.length === 1 && epCount === 1) { //If only one ep. probably a movie, remove the "Ep. 1" from the title
       videos[0].title = videos[0].title.replace(" Ep. 1", "")
     }
-    links=[{name:"AnimeAV1",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
+    const links = [{name:"AnimeAV1",category:"Open in",url:data.data.url},{name:data.data.title,category:"share",url:data.data.url}]
     if(data.data.related){//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {

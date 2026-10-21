@@ -4,7 +4,7 @@ require('dotenv').config()
  * Gets auth headers for TMDB API requests
  * @return {Object} { "Authorization": `Bearer ${process.env.TMDB_API_READ_TOKEN}` }
  */
-GetTMDBAuthToken = function () {
+function GetTMDBAuthToken () {
   return { "Authorization": `Bearer ${process.env.TMDB_API_READ_TOKEN}` }
 }
 const TMDB_API_BASE = "https://api.themoviedb.org/3"
