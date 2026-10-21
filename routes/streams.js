@@ -5,6 +5,7 @@ require('dotenv').config()//process.env.var
 
 const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
+const CLIENT_CACHE = require('../lib/clientCache.js')
 // const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
@@ -64,12 +65,12 @@ function HandleStreamRequest(req, res, next) {
     CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.streams)
         res.json({ streams: combinedStreams, message: "Got streams!" })
         next()
       } else {
         if (!res.headersSent) {
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+          res.header('Cache-Control', CLIENT_CACHE.failure)
           res.json({ streams, message: "Failed getting streams" });
           next()
         }
@@ -127,7 +128,7 @@ function HandleStreamRequest(req, res, next) {
       return metaProm.catch((err) => { //only catches error from TMDB or Cinemeta API calls, which we want
         console.error('\x1b[31mFailed on metadata:\x1b[39m ' + err)
         if (!res.headersSent) {
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+          res.header('Cache-Control', CLIENT_CACHE.failure)
           res.json({ streams, message: "Failed getting media info" })
           next()
         }
@@ -180,12 +181,12 @@ function HandleStreamRequest(req, res, next) {
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+          res.header('Cache-Control', CLIENT_CACHE.streams)
           res.json({ streams: combinedStreams, message: "Got streams!" })
           next()
         } else {
           if (!res.headersSent) {
-            res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+            res.header('Cache-Control', CLIENT_CACHE.failure)
             res.json({ streams, message: "Failed getting streams" });
             next()
           }
@@ -194,7 +195,7 @@ function HandleStreamRequest(req, res, next) {
     }).catch((err) => {
       console.error('\x1b[31mFailed on metadata search because:\x1b[39m ' + err)
       if (!res.headersSent) {
-        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.header('Cache-Control', CLIENT_CACHE.failure)
         res.json({ streams, message: "Failed getting media info" })
         next()
       }
