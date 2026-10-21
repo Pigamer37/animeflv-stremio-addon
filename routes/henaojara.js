@@ -46,8 +46,14 @@ exports.UpdateAiringAnimeFile = function () {
 
 exports.SearchHenaojara = async function (query, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchHenaojara()")
-  const henaojaraURL = (url) ? url
-    : `${encodeURIComponent(HENAOJARA_BASE)}%2Fanimes%3F${(query) ? "buscar%3D" + encodeURIComponent(query).replaceAll('%20','+') + "%26" : ""}${(genreArr) ? encodeURIComponent("genero%3D" + genreArr.join("%2C")) : ""}${(page) ? "%26pag%3D" + page : ""}`
+  let henaojaraURL = url
+  if (!henaojaraURL) {
+    const searchURL = new URL(`${HENAOJARA_BASE}/animes`) //URL objects encode each value (e.g. "Love & Lies #1") correctly
+    if (query) searchURL.searchParams.set("buscar", query)
+    if (genreArr) searchURL.searchParams.set("genero", genreArr.join(","))
+    if (page) searchURL.searchParams.set("pag", page)
+    henaojaraURL = searchURL.href
+  }
     return SearchAnimesBySpecificURL(henaojaraURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -301,7 +307,7 @@ async function GetAnimeInfo(slug) {
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function SearchAnimesBySpecificURL(henaojaraURL) {
   try {
-    const html = await fetch(decodeURIComponent(henaojaraURL)).then((resp) => {
+    const html = await fetch(henaojaraURL).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
       return resp.text()
@@ -382,7 +388,7 @@ async function SearchAnimesBySpecificURL(henaojaraURL) {
 }
 
 async function GetOnAir() {
-  return SearchAnimesBySpecificURL(`${decodeURIComponent(HENAOJARA_BASE)}/animes?estado=en-emision`).then((data) => {
+  return SearchAnimesBySpecificURL(`${HENAOJARA_BASE}/animes?estado=en-emision`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
     return data.media.map((anime) => {
       return {

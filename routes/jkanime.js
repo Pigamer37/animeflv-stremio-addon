@@ -47,7 +47,7 @@ exports.SearchJKAnime = async function (query, type = undefined, genreArr = unde
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchJKAnime()")
   let jkanimeURL
   if (url) jkanimeURL = url
-  else if (query) jkanimeURL = `${JKANIME_BASE}/buscar/${query}`
+  else if (query) jkanimeURL = new URL(`${JKANIME_BASE}/buscar/${encodeURIComponent(query)}`) //a path segment: "Fate/Zero" must stay one
   else {
     jkanimeURL = new URL(`${JKANIME_BASE}/directorio`)
     if (genreArr) jkanimeURL.searchParams.set('genero', genreArr[0])
@@ -325,7 +325,7 @@ async function GetAnimeInfo(slug) {
 
 async function SearchAnimesBySpecificURL(jkanimeURL) {
   try {
-    const html = await fetch(decodeURIComponent(jkanimeURL)).then((resp) => {
+    const html = await fetch(jkanimeURL).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
       return resp.text()
