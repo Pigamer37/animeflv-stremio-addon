@@ -177,25 +177,16 @@ function HandleMetaRequest(req, res, next) {
       })
     }).then((metadata) => {
       const searchTerm = ((season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
-      animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, all: true})[0]?.obj || animeFLVitem[0];
-        console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
-        return animeFLVAPI.GetAnimeBySlug(result.slug).then((animeMeta) => {
-          console.log('\x1b[36mGot AnimeFLV metadata for:\x1b[39m', animeMeta.name)
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ meta: animeMeta, message: "Got AnimeFLV metadata!" });
-          next()
-        })
+      //AnimeFLV used to answer these but it no longer serves videos: use the first active source that has the show
+      FindNativeMeta(searchTerm).then((animeMeta) => {
+        res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+        res.json({ meta: animeMeta, message: "Got anime metadata!" });
+        next()
       }).catch((err) => {
-        if (err.message == "No search results!" && !res.headersSent) {
-          res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ meta: {}, message: "No search results!" })
-          next()
-        }
-        console.error('\x1b[31mFailed on animeFLV search because:\x1b[39m ' + err)
+        console.error('\x1b[31mFailed on anime search because:\x1b[39m ' + err)
         if (!res.headersSent) {
           res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
-          res.json({ meta: {}, message: "Failed getting animeFLV info" });
+          res.json({ meta: {}, message: "No search results!" });
           next()
         }
       })
@@ -227,3 +218,25 @@ metas.get("/:config/meta/:type/:videoId.json", ParseConfig, HandleMetaRequest)
 metas.get("/meta/:type/:videoId.json", HandleMetaRequest)
 
 module.exports = metas;
+
+//Sources whose meta can stand in for an anime ID's (AniList, MAL, AniDB...), in order of preference. Their videos
+//have streams, unlike AnimeFLV's
+const NATIVE_META_SOURCES = [
+  { name: "AnimeAV1", search: (term) => animeAV1API.SearchAnimeAV1(term), meta: (slug) => animeAV1API.GetAnimeBySlug(slug) },
+  { name: "JKAnime", search: (term) => jkanimeAPI.SearchJKAnime(term), meta: (slug) => jkanimeAPI.GetAnimeBySlug(slug) },
+  { name: "TioAnime", search: (term) => tioanimeAPI.SearchTioAnime(term), meta: (slug) => tioanimeAPI.GetAnimeBySlug(slug) },
+]
+async function FindNativeMeta(searchTerm) {
+  for (const src of NATIVE_META_SOURCES) {
+    try {
+      const items = await src.search(searchTerm)
+      const result = fuzzysort.go(searchTerm, items, { key: "title", limit: 1, threshold: .5 })[0]?.obj
+      if (!result) throw Error("No search results!")
+      console.log(`\x1b[36mGot ${src.name} entry:\x1b[39m`, result.title)
+      return await src.meta(result.slug)
+    } catch (err) {
+      console.error(`\x1b[31mNo ${src.name} match because:\x1b[39m ${err}`)
+    }
+  }
+  throw Error("No search results!")
+}
