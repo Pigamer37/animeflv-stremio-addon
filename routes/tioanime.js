@@ -45,11 +45,19 @@ exports.UpdateAiringAnimeFile = function () {
 //TODO
 exports.SearchTioAnime = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchTioAnime()")
-  if (type) {
-    type = (type === "movie") ? "type%5B%5D%3D1%26" : "type%5B%5D%3D0%26type%5B%5D%3D2%26type%5B%5D%3D3%26"
+  let tioanimeURL = url
+  if (!tioanimeURL) {
+    const searchURL = new URL(`${TIOANIME_BASE}/directorio`) //URL objects encode each value (e.g. "Love & Lies #1") correctly
+    if (query) searchURL.searchParams.set("q", query)
+    if (type) for (const t of (type === "movie") ? ["1"] : ["0", "2", "3"]) searchURL.searchParams.append("type[]", t)
+    for (const genre of genreArr || []) searchURL.searchParams.append("genero[]", genre)
+    if (page) searchURL.searchParams.set("p", page)
+    //this search requires the year, sorting order and status (only one of them), otherwise it returns empty
+    searchURL.searchParams.set("year", `1950,${new Date().getFullYear() + 1}`)
+    searchURL.searchParams.set("status", "2")
+    searchURL.searchParams.set("sort", "recent")
+    tioanimeURL = searchURL.href
   }
-  const tioanimeURL = (url) ? url //this search requires the year, sorting order and status (only one of them) to be added, otherwise it returns empty
-    : `${TIOANIME_BASE}/directorio?${(query) ? "q=" + encodeURIComponent(query) + "&" : ""}${(type) ? type : ""}${(genreArr) ? "genero%5B%5D=" + genreArr.join("&genero%5B%5D=") : ""}${(page) ? "&p=" + page : ""}&year=1950%2C${new Date().getFullYear() + 1}&status=2&sort=recent`
   return SearchAnimesBySpecificURL(tioanimeURL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -285,7 +293,7 @@ async function GetAnimeInfo(slug) {
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function SearchAnimesBySpecificURL(tioanimeURL) {
   try {
-    const html = await fetch(decodeURIComponent(tioanimeURL)).then((resp) => {
+    const html = await fetch(tioanimeURL).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
       return resp.text()
@@ -365,7 +373,7 @@ async function SearchAnimesBySpecificURL(tioanimeURL) {
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function GetOnAir() {
   try {
-    const onAirData = await fetch(decodeURIComponent(TIOANIME_BASE)).then((resp) => {
+    const onAirData = await fetch(TIOANIME_BASE).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
       return resp.text()

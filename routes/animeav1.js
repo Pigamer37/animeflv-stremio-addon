@@ -46,12 +46,16 @@ exports.UpdateAiringAnimeFile = function () {
 
 exports.SearchAnimeAV1 = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimeAV1()")
-  if (type) {
-    type = (type === "movie") ? "category%3Dpelicula%26" : "category%3Dtv-anime%26category%3Dova%26category%3Despecial%26"
+  //https://animeav1.com/catalogo?search=one-piece&category=tv-anime&genre=accion&page=2
+  let animeAV1URL = url
+  if (!animeAV1URL) {
+    const searchURL = new URL(`${ANIMEAV1_BASE}/catalogo`) //URL objects encode each value (e.g. "Love & Lies #1") correctly
+    if (query) searchURL.searchParams.set("search", query)
+    if (type) for (const category of (type === "movie") ? ["pelicula"] : ["tv-anime", "ova", "especial"]) searchURL.searchParams.append("category", category)
+    for (const genre of genreArr || []) searchURL.searchParams.append("genre", genre)
+    if (page) searchURL.searchParams.set("page", page)
+    animeAV1URL = searchURL.href
   }
-//https://animeav1.com/catalogo?search=one-piece&category=tv-anime&genre=accion&page=2
-  const animeAV1URL = (url) ? url
-    : `${encodeURIComponent(ANIMEAV1_BASE)}%2Fcatalogo%3F${(query) ? "search%3D" + encodeURIComponent(query) + "%26" : ""}${(type) ? type : ""}${(genreArr) ? "genre%3D" + genreArr.join("%26genre%3D") : ""}${(page) ? "%26page%3D" + page : ""}`
   return SearchAnimesBySpecificURL(animeAV1URL).then((data) => {
     if (!data) throw Error("Invalid response!")
     return { data }
@@ -343,7 +347,7 @@ async function GetAnimeInfo(slug) {
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function SearchAnimesBySpecificURL(animeAV1URL) {
   try {
-    const html = await fetch(decodeURIComponent(animeAV1URL)).then((resp) => {
+    const html = await fetch(animeAV1URL).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
       return resp.text()
