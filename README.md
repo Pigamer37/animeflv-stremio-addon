@@ -93,6 +93,12 @@ NODE_USE_ENV_PROXY=1 HTTPS_PROXY=http://user:password@proxy-host:port npm start
 ```
 Add `NO_PROXY=api.themoviedb.org,graphql.anilist.co` to keep the metadata APIs on the direct connection.
 
+## Tests
+Tests use Node's built-in test runner, no extra dependencies:
+- `npm test`: offline tests, run on every push and pull request: the scrapers against pages recorded from each site (`test/fixtures/`), and the server with the network disabled.
+- `npm run test:live`: the same checks against the real sites. CI runs them daily and opens an issue when a source breaks, which usually means a site changed its HTML. Sites that answer 403 to GitHub's runners are reported as skipped there.
+- `npm run test:record [-- <source>...]`: re-records the fixtures after fixing a scraper for a site change, e.g. `npm run test:record -- jkanime`.
+
 ## Acknowledgements:
 > [!NOTE]
 <!-- > <p align="center"><img src="https://www3.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV logo" width="256"/></p>
