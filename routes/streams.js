@@ -55,12 +55,28 @@ function HandleStreamRequest(req, res, next) {
     console.log('Extra parameters:', res.locals.extraParams)
     // const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode)
     const animeFLVp = Promise.resolve([])
-    const animeAV1p = animeAV1API.GetItemStreams(ID, onlyInternal, episode)
-    const henaojarap = henaojaraAPI.GetItemStreams(ID, onlyInternal, episode)
-    const tioanimep = tioanimeAPI.GetItemStreams(ID, onlyInternal, episode)
+    //Every site is asked with this slug, since they usually use the same one for the same show...
+    const found = {
+      animeav1: animeAV1API.GetItemStreams(ID, onlyInternal, episode),
+      henaojara: henaojaraAPI.GetItemStreams(ID, onlyInternal, episode),
+      tioanime: tioanimeAPI.GetItemStreams(ID, onlyInternal, episode),
+      jkanime: jkanimeAPI.GetItemStreams(ID, onlyInternal, episode),
+    }
+    //...but a slug can name another show on another site: drop streams whose show title doesn't match this site's
+    //(their description starts with "<title> Ep. <n>"), with no extra requests
+    const showTitle = (streams) => streams?.[0]?.description?.split("\n")[0].replace(/\s+Ep\.\s*[\d.]+$/, "")
+    const sameShow = (a, b) => !a || !b || Math.max(fuzzysort.single(a, b)?.score ?? 0, fuzzysort.single(b, a)?.score ?? 0) >= 0.5
+    const ownTitle = (found[videoID] || Promise.reject()).then(showTitle).catch(() => undefined)
+    const checked = (prefix) => (prefix === videoID) ? found[prefix] : Promise.all([found[prefix], ownTitle]).then(([streams, title]) => {
+      if (!sameShow(title, showTitle(streams))) throw Error(`same slug, another show: ${showTitle(streams)}`)
+      return streams
+    })
+    const animeAV1p = checked("animeav1")
+    const henaojarap = checked("henaojara")
+    const tioanimep = checked("tioanime")
     // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode)
     const animejarap = Promise.resolve([])
-    const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode)
+    const jkanimep = checked("jkanime")
     CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
