@@ -288,7 +288,7 @@ function ParseConfig(req, res, next) {
   next()
 }
 //Calendar requests
-catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", (req, res) => {
+function HandleCalendarRequest(req, res) {
   let metasDetailed = [], uniqueIDs = [...new Set(req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
     .filter((id) => id.startsWith("animeflv:") /*|| id.startsWith("animeav1:") || id.startsWith("henaojara:")*/ || id.startsWith("tioanime:") || id.startsWith("animejara:") || id.startsWith("jkanime:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
 
@@ -326,7 +326,7 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID)
-      animeIMDBIDPromise.then((imdbID) => {
+      return animeIMDBIDPromise.then((imdbID) => { //returned, so a failure is just a missing item instead of an unhandled rejection
         if (!imdbID || imdbID === "null") throw Error("No IMDB ID")
         console.log(`\x1b[33mGetting TMDB metadata for IMDB ID:\x1b[39m`, imdbID)
         return Metadata.GetTMDBMeta(imdbID).then((TMDBmeta) => {
@@ -340,8 +340,7 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
           })
         })
       }).then((metadata) => {
-        const searchTerm = ((season !== undefined) && (season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
-        return animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
+        return animeFLVAPI.SearchAnimeFLV(metadata.title).then((animeFLVitem) => {
           console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
           return animeFLVAPI.GetAnimeBySlug(animeFLVitem[0].slug)
         })
@@ -350,7 +349,8 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
   })).then((promises) => {
     console.log("Promises allSettled")
     metasDetailed = promises.filter((prom) => (prom.value)).map((el) => {
-      el.value.videos = el.value.videos.filter((video) => (video.released >= new Date()))//only resolve future videos
+      //only upcoming videos; sites without real dates get estimated ones ("today" for the latest episode), so use the flag
+      el.value.videos = el.value.videos.filter((video) => video.available === false)
       return el.value
     })
 
@@ -359,8 +359,11 @@ catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosId
       res.json({ metasDetailed })
     }
   })
-})
+}
 //Configured requests
+//Calendar requests, configured or not (before the generic routes, which would take them as a normal catalog)
+catalog.get("/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", HandleCalendarRequest)
+catalog.get("/:config/catalog/series/calendar-videos/:calendarVideosIds(calendarVideosIds=(?:\\S{0,},?){0,}).json", ParseConfig, HandleCalendarRequest)
 catalog.get("/:config/catalog/:type/:videoId/*.json", ParseConfig, HandleLongCatalogRequest, HandleCatalogRequest)
 catalog.get("/:config/catalog/:type/:videoId.json", ParseConfig, HandleCatalogRequest)
 //Unconfigured requests
