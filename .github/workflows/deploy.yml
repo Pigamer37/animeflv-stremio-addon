@@ -62,10 +62,14 @@ jobs:
           # .gitignore
           # .github
     - name: Restart app
-      uses: Satak/webrequest-action@v1.5.0
-      with:
-        url: https://api.alwaysdata.com/v1/site/970871/restart/
-        method: POST
-        headers: '{"Authentication": "${{ secrets.APIKEY }}"}'
-        username: ${{ secrets.API_KEY }}
-        password: 'account=${{ vars.USERNAME }}:'
+      #plain curl instead of Satak/webrequest-action, which targets the deprecated Node 20; same request and credentials,
+      #and --fail-with-body makes the job fail (showing alwaysdata's answer) if the restart is refused
+      env:
+        APIKEY: ${{ secrets.APIKEY }}
+        API_KEY: ${{ secrets.API_KEY }}
+        ACCOUNT: ${{ vars.USERNAME }}
+      run: |
+        curl --fail-with-body -sS -X POST \
+          -H "Authentication: $APIKEY" \
+          -u "$API_KEY:account=$ACCOUNT:" \
+          https://api.alwaysdata.com/v1/site/970871/restart/
