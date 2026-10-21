@@ -262,6 +262,7 @@ function HandleCatalogRequest(req, res, next) {
   //     })
   //   }
   // }
+  if (!catalogPromise) catalogPromise = Promise.reject(Error(`Unknown catalog ${req.params.videoId}`)) //e.g. disabled sources' catalogs requested by old installs
   catalogPromise.then((metas) => {
     res.header('Cache-Control', "max-age=259200, stale-while-revalidate=86400, stale-if-error=259200")
     res.json({ metas, message: "Got Anime metadata!" });

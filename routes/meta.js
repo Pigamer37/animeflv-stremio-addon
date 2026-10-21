@@ -151,6 +151,7 @@ function HandleMetaRequest(req, res, next) {
         res.header('Cache-Control', "max-age=31557600, stale-while-revalidate=31557600, stale-if-error=31557600")
         res.json({ meta: {}, message: "Wrong ID format, check manifest for errors" }); next()
       }
+      return //nothing else to do, and there's no promise to continue with
     }
 
     console.log('Extra parameters:', res.locals.extraParams)
