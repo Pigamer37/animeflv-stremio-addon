@@ -7,7 +7,10 @@
     "devStart": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore onairJK_titles.json --ignore README",
     "devStartApp": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore onairJK_titles.json --ignore README --launch",
     "devStartWeb": "nodemon index.js --ignore onair_titles.json --ignore onairAV1_titles.json --ignore onairHENAOJARA_titles.json --ignore onair_titlesTIO.json --ignore onairANIMEJARA_titles.json --ignore onairJK_titles.json --ignore README --webLaunch",
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node --test \"test/*.test.js\"",
+    "test:live": "node --test --test-concurrency=1 --test-timeout=120000 \"test/live/*.test.js\"",
+    "test:record": "node test/record-fixtures.js"
   },
   "repository": {
     "type": "git",
