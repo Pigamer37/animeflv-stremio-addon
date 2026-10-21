@@ -5,6 +5,7 @@ require('dotenv').config()//process.env.var
 
 const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
+const CLIENT_CACHE = require('../lib/clientCache.js')
 const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
@@ -264,13 +265,13 @@ function HandleCatalogRequest(req, res, next) {
   // }
   if (!catalogPromise) catalogPromise = Promise.reject(Error(`Unknown catalog ${req.params.videoId}`)) //e.g. disabled sources' catalogs requested by old installs
   catalogPromise.then((metas) => {
-    res.header('Cache-Control', "max-age=259200, stale-while-revalidate=86400, stale-if-error=259200")
+    res.header('Cache-Control', CLIENT_CACHE.catalog)
     res.json({ metas, message: "Got Anime metadata!" });
     next()
   }).catch((err) => {
     console.error('\x1b[31mFailed on search because:\x1b[39m ' + err)
     if (!res.headersSent) {
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.failure)
       res.json({ metas: [], message: "Failed getting info" });
       next()
     }
@@ -358,7 +359,7 @@ function HandleCalendarRequest(req, res) {
     })
 
     if (!res.headersSent) {
-      res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
+      res.header('Cache-Control', CLIENT_CACHE.meta)
       res.json({ metasDetailed })
     }
   })
