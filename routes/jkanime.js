@@ -3,28 +3,20 @@ const JKANIME_BASE = "https://jkanime.net"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const { CollectPages } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
 exports.AiringCacheFile = './onairJK_titles.json'
 
 exports.GetAiringAnimeFromWeb = async function () {
+  //the airing listing already has title, type, cover and synopsis; opening each show's page (90+) gets the addon
+  //rate limited by JKAnime (HTTP 429), which dropped a third of the airing shows
   return GetOnAir().then((data) => {
     if (!data || data.length < 1) throw Error("Invalid response!")
-    return { data }
-  }).then((data) => {
-    if (data?.data === undefined) throw Error("Invalid response!")
-    const promises = data.data.map((entry) => {
-      return this.GetAnimeBySlug(entry.slug).then((anime) => {
-        return {
-          title: anime.name, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
-          slug: entry.slug, poster: anime.poster, overview: anime.description
-        }
-      })
-    })
-
-    return Promise.allSettled(promises).then((results) =>
-      results.filter((prom) => (prom.value)).map((source) => source.value)
-    )
+    return data.map((anime) => ({
+      title: anime.title, type: (anime.type === "Pelicula" || anime.type === "Película" || anime.type === "Especial" || anime.type === "movie") ? "movie" : "series",
+      slug: anime.slug, poster: anime.cover, overview: anime.synopsis
+    }))
   })
 }
 
@@ -416,17 +408,20 @@ async function SearchAnimesBySpecificURL(jkanimeURL) {
 }
 
 async function GetOnAir() {
-  return SearchAnimesBySpecificURL(`${JKANIME_BASE}/directorio?estado=emision`).then((data) => {
+  //airing lists span several pages (AnimeAV1: 66 shows over 4); only the first one used to be read
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${JKANIME_BASE}/directorio?estado=emision&p=${page}`).then((data) => {
     if (!data || data.media === undefined) throw Error("Invalid response!")
     return data.media.map((anime) => {
       return {
         title: anime.title,
         type: anime.type,
         slug: anime.slug,
-        url: anime.url
+        url: anime.url,
+        cover: anime.cover,
+        synopsis: anime.synopsis
       }
     })
-  })
+  }))
 }
 
 const SPANISH_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
