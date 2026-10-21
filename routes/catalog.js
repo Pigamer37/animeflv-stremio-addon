@@ -324,6 +324,7 @@ function HandleCalendarRequest(req, res) {
     } else {
       let animeIMDBIDPromise
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
+      const season = undefined //calendar IDs (kitsu:, mal:...) carry no season; reading an undeclared one threw a ReferenceError
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID)
       return animeIMDBIDPromise.then((imdbID) => { //returned, so a failure is just a missing item instead of an unhandled rejection
@@ -340,7 +341,8 @@ function HandleCalendarRequest(req, res) {
           })
         })
       }).then((metadata) => {
-        return animeFLVAPI.SearchAnimeFLV(metadata.title).then((animeFLVitem) => {
+        const searchTerm = ((season !== undefined) && (season) && (parseInt(season) !== 1)) ? `${metadata.title} ${season}` : metadata.title
+        return animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
           console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', animeFLVitem[0].title)
           return animeFLVAPI.GetAnimeBySlug(animeFLVitem[0].slug)
         })
