@@ -3,6 +3,7 @@ const ANIMEAV1_BASE = "https://animeav1.com"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const episodes = require("../lib/episodes.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
@@ -83,8 +84,8 @@ exports.GetAnimeBySlug = async function (slug) {
     const epCount = data.data.episodes.length
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover)
+    const rank = episodes.Ranks(data.data.episodes.map((ep) => ep.number))
     const videos = data.data.episodes.map((ep) => {
-      let d = new Date(Date.now())
       return {
         id: `animeav1:${slug}:${ep.number}`,
         title: data.data.title + " Ep. " + ep.number,
@@ -92,7 +93,7 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: `https://cdn.animeav1.com/screenshots/${matches[1]}/${ep.number}.jpg`,//`https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
-        released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
+        released: episodes.EstimateReleased(rank(ep.number), epCount, { start: data.data.startDate, end: data.data.endDate }),
         available: true
       }
     })

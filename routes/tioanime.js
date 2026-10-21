@@ -3,6 +3,7 @@ const TIOANIME_BASE = "https://tioanime.com"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const episodes = require("../lib/episodes.js");
 require('dotenv').config()//process.env.var
 
 exports.AiringCacheFile = './onair_titlesTIO.json'
@@ -87,8 +88,8 @@ exports.GetAnimeBySlug = async function (slug) {
     const epCount = data.data.episodes.length
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover)
+    const rank = episodes.Ranks(data.data.episodes.map((ep) => ep.number))
     const videos = data.data.episodes.map((ep) => {
-      let d = new Date(Date.now())
       return {
         id: `tioanime:${slug}:${ep.number}`,
         title: data.data.title + " Ep. " + ep.number,
@@ -96,7 +97,7 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: `${TIOANIME_BASE}/uploads/thumbs/${matches[1]}.jpg`,
-        released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
+        released: episodes.EstimateReleased(rank(ep.number), epCount, { start: data.data.startDate }),
         available: true
       }
     })
@@ -285,6 +286,8 @@ async function GetAnimeInfo(slug) {
     }
 
     animeInfo.year = $("#tioanime > article > div > div > aside > div.meta > span.year").text().trim();
+    animeInfo.startDate = episodes.ParseAnimeSeason($("#tioanime > article > div > div > aside > div.meta > span.season").first().text())
+      || ((/^\d{4}$/.test(animeInfo.year)) ? new Date(Date.UTC(Number(animeInfo.year), 0, 1)) : undefined);
 
     return animeInfo;
   } catch (error) {
