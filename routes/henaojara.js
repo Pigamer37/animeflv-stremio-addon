@@ -185,12 +185,15 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
         return resp.text()
       }).catch(() => {console.log("Failed to fetch server data"); return null});
     }
-    const $2 = cheerio.load(await serverData());
+    const serverHTML = await serverData();
+    const $2 = (serverHTML) ? cheerio.load(serverHTML) : null; //a failed request used to throw and lose the download links too
     
     if ($2) {
       const lis = $2("li");
       lis.each((_, el) => {
+        if (!$(el).attr("encrypt")) return
         const s = hex2a($(el).attr("encrypt"));
+        if (!URL.canParse(s)) return //skip a broken server instead of losing every stream
         const sURL = new URL(s)
         episodeLinks.servers.push({
           name: streamParser.getServerTitle(sURL.hostname),
@@ -201,6 +204,7 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
     }
     if (downloadObj) {
       for (const s of downloadObj) {
+        if (!URL.canParse(s)) continue
         const sURL = new URL(s)
         episodeLinks.servers.push({
           name: streamParser.getServerTitle(sURL.hostname),
@@ -251,12 +255,12 @@ async function GetAnimeInfo(slug) {
     const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var eps ="));
     const episodesArray = episodesFind?.match(/eps = (\[\[.*\].*])/)?.[1];
 
-    const epObj = JSON.parse(episodesArray)
+    const epObj = JSON.parse(episodesArray || "null") //shows without episodes yet have no list
     if (epObj) {
       for (ep of epObj) {
         if (animeInfo.episodes instanceof Array) {
           animeInfo.episodes.push({
-            number: ep[0],
+            number: Number(ep[0]),
             slug: slug + "-" + ep[0],
             url: HENAOJARA_BASE + "/ver/" + slug + "-" + ep[0]
           });
