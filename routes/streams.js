@@ -44,7 +44,7 @@ function HandleStreamRequest(req, res, next) {
   let streams = []
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
-  if (/*(videoID?.startsWith("animeflv")) || */(videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime")) || (videoID?.startsWith("animejara")) || (videoID?.startsWith("jkanime"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
+  if (/*(videoID?.startsWith("animeflv")) || */(videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime")) || (videoID?.startsWith("animejara")) /*|| (videoID?.startsWith("jkanime"))*/) { //If we got an AnimeFLV or AnimeAV1 specific ID
     const ID = idDetails[1] //We want the second part of the videoID
     let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     let season
@@ -61,7 +61,8 @@ function HandleStreamRequest(req, res, next) {
     const tioanimep = tioanimeAPI.GetItemStreams(ID, onlyInternal, episode)
     // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode)
     const animejarap = Promise.resolve([])
-    const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode)
+    // const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode)
+    const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
     CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
@@ -194,12 +195,13 @@ function HandleStreamRequest(req, res, next) {
       //   return animejaraAPI.GetItemStreams(result.slug, onlyInternal, season, episode)
       // })
       const animejarap = Promise.resolve([])
-      const jkanimep = firstMatch((searchTerm) => jkanimeAPI.SearchJKAnime(searchTerm).then(notSpecial).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
-        if (!result) throw Error('No search results!')
-        console.log('\x1b[36mGot JKAnime entry:\x1b[39m', result.title)
-        return jkanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
-      }))
+      // const jkanimep = firstMatch((searchTerm) => jkanimeAPI.SearchJKAnime(searchTerm).then(notSpecial).then((animeFLVitem) => {
+        // const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
+        // if (!result) throw Error('No search results!')
+        // console.log('\x1b[36mGot JKAnime entry:\x1b[39m', result.title)
+        // return jkanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
+      // }))
+      const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)

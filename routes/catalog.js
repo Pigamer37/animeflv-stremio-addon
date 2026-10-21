@@ -292,7 +292,7 @@ function ParseConfig(req, res, next) {
 //Calendar requests
 function HandleCalendarRequest(req, res) {
   let metasDetailed = [], uniqueIDs = [...new Set(req.params.calendarVideosIds.slice(18).split(',')//filter idPrefixes not covered by other meta providers
-    .filter((id) => id.startsWith("animeflv:") /*|| id.startsWith("animeav1:") || id.startsWith("henaojara:")*/ || id.startsWith("tioanime:") || id.startsWith("animejara:") || id.startsWith("jkanime:") || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
+    .filter((id) => id.startsWith("animeflv:") /*|| id.startsWith("animeav1:") || id.startsWith("henaojara:")*/ || id.startsWith("tioanime:") || id.startsWith("animejara:") /*|| id.startsWith("jkanime:")*/ || id.startsWith("anilist:") || id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anidb:")))]
 
   console.log("Unique IDs:", uniqueIDs)
 

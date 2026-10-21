@@ -112,21 +112,21 @@ function ReadManifest() {
         //   { name: "skip", isRequired: false }
         //   ]
         // },
-        {
-          id: "jkanime", type: "JKAnime", name: "search results",
-          extra: [{ name: "search", isRequired: true },
-          {
-            name: "genre",
-            options: ["accion", "aventura", "autos", "comedia", "dementia", "demonios", "misterio", "drama",
-              "ecchi", "fantasia", "juegos", "hentai", "historico", "terror", "nios", "magia", "artes-marciales",
-              "mecha", "musica", "parodia", "samurai", "romance", "colegial", "sci-fi", "shoujo", "shoujo-ai",
-              "shounen", "shounen-ai", "space", "deportes", "super-poderes", "vampiros", "yaoi", "yuri", "harem",
-              "cosas-de-la-vida", "sobrenatural", "militar", "policial", "psicologico", "thriller", "seinen", "josei", "latino", "isekai"],
-            optionsLimit: 1, isRequired: false
-          },
-          { name: "skip", isRequired: false }
-          ]
-        },
+        // {
+        //   id: "jkanime", type: "JKAnime", name: "search results",
+        //   extra: [{ name: "search", isRequired: true },
+        //   {
+        //     name: "genre",
+        //     options: ["accion", "aventura", "autos", "comedia", "dementia", "demonios", "misterio", "drama",
+        //       "ecchi", "fantasia", "juegos", "hentai", "historico", "terror", "nios", "magia", "artes-marciales",
+        //       "mecha", "musica", "parodia", "samurai", "romance", "colegial", "sci-fi", "shoujo", "shoujo-ai",
+        //       "shounen", "shounen-ai", "space", "deportes", "super-poderes", "vampiros", "yaoi", "yuri", "harem",
+        //       "cosas-de-la-vida", "sobrenatural", "militar", "policial", "psicologico", "thriller", "seinen", "josei", "latino", "isekai"],
+        //     optionsLimit: 1, isRequired: false
+        //   },
+        //   { name: "skip", isRequired: false }
+        //   ]
+        // },
         // {
         //   id: "animeflv|genres", type: "Anime", name: "AnimeFLV",
         //   extra: [
@@ -209,21 +209,21 @@ function ReadManifest() {
         //     { name: "skip", isRequired: false }
         //   ]
         // },
-        {
-          id: "jkanime|genres", type: "Anime", name: "JKAnime",
-          extra: [
-            {
-              name: "genre",
-              options: ["accion", "aventura", "autos", "comedia", "dementia", "demonios", "misterio", "drama",
-                "ecchi", "fantasia", "juegos", "hentai", "historico", "terror", "nios", "magia", "artes-marciales",
-                "mecha", "musica", "parodia", "samurai", "romance", "colegial", "sci-fi", "shoujo", "shoujo-ai",
-                "shounen", "shounen-ai", "space", "deportes", "super-poderes", "vampiros", "yaoi", "yuri", "harem",
-                "cosas-de-la-vida", "sobrenatural", "militar", "policial", "psicologico", "thriller", "seinen", "josei", "latino", "isekai"],
-              optionsLimit: 1, isRequired: true
-            },
-            { name: "skip", isRequired: false }
-          ]
-        },
+        // {
+        //   id: "jkanime|genres", type: "Anime", name: "JKAnime",
+        //   extra: [
+        //     {
+        //       name: "genre",
+        //       options: ["accion", "aventura", "autos", "comedia", "dementia", "demonios", "misterio", "drama",
+        //         "ecchi", "fantasia", "juegos", "hentai", "historico", "terror", "nios", "magia", "artes-marciales",
+        //         "mecha", "musica", "parodia", "samurai", "romance", "colegial", "sci-fi", "shoujo", "shoujo-ai",
+        //         "shounen", "shounen-ai", "space", "deportes", "super-poderes", "vampiros", "yaoi", "yuri", "harem",
+        //         "cosas-de-la-vida", "sobrenatural", "militar", "policial", "psicologico", "thriller", "seinen", "josei", "latino", "isekai"],
+        //       optionsLimit: 1, isRequired: true
+        //     },
+        //     { name: "skip", isRequired: false }
+        //   ]
+        // },
         // {
         //   id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
         // },
@@ -239,9 +239,9 @@ function ReadManifest() {
         // {
         //   id: "animejara|onair", type: "AnimeJara", name: "On Air"
         // },
-        {
-          id: "jkanime|onair", type: "JKAnime", name: "On Air"
-        },
+        // {
+        //   id: "jkanime|onair", type: "JKAnime", name: "On Air"
+        // },
         {
           type: "series",
           id: "calendar-videos",
@@ -263,7 +263,7 @@ function ReadManifest() {
       ],
       "resources": [
         "stream",
-        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ /*"animeflv:",*/"animeav1:","henaojara:","tioanime:",/*"animejara:",*/"jkanime:","anilist:","mal:","anidb:"] },
+        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ /*"animeflv:",*/"animeav1:","henaojara:","tioanime:",/*"animejara:",*/ /*"jkanime:",*/"anilist:","mal:","anidb:"] },
         "catalog"
       ],
       "types": [
@@ -279,7 +279,7 @@ function ReadManifest() {
         "henaojara:",
         "tioanime:",
         // "animejara:",
-        "jkanime:",
+        // "jkanime:", //JKAnime answers 403 to the server (#61)
         "tmdb:",
         "anilist:",
         "kitsu:",
@@ -377,8 +377,8 @@ app.listen(process.env.PORT || 3000, () => {
   const henaojaraAPI = require('./routes/henaojara.js')
   const tioanimeAPI = require('./routes/tioanime.js')
   // const animejaraAPI = require('./routes/animejara.js') // Cloudflare protected
-  const jkanimeAPI = require('./routes/jkanime.js')
-  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI, jkanimeAPI]
+  // const jkanimeAPI = require('./routes/jkanime.js') //JKAnime answers 403 to the server's IP (#61)
+  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI/*, jkanimeAPI*/]
   const REFRESH = 6 * 3600000 //newly airing shows appear within hours
   //When the code is newer than a saved list (a deploy), that list was built by the old code: refresh it right away
   const codeTime = Promise.all(["routes", "lib"].map((dir) => fsPromises.readdir(dir).then((files) =>
