@@ -149,8 +149,13 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', result.title)
         return animeAV1API.GetItemStreams(result.slug, onlyInternal, episode)
       })
+      //Henaojara lists every season, movie and dub as its own entry: keep only the ones that can be the requested one
+      //(same type, no "Season/Part N" of another season), fuzzy match among them, and don't fall back to the first result
+      const sameSeason = (title) => { const n = title.match(/\b(?:season|temporada|part|parte)\s*(\d+)/i)?.[1]; return !n || parseInt(n) === (parseInt(season) || 1) }
       const henaojarap = henaojaraAPI.SearchHenaojara(searchTerm).then(notSpecial).then((animeFLVitem) => {
-        const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem.sort((a,b)=>(a.type === req.params.type && b.type !== req.params.type)?-1:0)[0];
+        const candidates = animeFLVitem.filter((i) => (!i.type || i.type === req.params.type) && sameSeason(i.title))
+        const result = fuzzysort.go(searchTerm, candidates, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
+        if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot Henaojara entry:\x1b[39m', result.title)
         return henaojaraAPI.GetItemStreams(result.slug, onlyInternal, episode)
       })
