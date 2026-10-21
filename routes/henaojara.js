@@ -6,6 +6,8 @@ const streamParser = require("../lib/streamParsing.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
 
+exports.AiringCacheFile = './onairHENAOJARA_titles.json'
+
 exports.GetAiringAnimeFromWeb = async function () {
   return GetOnAir().then((data) => {
     if (!data || data.length < 1) throw Error("Invalid response!")
@@ -28,7 +30,7 @@ exports.GetAiringAnimeFromWeb = async function () {
 }
 
 exports.GetAiringAnime = async function () {
-  return fsPromises.readFile('./onairHENAOJARA_titles.json').then((data) => JSON.parse(data)).catch((err) => {
+  return fsPromises.readFile(exports.AiringCacheFile).then((data) => JSON.parse(data)).catch((err) => {
     console.error('\x1b[31mFailed reading titles cache:\x1b[39m ' + err)
     return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
   })
@@ -37,7 +39,7 @@ exports.GetAiringAnime = async function () {
 exports.UpdateAiringAnimeFile = function () {
   return this.GetAiringAnimeFromWeb().then((titles) => {
     console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
-    return fsPromises.writeFile('./onairHENAOJARA_titles.json', JSON.stringify(titles))
+    return fsPromises.writeFile(exports.AiringCacheFile, JSON.stringify(titles))
   }).then(() => console.log('\x1b[32mOn Air Henaojara titles "cached" successfully!\x1b[39m')
   ).catch((err) => {
     console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
