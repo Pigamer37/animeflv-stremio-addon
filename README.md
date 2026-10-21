@@ -86,6 +86,13 @@ You can add some configuration before the call. Right now, the only available co
 > [!TIP]
 > When running locally, your IP and the server's IP are the same, so you can uncomment [the code on `streamParsing.js`](lib/streamParsing.js#L30) that extracts StreamTape, Streamwish, Okru & Mixdrop links and they should work inside of Stremio (see [TO DO](#to-do)).
 
+## If a site blocks the server
+Some sites block whole IP ranges: JKAnime answers 403 to datacenter IPs such as GitHub's runners while working for users. If that happens to your server, route the requests through a proxy without changing any code (Node 22.21+ or 24.5+):
+```
+NODE_USE_ENV_PROXY=1 HTTPS_PROXY=http://user:password@proxy-host:port npm start
+```
+Add `NO_PROXY=api.themoviedb.org,graphql.anilist.co` to keep the metadata APIs on the direct connection.
+
 ## Acknowledgements:
 > [!NOTE]
 <!-- > <p align="center"><img src="https://www3.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV logo" width="256"/></p>
