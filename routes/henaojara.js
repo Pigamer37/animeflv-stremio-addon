@@ -137,6 +137,8 @@ exports.GetItemStreams = async function (slug, onlyInternal=true, epNumber = 1) 
 
 async function GetEpisodeLinks(slug, epNumber = 1) {
   try {
+    //dubbed versions are separate entries whose slug ends in -latino or -castellano
+    const dubLang = /latino/.test(slug) ? "lat" : /castellano/.test(slug) ? "esp" : undefined
     const episodeData = async () => {
       if (slug && !epNumber)
         return await fetch(HENAOJARA_BASE + "/ver/" + slug).then((resp) => {
@@ -206,7 +208,8 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
         episodeLinks.servers.push({
           name: streamParser.getServerTitle(sURL.hostname),
           embed: s?.replace("mega.nz/embed#!", "mega.nz/embed/"),
-          dub: false
+          dub: dubLang !== undefined,
+          dubLang
         });
       });
     }
@@ -217,7 +220,8 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
         episodeLinks.servers.push({
           name: streamParser.getServerTitle(sURL.hostname),
           download: s?.replace("mega.nz/#!", "mega.nz/file/"),
-          dub: false
+          dub: dubLang !== undefined,
+          dubLang
         });
       }
     }
