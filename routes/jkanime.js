@@ -77,6 +77,7 @@ exports.GetAnimeBySlug = async function (slug) {
     if (data?.data === undefined) throw Error("Invalid response!")
     //return first result
     const epCount = data.data.episodes.length
+    const lastNumber = data.data.episodes[epCount - 1]?.number ?? 0
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover)
     const videos = data.data.episodes.map((ep) => {
@@ -88,17 +89,17 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: ep.thumbnail,
-        released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
+        released: ep.released || new Date(d.setDate(d.getDate() - (lastNumber - ep.number))), //estimated when unknown
         available: true
       }
     })
     if (data.data.next_airing_episode !== undefined) {
       videos.push({
-        id: `jkanime:${slug}:${epCount + 1}`,
-        title: `${data.data.title} Ep. ${epCount + 1}`,
+        id: `jkanime:${slug}:${lastNumber + 1}`,
+        title: `${data.data.title} Ep. ${lastNumber + 1}`,
         season: 1,
-        episode: epCount + 1,
-        number: epCount + 1,
+        episode: lastNumber + 1,
+        number: lastNumber + 1,
         thumbnail: `https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png`,
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
@@ -120,7 +121,7 @@ exports.GetAnimeBySlug = async function (slug) {
       videos, poster: data.data.cover, background: videos[0]?.thumbnail, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `jkanime:${slug}`,
       language: "jpn", links,
       ...(data.data.runtime) && { runtime: data.data.runtime },
-      ...(data.data.released) && { released: data.data.released, releaseInfo: `${data.data.released.getFullYear()}${(data.data.status === "Concluido") ? "" : "-"}` },
+      ...(data.data.released && !isNaN(data.data.released)) && { released: data.data.released, releaseInfo: `${data.data.released.getFullYear()}${(data.data.status === "Concluido") ? "" : "-"}` },
       ...(data.data.trailer) && { trailers: [{ source: data.data.trailer, type: "Trailer" }] },
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `jkanime:${slug}:1` } }
@@ -229,7 +230,7 @@ async function GetAnimeInfo(slug) {
       genres: metadataLis.filter((_, el) => $(el).text()?.includes("Generos:")).first().find('a')
         .map((_, el) => $(el).text().trim())
         .get(),
-      next_airing_episode: nextAiringInfo ? nextAiringInfo + ' ' + new Date().getFullYear() : undefined,
+      next_airing_episode: NextAiringDate(nextAiringInfo),
       episodes: [],
       url,
       runtime: metadataLis.filter((_, el) => $(el).text().includes("Duracion:"))?.first()?.text()?.replace("Duracion:", "")?.trim().slice(0, -1),
@@ -260,13 +261,19 @@ async function GetAnimeInfo(slug) {
       return resp.json()
     })
 
-    if (animeInfo.episodes instanceof Array && epArray) {
-      for (let i = 1; i <= epArray.total; i++) {
+    if (animeInfo.episodes instanceof Array && epArray?.total) {
+      //some shows start at episode 0 (numbered 0..total-1); page 1 holds the oldest ones, so it tells where numbering
+      //starts and has those episodes' real upload dates and thumbnails
+      const firstNumber = Number(epArray.data?.[0]?.number ?? 1)
+      const byNumber = new Map((epArray.data || []).map((ep) => [Number(ep.number), ep]))
+      for (let i = firstNumber; i < firstNumber + epArray.total; i++) {
+        const ep = byNumber.get(i)
         animeInfo.episodes.push({
           number: i,
           slug: `${slug}/${i}`,
           url: JKANIME_BASE + `${slug}/${i}`,
-          thumbnail: `https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/${epArray.data[i - 1]?.image}`
+          thumbnail: (ep?.image) ? `https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/${ep.image}` : undefined, //only page 1 is fetched
+          released: (ep?.timestamp) ? new Date(ep.timestamp.replace(" ", "T") + "Z") : undefined //read as UTC: never later than the upload
         })
       }
     }
@@ -417,4 +424,16 @@ async function GetOnAir() {
       }
     })
   })
+}
+
+const SPANISH_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+//"Martes 27 de Octubre" (no year) -> the next such date, or undefined if it can't be read. The paragraph also names
+//the last episode ("... - 2 Nuevo"), so the first "<day> [de] <month>" that is a real month is taken
+function NextAiringDate(text) {
+  const match = [...(text?.toLowerCase() || "").matchAll(/(\d{1,2})\s+(?:de\s+)?([a-záéíóú]+)/g)].find((m) => SPANISH_MONTHS.includes(m[2]))
+  if (!match) return undefined
+  const now = new Date()
+  const date = new Date(now.getFullYear(), SPANISH_MONTHS.indexOf(match[2]), Number(match[1]))
+  if (date < now - 7 * 86400000) date.setFullYear(date.getFullYear() + 1) //e.g. "5 de Enero" read in December
+  return date
 }
