@@ -77,7 +77,7 @@ function HandleStreamRequest(req, res, next) {
       }
     })
   } else {
-    let episode, season, animeIMDBIDPromise
+    let episode, season, animeIMDBIDPromise, romajiPromise
 
     if (videoID?.startsWith("tt")) { //If we got an IMDB ID/TMDB ID
       const ID = videoID //We want the IMDB ID as is
@@ -85,17 +85,21 @@ function HandleStreamRequest(req, res, next) {
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with IMDB ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = Promise.resolve(ID)
+      romajiPromise = relationsAPI.GetRomajiTitle("imdb", ID)
     } else if (videoID?.startsWith("tmdb")) {
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       season = idDetails[2] //undefined if we don't get a season number in the query, which is fine
       episode = idDetails[3] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with TMDB ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = Metadata.GetIMDBIDFromTMDBID(ID, req.params.type)
+      romajiPromise = relationsAPI.GetRomajiTitle("themoviedb", ID)
     } else if (videoID.match(/^(?:kitsu|mal|anidb|anilist)$/)) { //If we got a kitsu, mal, anilist or anidb ID
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
-      animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID)
+      const mappings = relationsAPI.GetAniZipMappings(videoID, ID) //one ani.zip call for both the IMDB ID and the romaji title
+      animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID, mappings)
+      romajiPromise = relationsAPI.GetRomajiTitle(videoID, ID, mappings)
     } else {
       if (!res.headersSent) {
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
@@ -105,6 +109,9 @@ function HandleStreamRequest(req, res, next) {
     }
 
     console.log('Extra parameters:', res.locals.extraParams)
+    romajiPromise = romajiPromise?.catch((err) => console.error('\x1b[31mFailed getting romaji title:\x1b[39m ' + err))
+    //a special (season 0) is searched by its own title (from Cinemeta): the romaji would be the main series' title
+    if (parseInt(season) === 0) romajiPromise = Promise.resolve()
     animeIMDBIDPromise.then((imdbID) => {
       if (!imdbID || imdbID === "null") throw Error("No IMDB ID")
       let metaProm
@@ -134,8 +141,23 @@ function HandleStreamRequest(req, res, next) {
         }
         throw err //We throw the error so we can catch it later
       })
-    }).then((metadata) => {
-      const searchTerm = ((season) && (parseInt(season) !== 1) && (parseInt(season) !== 0)) ? `${metadata.title} ${season}` : metadata.title
+    }).then((metadata) => Promise.resolve(romajiPromise).then((romaji) => {
+      //Sites list anime by their romaji title: try it first, then the provider's (usually English) title, since the
+      //romaji sometimes doesn't match a site's naming (e.g. AniList's "SPY×FAMILY" vs the sites' "Spy x Family")
+      const searchTerms = [...new Set([romaji, metadata.title].filter(Boolean))].map((title) => ((season) && (parseInt(season) !== 1) && (parseInt(season) !== 0)) ? `${title} ${season}` : title)
+      console.log('Search terms:', searchTerms)
+      //Runs a source's search/match/streams chain with each search term until one succeeds
+      const firstMatch = async (searchFn) => {
+        let lastError = Error('No search terms!')
+        for (const searchTerm of searchTerms) {
+          try {
+            return await searchFn(searchTerm)
+          } catch (err) {
+            lastError = err //this term found nothing on this site, try the next one
+          }
+        }
+        throw lastError
+      }
       //Regular-season episodes must not match a site's separate "Specials"/OVA entry (#55)
       const notSpecial = (items) => (req.params.type === "series" && parseInt(season) !== 0) ? items.filter((i) => !/\b(specials?|especial(es)?|ova)\b/i.test(i.title)) : items
       // const animeFLVp = animeFLVAPI.SearchAnimeFLV(searchTerm).then((animeFLVitem) => {
@@ -144,40 +166,40 @@ function HandleStreamRequest(req, res, next) {
       //   return animeFLVAPI.GetItemStreams(result.slug, onlyInternal, episode)
       // })
       const animeFLVp = Promise.resolve([])
-      const animeAV1p = animeAV1API.SearchAnimeAV1(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
+      const animeAV1p = firstMatch((searchTerm) => animeAV1API.SearchAnimeAV1(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot AnimeAV1 entry:\x1b[39m', result.title)
         return animeAV1API.GetItemStreams(result.slug, onlyInternal, episode)
-      })
+      }))
       //Henaojara lists every season, movie and dub as its own entry: keep only the ones that can be the requested one
       //(same type, no "Season/Part N" of another season), fuzzy match among them, and don't fall back to the first result
       const sameSeason = (title) => { const n = title.match(/\b(?:season|temporada|part|parte)\s*(\d+)/i)?.[1]; return !n || parseInt(n) === (parseInt(season) || 1) }
-      const henaojarap = henaojaraAPI.SearchHenaojara(searchTerm).then(notSpecial).then((animeFLVitem) => {
+      const henaojarap = firstMatch((searchTerm) => henaojaraAPI.SearchHenaojara(searchTerm).then(notSpecial).then((animeFLVitem) => {
         const candidates = animeFLVitem.filter((i) => (!i.type || i.type === req.params.type) && sameSeason(i.title))
         const result = fuzzysort.go(searchTerm, candidates, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot Henaojara entry:\x1b[39m', result.title)
         return henaojaraAPI.GetItemStreams(result.slug, onlyInternal, episode)
-      })
-      const tioanimep = tioanimeAPI.SearchTioAnime(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
+      }))
+      const tioanimep = firstMatch((searchTerm) => tioanimeAPI.SearchTioAnime(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj; //no first-result fallback: it served another show's streams
         if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot TioAnime entry:\x1b[39m', result.title)
         return tioanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
-      })
+      }))
       // const animejarap = animejaraAPI.SearchAnimeJara(searchTerm, req.params.type).then((animeFLVitem) => {
       //   const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1})[0]?.obj || animeFLVitem[0];
       //   console.log('\x1b[36mGot AnimeJara entry:\x1b[39m', result.title)
       //   return animejaraAPI.GetItemStreams(result.slug, onlyInternal, season, episode)
       // })
       const animejarap = Promise.resolve([])
-      const jkanimep = jkanimeAPI.SearchJKAnime(searchTerm).then(notSpecial).then((animeFLVitem) => {
+      const jkanimep = firstMatch((searchTerm) => jkanimeAPI.SearchJKAnime(searchTerm).then(notSpecial).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot JKAnime entry:\x1b[39m', result.title)
         return jkanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
-      })
+      }))
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
@@ -192,7 +214,7 @@ function HandleStreamRequest(req, res, next) {
           }
         }
       })
-    }).catch((err) => {
+    })).catch((err) => {
       console.error('\x1b[31mFailed on metadata search because:\x1b[39m ' + err)
       if (!res.headersSent) {
         res.header('Cache-Control', CLIENT_CACHE.failure)

@@ -1,8 +1,21 @@
 const ID_RELATIONS_API_BASE = "https://relations.yuna.moe/api/v2"
 const ANI_ZIP_API_BASE = "https://api.ani.zip/mappings"
+const ANILIST_API_BASE = "https://graphql.anilist.co"
 
-exports.GetIMDBIDFromANIMEID = async function (IDType, ID) {
-  return GetIMDBFromYunaMoe(IDType, ID).catch(()=>GetIMDBIDFromAniZip(IDType, ID))
+//One api.ani.zip call has every ID we need for a show: IMDB (for its metadata) and AniList (for its romaji title).
+//Callers that need both share the same promise, so it's only requested once
+exports.GetAniZipMappings = async function (IDType, ID) {
+  return fetch(`${ANI_ZIP_API_BASE}?${IDType}_id=${ID}`).then((resp) => {
+    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+    return resp.json()
+  }).then((data) => {
+    if (!data?.mappings) throw Error("Invalid response!")
+    return data.mappings
+  })
+}
+
+exports.GetIMDBIDFromANIMEID = async function (IDType, ID, mappings = exports.GetAniZipMappings(IDType, ID)) {
+  return mappings.then((m) => m.imdb_id || Promise.reject(Error("No IMDB ID"))).catch(() => GetIMDBFromYunaMoe(IDType, ID))
 }
 
 async function GetIMDBFromYunaMoe(IDType, ID){
@@ -18,16 +31,18 @@ async function GetIMDBFromYunaMoe(IDType, ID){
   })
 }
 
-async function GetIMDBIDFromAniZip(IDType, ID){
-  //get anilist ID from any supported anime-like ID (kitsu, mal, anidb)
-  const reqURL = `${ANI_ZIP_API_BASE}?${IDType}_id=${ID}`
-  return fetch(reqURL).then((resp) => {
+//Sites list anime by their romaji title. TMDB's original title is the Japanese one (e.g. 田中くんはいつもけだるげ) and
+//Cinemeta's is the English one, so it comes from AniList
+exports.GetRomajiTitle = async function (IDType, ID, mappings = exports.GetAniZipMappings(IDType, ID)) {
+  return mappings.then((m) => {
+    if (!m.anilist_id) throw Error("No AniList ID!")
+    return fetch(ANILIST_API_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ query: "query($id:Int){Media(id:$id){title{romaji}}}", variables: { id: m.anilist_id } })
+    })
+  }).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    if (resp === undefined) throw Error(`Undefined response!`)
     return resp.json()
-  }).then((data) => {
-    if (data === undefined) throw Error("Invalid response!")
-    //return first result
-    return data.mappings?.imdb_id
-  })
+  }).then((data) => data?.data?.Media?.title?.romaji)
 }
