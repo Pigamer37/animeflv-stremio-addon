@@ -83,7 +83,7 @@ exports.GetAnimeBySlug = async function (slug) {
     //return first result
     const epCount = data.data.episodes.length
     const imgPattern = /\/(\d+).jpg$/g
-    const matches = imgPattern.exec(data.data.cover)
+    const matches = imgPattern.exec(data.data.cover) || [] //covers without a numeric file name just get no thumbnails
     const rank = episodes.Ranks(data.data.episodes.map((ep) => ep.number))
     const videos = data.data.episodes.map((ep) => {
       return {
@@ -92,7 +92,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: ep.number,
         number: ep.number,
-        thumbnail: `https://cdn.animeav1.com/screenshots/${matches[1]}/${ep.number}.jpg`,//`https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
+        thumbnail: (matches[1]) ? `https://cdn.animeav1.com/screenshots/${matches[1]}/${ep.number}.jpg` : undefined,//`https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
         released: episodes.EstimateReleased(rank(ep.number), epCount, { start: data.data.startDate, end: data.data.endDate }),
         available: true
       }
@@ -122,7 +122,7 @@ exports.GetAnimeBySlug = async function (slug) {
     }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Pelicula" || data.data.type === "Película" || data.data.type === "Especial") ? "movie" : "series",
-      videos, poster: data.data.cover, background: `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
+      videos, poster: data.data.cover, background: (matches[1]) ? `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg` : data.data.cover, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
       language: "jpn", links,
       runtime: data.data.runtime,
       ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: data.data.startDate.getFullYear() + "-".concat((data.data.endDate!==undefined)?data.data.endDate?.getFullYear():"") },
@@ -279,7 +279,7 @@ async function GetAnimeInfo(slug) {
       //next_airing_episode: nextAiringInfo ? JSON.parse(nextAiringInfo)?.[3] : undefined,
       episodes: [],
       url,
-      ...(metadataObj?.match(/runtime:\s?(.*?),/)?.[1] !== "null") && { runtime: `${metadataObj?.match(/runtime:\s?(.*?),/)?.[1]}m` || undefined },
+      ...(/^\d+$/.test(metadataObj?.match(/runtime:\s?(.*?),/)?.[1] || "")) && { runtime: `${metadataObj.match(/runtime:\s?(.*?),/)[1]}m` },
       ...(metadataObj?.match(/trailer:\s?"(.*?)",/)?.[1]) && { trailers: metadataObj?.match(/trailer:\s?"(.*?)",/)?.[1] || undefined }
     };
     

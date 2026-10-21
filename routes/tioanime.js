@@ -87,7 +87,7 @@ exports.GetAnimeBySlug = async function (slug) {
     //return first result
     const epCount = data.data.episodes.length
     const imgPattern = /\/(\d+).jpg$/g
-    const matches = imgPattern.exec(data.data.cover)
+    const matches = imgPattern.exec(data.data.cover) || [] //covers without a numeric file name just get no thumbnails
     const rank = episodes.Ranks(data.data.episodes.map((ep) => ep.number))
     const videos = data.data.episodes.map((ep) => {
       return {
@@ -96,7 +96,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: ep.number,
         number: ep.number,
-        thumbnail: `${TIOANIME_BASE}/uploads/thumbs/${matches[1]}.jpg`,
+        thumbnail: (matches[1]) ? `${TIOANIME_BASE}/uploads/thumbs/${matches[1]}.jpg` : undefined,
         released: episodes.EstimateReleased(rank(ep.number), epCount, { start: data.data.startDate }),
         available: true
       }
@@ -126,7 +126,7 @@ exports.GetAnimeBySlug = async function (slug) {
     }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (/pel[ií]cula/i.test(data.data.type)) ? "movie" : "series", //the page says "TV", "OVA", "Especial" or "Película"
-      videos, poster: data.data.cover, background: `${TIOANIME_BASE}/uploads/animes/thumbs/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `tioanime:${slug}`,
+      videos, poster: data.data.cover, background: (matches[1]) ? `${TIOANIME_BASE}/uploads/animes/thumbs/${matches[1]}.jpg` : data.data.cover, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `tioanime:${slug}`,
       language: "jpn", links,
       ...(data.data.year) && { releaseInfo: data.data.year },
       //both behavior hints can't coexist, if there's an upcoming episode, videos.length > 1

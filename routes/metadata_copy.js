@@ -28,7 +28,7 @@ class Metadata {
     else if (typeof releaseDate === 'string') { this.releaseDate = new Date(releaseDate) }
   }
   shortPrint() {
-    return `${this.title}, a ${(this.type === "tv") ? "series" : this.type} released ${this.releaseDate.toDateString()}`;
+    return `${this.title}, a ${(this.type === "tv") ? "series" : this.type} released ${this.releaseDate?.toDateString() || "on an unknown date"}`; //only logged, but it used to throw and discard the metadata
   }
   fullPrint() {
     return `${this.title}, a` + (adult !== undefined) ? "n adult" : "" +
@@ -163,8 +163,7 @@ class Metadata {
   static GetSpecialMeta(imdbID, episode, type="series"){
     const reqURL = `${CINEMETA_BASE}/meta/${type}/${imdbID}.json`
     return fetch(reqURL).then((resp) => {
-      if ((!resp.ok) || resp.status !== 200) reject(new Error(`HTTP error! Status: ${resp.status}`))
-      if (resp === undefined) reject(new Error("Undefined response!"))
+      if ((!resp.ok) || resp.status !== 200) throw new Error(`HTTP error! Status: ${resp.status}`)
       return resp.json()
     }).then((data) => {
       if (data?.meta?.videos === undefined) throw new Error("Invalid response!")
