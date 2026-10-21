@@ -3,7 +3,7 @@ const { describe, it, before, after } = require("node:test")
 const path = require("node:path")
 const fixtures = require("./helpers/fetch-fixtures.js")
 const assert = require("node:assert/strict")
-const { SOURCES, checkSearch, checkMeta, checkStreams } = require("./helpers/sources.js")
+const { SOURCES, checkSearch, checkMeta, checkStreams, checkStableDates } = require("./helpers/sources.js")
 
 const globalsBefore = new Set(Object.keys(globalThis))
 
@@ -14,6 +14,7 @@ for (const src of SOURCES) {
     it("parses search results", () => checkSearch(src))
     it("parses series metadata", () => checkMeta(src))
     it("parses episode streams", () => checkStreams(src))
+    if (src.stableDates) it("keeps episode dates between refreshes", () => checkStableDates(src))
   })
 }
 

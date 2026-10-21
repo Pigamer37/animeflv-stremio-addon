@@ -3,6 +3,7 @@ const JKANIME_BASE = "https://jkanime.net"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const episodes = require("../lib/episodes.js");
 const { CollectPages } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
@@ -75,8 +76,9 @@ exports.GetAnimeBySlug = async function (slug) {
     const lastNumber = data.data.episodes[epCount - 1]?.number ?? 0
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover)
+    const rank = episodes.Ranks(data.data.episodes.map((ep) => ep.number))
+    const start = (data.data.released && !isNaN(data.data.released)) ? data.data.released : undefined
     const videos = data.data.episodes.map((ep) => {
-      let d = new Date(Date.now())
       return {
         id: `jkanime:${slug}:${ep.number}`,
         title: data.data.title + " Ep. " + ep.number,
@@ -84,7 +86,7 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: ep.thumbnail,
-        released: ep.released || new Date(d.setDate(d.getDate() - (lastNumber - ep.number))), //estimated when unknown
+        released: ep.released || episodes.EstimateReleased(rank(ep.number), epCount, { start }), //estimated when unknown
         available: true
       }
     })
@@ -422,7 +424,7 @@ async function GetOnAir() {
   }))
 }
 
-const SPANISH_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+const SPANISH_MONTHS = episodes.SPANISH_MONTHS
 //"Martes 27 de Octubre" (no year) -> the next such date, or undefined if it can't be read
 function NextAiringDate(text) {
   //the paragraph also holds the last episode ("... - 2 Nuevo"), so take the first "<day> [de] <month>" that is a real month

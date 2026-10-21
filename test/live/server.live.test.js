@@ -34,6 +34,13 @@ describe("server (live)", { timeout: 180000 }, () => {
       assert.ok(["animeav1", "jkanime", "tioanime"].includes(prefix), `${id} resolved to ${prefix}`)
     }
   })
+  it("adds the other sites' streams, LatAnime's dubs included, for a site's own ID", async () => {
+    const streams = await streamsFor("/externalStreams=true/stream/series/tioanime:spy-x-family:1.json")
+    const sources = new Set(streams.map((s) => s.name.split("\n")[0]))
+    assert.ok(sources.size >= 3, `only ${[...sources]}`)
+    if (!(await blockedInCI("https://latanime.org/buscar?q=naruto"))) assert.ok(streams.some((s) => s.name.startsWith("LatAnime") && s.name.includes("DUB")), "no LatAnime dub")
+    assert.ok(streams.every((s) => s.description.startsWith("Spy x Family")), "a stream from another show")
+  })
   it("fills a search catalog", async () => {
     const { metas } = await (await server.get("/catalog/AnimeAV1/animeav1/search=naruto.json")).json()
     assert.ok(metas.length > 0)

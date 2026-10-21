@@ -58,13 +58,33 @@ function HandleStreamRequest(req, res, next) {
     console.log('Extra parameters:', res.locals.extraParams)
     // const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode)
     const animeFLVp = Promise.resolve([])
-    const animeAV1p = animeAV1API.GetItemStreams(ID, onlyInternal, episode)
-    const henaojarap = henaojaraAPI.GetItemStreams(ID, onlyInternal, episode)
-    const tioanimep = tioanimeAPI.GetItemStreams(ID, onlyInternal, episode)
+    //Other sites usually use the same slug for the same show, so they're asked too. LatAnime adds -latino/-castellano
+    //to its slugs: its IDs lose them for the others, and it's asked for every version of the others' slugs
+    const own = videoID
+    const baseSlug = (own === "latanime") ? ID.replace(/-(latino|castellano)$/, "") : ID
+    const slugFor = (prefix) => (prefix === own) ? ID : baseSlug
+    const found = {
+      animeav1: animeAV1API.GetItemStreams(slugFor("animeav1"), onlyInternal, episode),
+      henaojara: henaojaraAPI.GetItemStreams(slugFor("henaojara"), onlyInternal, episode),
+      tioanime: tioanimeAPI.GetItemStreams(slugFor("tioanime"), onlyInternal, episode),
+      jkanime: jkanimeAPI.GetItemStreams(slugFor("jkanime"), onlyInternal, episode),
+      latanime: (own === "latanime") ? latanimeAPI.GetItemStreams(ID, onlyInternal, episode)
+        : Promise.allSettled([baseSlug, `${baseSlug}-latino`, `${baseSlug}-castellano`].map((slug) => latanimeAPI.GetItemStreams(slug, onlyInternal, episode)))
+          .then((all) => all.filter((p) => p.value).flatMap((p) => p.value)),
+    }
+    //...but a slug can name another show on another site: drop those streams (no extra requests, just their titles)
+    const ownTitle = (found[own] || Promise.reject()).then(matching.StreamsShowTitle).catch(() => undefined)
+    const sameShow = (prefix) => (prefix === own) ? found[prefix] : Promise.all([found[prefix], ownTitle]).then(([streams, title]) => {
+      if (!matching.SameShow(title, matching.StreamsShowTitle(streams))) throw Error(`same slug, another show: ${matching.StreamsShowTitle(streams)}`)
+      return streams
+    })
+    const animeAV1p = sameShow("animeav1")
+    const henaojarap = sameShow("henaojara")
+    const tioanimep = sameShow("tioanime")
     // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode)
     const animejarap = Promise.resolve([])
-    const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    const latanimep = latanimeAPI.GetItemStreams(ID, onlyInternal, episode)
+    const jkanimep = sameShow("jkanime")
+    const latanimep = sameShow("latanime")
     CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)

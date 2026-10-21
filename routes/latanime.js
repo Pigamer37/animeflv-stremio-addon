@@ -3,6 +3,7 @@ const LATANIME_BASE = "https://latanime.org"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const episodes = require("../lib/episodes.js");
 const { CollectPages } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
@@ -83,13 +84,14 @@ exports.GetAnimeBySlug = async function (slug) {
   //an airing series with its first episode out also has a single episode, so that alone doesn't make a movie
   const finished = /\bFinalizado\b/.test($("body").clone().find("nav, header, footer").remove().end().text())
   const isMovie = /pel[ií]cula|\bmovie\b|\bfilm\b/i.test(`${title} ${slug}`) || (epNumbers.length <= 1 && finished)
-  const d = new Date(Date.now())
+  const start = episodes.ParseSpanishDate($("body").text().match(/Estreno:\s*([^\n]{0,40})/)?.[1])
+  const rank = episodes.Ranks(epNumbers)
   const videos = epNumbers.map((n) => ({
     id: `latanime:${slug}:${n}`,
     title: (isMovie) ? title : `${title} Ep. ${n}`,
     season: 1, episode: n, number: n,
     thumbnail: poster,
-    released: new Date(new Date(d).setDate(d.getDate() - (epNumbers.length - n))),
+    released: episodes.EstimateReleased(rank(n), epNumbers.length, { start }),
     available: true
   }))
   const url = `${LATANIME_BASE}/anime/${slug}`

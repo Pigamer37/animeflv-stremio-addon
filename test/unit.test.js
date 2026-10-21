@@ -197,3 +197,56 @@ describe("JKAnime next episode date", () => {
     assert.equal(NextAiringDate("Próximamente"), undefined)
   })
 })
+
+describe("estimated release dates (sites that only give episode numbers)", () => {
+  const { EstimateReleased, ParseSpanishDate, ParseAnimeSeason, Ranks } = require("../lib/episodes.js")
+  const DAY = 86400000, now = Date.UTC(2026, 9, 21)
+  const iso = (d) => d.toISOString().slice(0, 10)
+  it("spreads episodes between the series' start and end", () => {
+    const opts = { start: "2022-04-09", end: "2022-06-25", now }
+    assert.equal(iso(EstimateReleased(0, 12, opts)), "2022-04-09")
+    assert.equal(iso(EstimateReleased(11, 12, opts)), "2022-06-25")
+  })
+  it("adds a week per episode from the start when there's no end", () => {
+    assert.equal(iso(EstimateReleased(3, 12, { start: "2022-04-09", now })), "2022-04-30")
+  })
+  it("doesn't change between refreshes, so finished shows don't look new every day", () => {
+    const opts = { start: "2016-04-01" }
+    assert.equal(+EstimateReleased(11, 12, { ...opts, now }), +EstimateReleased(11, 12, { ...opts, now: now + DAY }))
+  })
+  it("is never in the future and keeps the episodes in order", () => {
+    const dates = [0, 1, 2].map((i) => EstimateReleased(i, 3, { start: now - DAY, now }))
+    assert.ok(dates.every((d) => +d <= now))
+    assert.ok(dates[0] < dates[1] && dates[1] < dates[2])
+  })
+  it("falls back to the old estimate without a start date", () => {
+    assert.equal(+EstimateReleased(11, 12, { now }), now)
+  })
+  it("reads Spanish dates and anime seasons", () => {
+    assert.equal(iso(ParseSpanishDate("09 de Abril de 2022")), "2022-04-09")
+    assert.equal(iso(ParseSpanishDate("5 de enero 2026 Episodios: 1")), "2026-01-05")
+    assert.equal(ParseSpanishDate("Próximamente"), undefined)
+    assert.equal(iso(ParseAnimeSeason("Temporada Invierno 2022")), "2022-01-01")
+    assert.equal(iso(ParseAnimeSeason("Temporada Otoño 2025")), "2025-10-01")
+    assert.equal(ParseAnimeSeason("2022"), undefined)
+  })
+  it("ranks episode numbers oldest first whatever the order", () => {
+    const rank = Ranks(["3", "2", "1", "0"])
+    assert.deepEqual([0, 1, 2, 3].map(rank), [0, 1, 2, 3])
+  })
+})
+
+describe("streams of other sites for a site's own ID", () => {
+  it("reads the show title from the streams", () => {
+    assert.equal(matching.StreamsShowTitle([{ description: "Spy x Family Ep. 12\n⚙️ MP4Upload" }]), "Spy x Family")
+    assert.equal(matching.StreamsShowTitle([{ description: "One Piece Film: Red\n⚙️ Voe" }]), "One Piece Film: Red")
+    assert.equal(matching.StreamsShowTitle([]), undefined)
+  })
+  it("keeps them for the same show, written slightly differently, and drops another show with the same slug", () => {
+    assert.ok(matching.SameShow("Spy x Family", "SPY x FAMILY"))
+    assert.ok(matching.SameShow("Shingeki no Kyojin", "Shingeki no Kyojin"))
+    assert.ok(!matching.SameShow("Naruto", "One Piece"))
+    assert.ok(!matching.SameShow("Shingeki no Kyojin", "Kimetsu no Yaiba"))
+    assert.ok(matching.SameShow(undefined, "Naruto")) //nothing to compare against
+  })
+})
