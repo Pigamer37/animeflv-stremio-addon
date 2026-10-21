@@ -16,9 +16,11 @@ app.use(express.static('public'))
 app.set('view engine', 'ejs');
 
 const fsPromises = require("fs/promises")
+//Read once at startup: deploys upload files one by one, so reading package.json on every request could catch it
+//half-written (JSON.parse failed, and the host's proxy kept serving that 500)
+const PACKAGE_JSON = require('./package.json')
 function ReadManifest() {
-  return fsPromises.readFile('./package.json', 'utf8').then((data) => {
-    const packageJSON = JSON.parse(data);
+  return Promise.resolve(PACKAGE_JSON).then((packageJSON) => {
 
     let manifest = {
       "id": 'com.' + packageJSON.name.replaceAll('-', '.'),
@@ -305,7 +307,7 @@ app.get("/manifest.json", (_req, res) => {
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
   }).catch((err) => {
-    if(!res.headersSent) res.status(500).send("Error reading file: " + err);
+    if(!res.headersSent) res.status(500).header("Cache-Control", "no-store").send("Error reading file: " + err) //errors must not be cached by proxies;
   })
 })
 
@@ -320,7 +322,7 @@ app.get("/:config/manifest.json", (req, res) => {
     res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
     res.json(manif);
   }).catch((err) => {
-    if(!res.headersSent) res.status(500).send("Error reading file: " + err);
+    if(!res.headersSent) res.status(500).header("Cache-Control", "no-store").send("Error reading file: " + err) //errors must not be cached by proxies;
   })
 })
 
@@ -335,7 +337,7 @@ app.get("/configure", (req, res) => {
       manifest: manif
     })
   }).catch((err) => {
-    if(!res.headersSent) res.status(500).send("Error reading file: " + err);
+    if(!res.headersSent) res.status(500).header("Cache-Control", "no-store").send("Error reading file: " + err) //errors must not be cached by proxies;
   })
 })
 //WIP
@@ -346,7 +348,7 @@ app.get("/:config/configure", (req, res) => {
       manifest: manif
     })
   }).catch((err) => {
-    if(!res.headersSent) res.status(500).send("Error reading file: " + err);
+    if(!res.headersSent) res.status(500).header("Cache-Control", "no-store").send("Error reading file: " + err) //errors must not be cached by proxies;
   })
 })
 
