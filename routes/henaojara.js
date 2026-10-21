@@ -145,9 +145,10 @@ async function GetEpisodeLinks(slug, epNumber = 1) {
       else return null;
     }
 
-    if (!(await episodeData())) return null;
+    const html = await episodeData(); //fetch the page once
+    if (!html) return null;
 
-    const $ = cheerio.load(await episodeData());
+    const $ = cheerio.load(html);
 
     const episodeLinks = {
       title: $("#l > div > h1").text().replace(/episodio \d+$/i, "").trim(),

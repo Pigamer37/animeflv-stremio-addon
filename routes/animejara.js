@@ -148,9 +148,10 @@ async function GetEpisodeLinks(slug, season = undefined, epNumber = undefined) {
       else return null;
     }
 
-    if (!(await episodeData())) return null;
+    const html = await episodeData(); //fetch the page once
+    if (!html) return null;
 
-    const $ = cheerio.load(await episodeData());
+    const $ = cheerio.load(html);
 
     let optSeason = $("#content div.episodio-info > div.episodio-meta").text().match(/Temporada \d+/)?.[0]
     if (optSeason === "Temporada 1") optSeason = ""
