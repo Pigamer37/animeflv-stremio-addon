@@ -102,7 +102,7 @@ exports.GetAnimeBySlug = async function (slug, type = "series") {
       })
     }
 
-    links = [{ name: "AnimeJara", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
+    const links = [{ name: "AnimeJara", category: "Open in", url: data.data.url }, { name: data.data.title, category: "share", url: data.data.url }]
     if (data.data.related) {//Add relation links if they exist
       links.push(
         ...data.data.related.map((r) => {

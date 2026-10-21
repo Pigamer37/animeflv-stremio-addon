@@ -233,6 +233,7 @@ function SearchParamsRegex(extraParams) {
 }
 
 function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise) {
+  let lastInternal, lastInternalFLV, lastInternalAV1, lastInternalHena, lastInternalTio, lastInternalJara, lastInternalJK
   return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise]).then((results) => {
     let combinedStreams = []
     if (results[0].value) {
