@@ -3,33 +3,37 @@ const LATANIME_BASE = "https://latanime.org"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
+const { CollectPages } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
 /**
  * LatAnime lists each dub as its own entry, with the language (or nothing, for subs) at the end of the title,
- * and seasons as "S2" or a bare "2" (e.g. "Shingeki no Kyojin S2 Latino", "Shingeki no Kyojin 2 Castellano").
- * Parsing search terms the same way lets us compare entries by base title and season.
+ * seasons as "S2" or a bare "2", and sometimes a tag (e.g. "Shingeki no Kyojin S2 Latino", "Shingeki no Kyojin 2
+ * Castellano", "Dr. Stone: Stone Wars Latino S2", "Dandadan CR Latino"). Parsing search terms the same way lets us
+ * compare entries by base title and season.
  * @param {string} title
- * @return {{key: string, dubLang: (string|undefined)}} key is "<normalized base title>|<season>"
+ * @return {{key: string, base: string, dubLang: (string|undefined)}} key is "<normalized base title>|<season>"
  */
 exports.ParseTitle = function (title) {
-  let dubLang
-  let base = title.trim().replace(/\s+(latino|castellano|catal[aá]n)$/i, (_, lang) => {
-    dubLang = { latino: "lat", castellano: "esp" }[lang.toLowerCase()] || "cat"
-    return ""
-  })
-  let season = 1
-  base = base.replace(/\s+(?:s|season\s*|temporada\s*)?(\d{1,2})$/i, (_, n) => { season = Number(n); return "" })
-  return { key: base.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "") + "|" + season, dubLang }
+  let dubLang, season, base = title.trim(), prev
+  do { //the suffixes come in any order
+    prev = base
+    base = base.replace(/\s+(latino|castellano|catal[aá]n)$/i, (_, lang) => {
+      dubLang = { latino: "lat", castellano: "esp" }[lang.toLowerCase()] || "cat"
+      return ""
+    }).replace(/\s+(\d{3,4}p|cr|hd)$/i, "")
+    if (season === undefined) base = base.replace(/\s+(?:s|season\s*|temporada\s*)?(\d{1,2})$/i, (_, n) => { season = Number(n); return "" })
+  } while (base !== prev)
+  return { key: base.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "") + "|" + (season || 1), base, dubLang }
 }
 
 exports.AiringCacheFile = './onair_titlesLAT.json'
 
 exports.GetAiringAnimeFromWeb = async function () {
   //the listing already has title, type and poster; opening every series page was slow and dropped the ones that failed
-  return CollectPages((page) => SearchAnimesBySpecificURL(`${LATANIME_BASE}/emision?p=${page}`)).then((data) => {
+  return GetOnAir().then((data) => {
     if (!data || data.length < 1) throw Error("Invalid response!")
-    return data.map(({ title, type, slug, poster }) => ({ title, type, slug, poster }))
+    return data
   })
 }
 
@@ -126,7 +130,7 @@ async function GetEpisodeLinks(slug, epNumber, title) {
     if (!/^https?:\/\//.test(embed)) return null //some entries are bare file names, not players
     return { name: streamParser.getServerTitle(new URL(embed).hostname.replace(/^www\./, "")), embed, dub: dubLang !== undefined, dubLang }
   }).get()
-  return { title: title.replace(/\s+(latino|castellano|catal[aá]n)$/i, ""), number: epNumber, servers }
+  return { title: title.replace(/\s+(latino|castellano|catal[aá]n)(?=(\s+s?\d{1,2})?$)/i, ""), number: epNumber, servers }
 }
 
 async function SearchAnimesBySpecificURL(latanimeURL) {
@@ -149,15 +153,8 @@ async function SearchAnimesBySpecificURL(latanimeURL) {
   }).get()
 }
 
-//Reads a paginated listing until a page is empty or only repeats entries already seen (at most 10 pages)
-async function CollectPages(getPage, maxPages = 10) {
-  const all = [], seen = new Set()
-  for (let page = 1; page <= maxPages; page++) {
-    const items = await getPage(page).catch((err) => { if (page === 1) throw err; return [] })
-    const fresh = items.filter((i) => !seen.has(i.slug))
-    if (fresh.length < 1) break
-    fresh.forEach((i) => seen.add(i.slug))
-    all.push(...fresh)
-  }
-  return all
+async function GetOnAir() {
+  return CollectPages((page) => SearchAnimesBySpecificURL(`${LATANIME_BASE}/emision?p=${page}`)).then((data) =>
+    data.map(({ title, type, slug, poster }) => ({ title, type, slug, poster }))
+  )
 }

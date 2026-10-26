@@ -205,12 +205,15 @@ function HandleStreamRequest(req, res, next) {
       // }))
       const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
       //LatAnime lists the sub, Latino and Castellano versions as separate entries, with inconsistent season naming
-      //("X S2 Latino", "X 2 Castellano"): titles are compared by base title + season, and the streams of every matching
-      //entry are merged. Its search is literal ("X 2" doesn't find "X S2"), so the base title is searched
+      //("X S2 Latino", "X 2 Castellano"): entries of the requested season are matched by base title (fuzzy matched like
+      //the other sources when none is exact) and the streams of every version of the match are merged. Its search is
+      //literal ("X 2" doesn't find "X S2"), so the base title is searched
       const latanimep = firstMatch((searchTerm) => latanimeAPI.SearchLatAnime(searchTerm.replace(/\s+\d{1,2}$/, ""), req.params.type).then(notSpecial).then((animeFLVitem) => {
-        const key = latanimeAPI.ParseTitle(searchTerm).key
-        const results = animeFLVitem.filter((i) => i.key === key && i.dubLang !== "cat") //Catalan dubs would be labelled as Castilian
-        if (results.length < 1) throw Error('No search results!')
+        const { key, base } = latanimeAPI.ParseTitle(searchTerm)
+        const candidates = animeFLVitem.filter((i) => i.key.split("|")[1] === key.split("|")[1] && i.dubLang !== "cat") //Catalan dubs would be labelled as Castilian
+        const best = candidates.find((i) => i.key === key) || fuzzysort.go(base, candidates, {key: 'base', limit: 1, threshold: .5})[0]?.obj
+        if (!best) throw Error('No search results!')
+        const results = candidates.filter((i) => i.key === best.key)
         console.log('\x1b[36mGot LatAnime entries:\x1b[39m', results.map((r) => r.title).join(", "))
         return Promise.allSettled(results.map((r) => latanimeAPI.GetItemStreams(r.slug, onlyInternal, episode, r.title))).then((all) => {
           const streams = all.filter((p) => p.value).flatMap((p) => p.value)
