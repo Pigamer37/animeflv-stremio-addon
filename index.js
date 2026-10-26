@@ -2,6 +2,8 @@
 const express = require("express")
 const app = express()
 
+require("./lib/http.js").Install() //shared cache, per-site limits and a browser User-Agent for every request to the sites
+
 //const { addonBuilder, serveHTTP, publishToCentral } = require('stremio-addon-sdk')
 
 function setCORS(_req, res, next) {
