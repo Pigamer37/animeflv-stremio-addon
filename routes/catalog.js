@@ -194,13 +194,13 @@ function HandleCatalogRequest(req, res, next) {
     //latanime catalog request
     if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
       let genreArr = res.locals.extraParams.genre
-      //calculate the page to start from, LatAnime uses 30 results per page
+      //calculate the page to start from, Latanime uses 30 results per page
       //if skip is defined, we can calculate the page and the number of items we already delivered
       let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 30) + 1 : undefined,
         gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 30 : undefined
       console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
-      catalogPromise = latanimeAPI.SearchLatAnime(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
-        console.log('\x1b[36mGot LatAnime metadata for:\x1b[39m', result.length, "search results")
+      catalogPromise = latanimeAPI.SearchLatanime(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
+        console.log('\x1b[36mGot Latanime metadata for:\x1b[39m', result.length, "search results")
         return result.map((anime) => {
           return {
             id: `latanime:${anime.slug}`,
@@ -214,7 +214,7 @@ function HandleCatalogRequest(req, res, next) {
       })
     } else {
       catalogPromise = latanimeAPI.GetAiringAnime().then((result) => {
-        console.log('\x1b[36mGot LatAnime metadata for:\x1b[39m', result.length, "search results")
+        console.log('\x1b[36mGot Latanime metadata for:\x1b[39m', result.length, "search results")
         return result.map((anime) => {
           return {
             id: `latanime:${anime.slug}`,

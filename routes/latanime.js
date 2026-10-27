@@ -7,7 +7,7 @@ const { CollectPages } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
 /**
- * LatAnime lists each dub as its own entry, with the language (or nothing, for subs) at the end of the title,
+ * Latanime lists each dub as its own entry, with the language (or nothing, for subs) at the end of the title,
  * seasons as "S2" or a bare "2", and sometimes a tag (e.g. "Shingeki no Kyojin S2 Latino", "Shingeki no Kyojin 2
  * Castellano", "Dr. Stone: Stone Wars Latino S2", "Dandadan CR Latino"). Parsing search terms the same way lets us
  * compare entries by base title and season.
@@ -48,14 +48,14 @@ exports.UpdateAiringAnimeFile = function () {
   return this.GetAiringAnimeFromWeb().then((titles) => {
     console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
     return fsPromises.writeFile(exports.AiringCacheFile, JSON.stringify(titles))
-  }).then(() => console.log('\x1b[32mOn Air LatAnime titles "cached" successfully!\x1b[39m')
+  }).then(() => console.log('\x1b[32mOn Air Latanime titles "cached" successfully!\x1b[39m')
   ).catch((err) => {
     console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
   })
 }
 
-exports.SearchLatAnime = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
-  if (!url && !query && !genreArr) throw Error("No arguments passed to SearchLatAnime()")
+exports.SearchLatanime = async function (query, type = undefined, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
+  if (!url && !query && !genreArr) throw Error("No arguments passed to SearchLatanime()")
   if (query && page > 1) return [] //text searches return every match at once; asking again only repeats page 1
   let latanimeURL
   if (url) latanimeURL = new URL(url)
@@ -103,7 +103,7 @@ exports.GetAnimeBySlug = async function (slug) {
     description: $("p").map((_, p) => $(p).text().trim()).get().find((t) => t.length > 60),
     website: url, id: `latanime:${slug}`,
     language: ({ lat: "spa", esp: "spa", cat: "cat" })[exports.ParseTitle(title).dubLang] || "jpn",
-    links: [{ name: "LatAnime", category: "Open in", url }, { name: title, category: "share", url }],
+    links: [{ name: "Latanime", category: "Open in", url }, { name: title, category: "share", url }],
     ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `latanime:${slug}:${epNumbers[0]}` } }
   }
 }
@@ -111,7 +111,7 @@ exports.GetAnimeBySlug = async function (slug) {
 exports.GetItemStreams = async function (slug, onlyInternal = true, epNumber = 1, title = undefined) {
   return GetEpisodeLinks(slug, epNumber || 1, title).then((data) => {
     if (!data) throw Error('Empty response!')
-    return streamParser.GetStreamLinks("LatAnime", "latanime", { data }, onlyInternal)
+    return streamParser.GetStreamLinks("Latanime", "latanime", { data }, onlyInternal)
   })
 }
 

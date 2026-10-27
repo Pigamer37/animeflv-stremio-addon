@@ -204,17 +204,17 @@ function HandleStreamRequest(req, res, next) {
         // return jkanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
       // }))
       const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
-      //LatAnime lists the sub, Latino and Castellano versions as separate entries, with inconsistent season naming
+      //Latanime lists the sub, Latino and Castellano versions as separate entries, with inconsistent season naming
       //("X S2 Latino", "X 2 Castellano"): entries of the requested season are matched by base title (fuzzy matched like
       //the other sources when none is exact) and the streams of every version of the match are merged. Its search is
       //literal ("X 2" doesn't find "X S2"), so the base title is searched
-      const latanimep = firstMatch((searchTerm) => latanimeAPI.SearchLatAnime(searchTerm.replace(/\s+\d{1,2}$/, ""), req.params.type).then(notSpecial).then((animeFLVitem) => {
+      const latanimep = firstMatch((searchTerm) => latanimeAPI.SearchLatanime(searchTerm.replace(/\s+\d{1,2}$/, ""), req.params.type).then(notSpecial).then((animeFLVitem) => {
         const { key, base } = latanimeAPI.ParseTitle(searchTerm)
         const candidates = animeFLVitem.filter((i) => i.key.split("|")[1] === key.split("|")[1] && i.dubLang !== "cat") //Catalan dubs would be labelled as Castilian
         const best = candidates.find((i) => i.key === key) || fuzzysort.go(base, candidates, {key: 'base', limit: 1, threshold: .5})[0]?.obj
         if (!best) throw Error('No search results!')
         const results = candidates.filter((i) => i.key === best.key)
-        console.log('\x1b[36mGot LatAnime entries:\x1b[39m', results.map((r) => r.title).join(", "))
+        console.log('\x1b[36mGot Latanime entries:\x1b[39m', results.map((r) => r.title).join(", "))
         return Promise.allSettled(results.map((r) => latanimeAPI.GetItemStreams(r.slug, onlyInternal, episode, r.title))).then((all) => {
           const streams = all.filter((p) => p.value).flatMap((p) => p.value)
           if (streams.length < 1) throw Error('No streams!')
@@ -358,18 +358,18 @@ function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioa
       }
     } else {console.error('\x1b[31mFailed on JKAnime slug search because:\x1b[39m ' + results[5].reason)}
     if (results[6].value) {
-      console.log(`\x1b[36mGot ${results[6].value.length} LatAnime streams\x1b[39m`)
+      console.log(`\x1b[36mGot ${results[6].value.length} Latanime streams\x1b[39m`)
       lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
       const lastInternalLat = results[6].value.findLastIndex((stream)=>stream.url !== undefined)
       if (lastInternalLat === -1) {
-        combinedStreams = combinedStreams.concat(results[6].value) //LatAnime has only external links, just append at the end
+        combinedStreams = combinedStreams.concat(results[6].value) //Latanime has only external links, just append at the end
       } else if ((lastInternalLat !== -1) && (lastInternal === -1)) {
         combinedStreams = results[6].value.concat(combinedStreams) //Previous has only external links, prepend at the start
       } else {
-        combinedStreams.splice(lastInternal + 1, 0, ...results[6].value.slice(0, lastInternalLat + 1)) //Both have internal links, insert LatAnime internal links after last internal links
+        combinedStreams.splice(lastInternal + 1, 0, ...results[6].value.slice(0, lastInternalLat + 1)) //Both have internal links, insert Latanime internal links after last internal links
         combinedStreams = combinedStreams.concat(results[6].value.slice(lastInternalLat + 1)) //Append external links at the end
       }
-    } else {console.error('\x1b[31mFailed on LatAnime slug search because:\x1b[39m ' + results[6].reason)}
+    } else {console.error('\x1b[31mFailed on Latanime slug search because:\x1b[39m ' + results[6].reason)}
     return combinedStreams
   })
 }

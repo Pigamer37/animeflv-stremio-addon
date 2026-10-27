@@ -80,7 +80,7 @@ function ReadManifest() {
           ]
         },
         {
-          id: "latanime", type: "LatAnime", name: "search results",
+          id: "latanime", type: "Latanime", name: "search results",
           extra: [{ name: "search", isRequired: true },
           {
             name: "genre",
@@ -192,7 +192,7 @@ function ReadManifest() {
           ]
         },
         {
-          id: "latanime|genres", type: "Anime", name: "LatAnime",
+          id: "latanime|genres", type: "Anime", name: "Latanime",
           extra: [
             {
               name: "genre",
@@ -267,7 +267,7 @@ function ReadManifest() {
           id: "tioanime|onair", type: "TioAnime", name: "On Air"
         },
         {
-          id: "latanime|onair", type: "LatAnime", name: "On Air"
+          id: "latanime|onair", type: "Latanime", name: "On Air"
         },
         // {
         //   id: "animejara|onair", type: "AnimeJara", name: "On Air"
