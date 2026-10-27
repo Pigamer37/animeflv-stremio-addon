@@ -36,25 +36,21 @@ function ReadManifest() {
           id: "animeflv", type: "series", name: "AnimeFLV",
           extra: [
             { name: "search", isRequired: true },
+            {
+              name: "genre",
+              options: ["accion", "aenime", "anime-latino", "artes-marciales", "aventura", "aventuras", "blu-ray",
+                "carreras", "castellano", "ciencia-ficcion", "comedia", "comida", "cyberpunk", "demencia", "dementia",
+                "demonios", "deportes", "drama", "ecchi", "escolares", "escuela", "espacial", "fantasia", "gore",
+                "harem", "historia-paralela", "historico", "horror", "infantil", "josei", "juegos", "latino", "lucha",
+                "magia", "mecha", "militar", "misterio", "monogatari", "musica", "parodia", "parodias", "policia",
+                "psicologico", "recuentos-de-la-vida", "recuerdos-de-la-vida", "romance", "samurai", "seinen", "shojo",
+                "shonen", "shoujo", "shounen", "shounen-ai", "sobrenatural", "superpoderes", "suspenso", "terror",
+                "vampiros", "yaoi", "yuri"],
+              optionsLimit: 1, isRequired: false
+            },
             { name: "skip", isRequired: false }
           ]
         },
-        // {
-        //   id: "animeflv", type: "AnimeFLV", name: "search results",
-        //   extra: [{ name: "search", isRequired: true },
-        //   {
-        //     name: "genre",
-        //     options: ["accion", "artes-marciales", "aventura", "carreras", "ciencia-ficcion", "comedia",
-        //       "demencia", "demonios", "deportes", "drama", "ecchi", "escolares", "espacial", "fantasia",
-        //       "harem", "historico", "infantil", "josei", "juegos", "magia", "mecha", "militar", "misterio",
-        //       "musica", "parodia", "policia", "psicologico", "recuentos-de-la-vida", "romance", "samurai",
-        //       "seinen", "shoujo", "shounen", "sobrenatural", "superpoderes", "suspenso", "terror", "vampiros",
-        //       "yaoi", "yuri"],
-        //     optionsLimit: 1, isRequired: false
-        //   },
-        //   { name: "skip", isRequired: false }
-        //   ]
-        // },
         {
           id: "animeav1", type: "AnimeAV1", name: "search results",
           extra: [{ name: "search", isRequired: true },
@@ -415,14 +411,14 @@ app.listen(process.env.PORT || 3000, () => {
     const url = `http://127.0.0.1:${process.env.PORT || 3000}/manifest.json`
     console.log('Open the following for a developement web Stremio session:', `https://staging.strem.io#?addonOpen=${encodeURIComponent(url)}`)
   }
-  // const animeFLVAPI = require('./routes/animeFLV.js')
+  const animeFLVAPI = require('./routes/animeFLV.js')
   const animeAV1API = require('./routes/animeav1.js')
   const henaojaraAPI = require('./routes/henaojara.js')
   const tioanimeAPI = require('./routes/tioanime.js')
   // const animejaraAPI = require('./routes/animejara.js') // Cloudflare protected
   // const jkanimeAPI = require('./routes/jkanime.js') //JKAnime answers 403 to the server's IP (#61)
   const latanimeAPI = require('./routes/latanime.js')
-  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI/*, jkanimeAPI*/, latanimeAPI]
+  let imports = [animeFLVAPI, /*animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI/*, jkanimeAPI*/, latanimeAPI]
   const REFRESH = 6 * 3600000 //newly airing shows appear within hours
   //When the code is newer than a saved list (a deploy), that list was built by the old code: refresh it right away
   const codeTime = Promise.all(["routes", "lib"].map((dir) => fsPromises.readdir(dir).then((files) =>

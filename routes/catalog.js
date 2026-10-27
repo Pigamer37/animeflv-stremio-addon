@@ -47,7 +47,7 @@ function HandleCatalogRequest(req, res, next) {
       const genreArr = res.locals.extraParams.genre
       const page = res.locals.extraParams.skip ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined
       const gottenItems = res.locals.extraParams.skip ? res.locals.extraParams.skip % 24 : undefined
-      catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, genreArr, undefined, page, gottenItems).then((result) => {
+      catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
         return result.map((anime) => ({
           id: `animeflv:${anime.slug}`,
           type: anime.type,
