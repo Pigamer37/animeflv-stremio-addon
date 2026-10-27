@@ -8,6 +8,7 @@ exports.SOURCES = [
   { name: "TioAnime", home: "https://tioanime.com/", prefix: "tioanime", file: "../../routes/tioanime.js", search: "SearchTioAnime", query: "spy x family", slug: "spy-x-family" },
   { name: "JKAnime", home: "https://jkanime.net/", prefix: "jkanime", enabled: false, //disabled in the addon (403 on the server, #61); its scraper is still tested
     file: "../../routes/jkanime.js", search: "SearchJKAnime", query: "spy x family", slug: "spy-x-family" },
+  { name: "Latanime", home: "https://latanime.org/", prefix: "latanime", file: "../../routes/latanime.js", search: "SearchLatanime", query: "spy x family", slug: "spy-x-family-latino" },
 ]
 
 exports.checkSearch = async function (src) {
