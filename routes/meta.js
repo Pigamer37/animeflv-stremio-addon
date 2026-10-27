@@ -32,7 +32,7 @@ function HandleMetaRequest(req, res, next) {
   console.log(`\x1b[96mEntered HandleMetaRequest with\x1b[39m ${req.originalUrl}`)
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
-  /*if (videoID?.startsWith("animeflv")) {
+  if (videoID?.startsWith("animeflv")) {
     const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     animeFLVAPI.GetAnimeBySlug(ID).then((animeMeta) => {
@@ -48,7 +48,7 @@ function HandleMetaRequest(req, res, next) {
         next()
       }
     })
-  } else*/ if (videoID?.startsWith("animeav1")){
+  } else if (videoID?.startsWith("animeav1")){
     const ID = idDetails[1]
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     animeAV1API.GetAnimeBySlug(ID).then((animeMeta) => {

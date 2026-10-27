@@ -42,7 +42,32 @@ function HandleCatalogRequest(req, res, next) {
   console.log(`\x1b[96mEntered HandleCatalogRequest with\x1b[39m ${req.originalUrl}`)
   console.log('Extra parameters:', res.locals.extraParams)
   let catalogPromise
-  if (req.params.videoId.startsWith("animeav1")) {
+  if (req.params.videoId.startsWith("animeflv")) {
+    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
+      const genreArr = res.locals.extraParams.genre
+      const page = res.locals.extraParams.skip ? Math.floor(res.locals.extraParams.skip / 24) + 1 : undefined
+      const gottenItems = res.locals.extraParams.skip ? res.locals.extraParams.skip % 24 : undefined
+      catalogPromise = animeFLVAPI.SearchAnimeFLV(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
+        return result.map((anime) => ({
+          id: `animeflv:${anime.slug}`,
+          type: anime.type,
+          name: anime.title,
+          poster: anime.poster,
+          description: anime.overview,
+          genres: anime.genres
+        }))
+      })
+    } else {
+      catalogPromise = animeFLVAPI.GetAiringAnime().then((result) => result.map((anime) => ({
+        id: `animeflv:${anime.slug}`,
+        type: anime.type,
+        name: anime.title,
+        poster: anime.poster,
+        description: anime.overview,
+        genres: anime.genres
+      })))
+    }
+  } else if (req.params.videoId.startsWith("animeav1")) {
     //animeAV1 catalog request
     if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
       let genreArr = res.locals.extraParams.genre
@@ -337,11 +362,11 @@ function HandleCalendarRequest(req, res) {
   Promise.allSettled(uniqueIDs.map((item) => {
     const idDetails = item.split(':')
     const videoID = idDetails[0]
-    /*if (videoID.startsWith("animeflv")) {
+    if (videoID.startsWith("animeflv")) {
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return animeFLVAPI.GetAnimeBySlug(ID)
-    } else*/ if (videoID.startsWith("animeav1")) {
+    } else if (videoID.startsWith("animeav1")) {
       const ID = idDetails[1]
       console.log(`\x1b[33mGot ${videoID} ID:\x1b[39m ${ID}`)
       return animeAV1API.GetAnimeBySlug(ID)

@@ -6,7 +6,7 @@ require('dotenv').config()//process.env.var
 const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
 const CLIENT_CACHE = require('../lib/clientCache.js')
-// const animeFLVAPI = require('./animeFLV.js')
+const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
 const tioanimeAPI = require('./tioanime.js')
@@ -45,7 +45,7 @@ function HandleStreamRequest(req, res, next) {
   let streams = []
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
-  if (/*(videoID?.startsWith("animeflv")) || */(videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime")) || (videoID?.startsWith("animejara")) /*|| (videoID?.startsWith("jkanime"))*/ || (videoID?.startsWith("latanime"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
+  if ((videoID?.startsWith("animeflv")) || (videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime")) || (videoID?.startsWith("animejara")) /*|| (videoID?.startsWith("jkanime"))*/ || (videoID?.startsWith("latanime"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
     const ID = idDetails[1] //We want the second part of the videoID
     let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     let season
@@ -55,8 +55,7 @@ function HandleStreamRequest(req, res, next) {
     }
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     console.log('Extra parameters:', res.locals.extraParams)
-    // const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode)
-    const animeFLVp = Promise.resolve([])
+    const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode)
     const animeAV1p = animeAV1API.GetItemStreams(ID, onlyInternal, episode)
     const henaojarap = henaojaraAPI.GetItemStreams(ID, onlyInternal, episode)
     const tioanimep = tioanimeAPI.GetItemStreams(ID, onlyInternal, episode)
@@ -168,7 +167,27 @@ function HandleStreamRequest(req, res, next) {
       //   console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
       //   return animeFLVAPI.GetItemStreams(result.slug, onlyInternal, episode)
       // })
-      const animeFLVp = Promise.resolve([])
+      const animeFLVp = firstMatch((searchTerm) => animeFLVAPI.SearchAnimeFLV(searchTerm)
+        .then(notSpecial)
+        .then((animeFLVitems) => {
+          const candidates = animeFLVitems
+            .filter((item) => !item.type || item.type === req.params.type)
+            .filter((item) => {
+              const normalizedTitle = item.title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
+              const normalizedSearch = searchTerm.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
+              return normalizedTitle === normalizedSearch ||
+                new RegExp(`^${normalizedSearch} (latino|castellano)$`, "iu").test(normalizedTitle)
+            })
+          if (candidates.length === 0) throw Error('No AnimeFLV matches!')
+          console.log(`\x1b[36mGot ${candidates.length} AnimeFLV entries:\x1b[39m`, candidates.map((item) => item.title).join(", "))
+          return Promise.allSettled(candidates.map((result) =>
+            animeFLVAPI.GetItemStreams(result.slug, onlyInternal, episode)
+          )).then((results) => {
+            const streams = results.flatMap((result) => result.status === "fulfilled" ? result.value : [])
+            if (streams.length === 0) throw Error("No AnimeFLV streams!")
+            return streams
+          })
+        }))
       const animeAV1p = firstMatch((searchTerm) => animeAV1API.SearchAnimeAV1(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         if (!result) throw Error('No search results!')

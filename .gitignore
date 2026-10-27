@@ -129,7 +129,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-onair_titles.json
+onair_titlesFLV.json
 onairAV1_titles.json
 onairHENAOJARA_titles.json
 onair_titlesTIO.json
