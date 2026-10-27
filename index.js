@@ -32,6 +32,13 @@ function ReadManifest() {
       "background": "https://images6.alphacoders.com/113/1135890.jpg",
       "description": packageJSON.description,
       "catalogs": [
+        {
+          id: "animeflv", type: "series", name: "AnimeFLV",
+          extra: [
+            { name: "search", isRequired: true },
+            { name: "skip", isRequired: false }
+          ]
+        },
         // {
         //   id: "animeflv", type: "AnimeFLV", name: "search results",
         //   extra: [{ name: "search", isRequired: true },
@@ -256,9 +263,9 @@ function ReadManifest() {
         //     { name: "skip", isRequired: false }
         //   ]
         // },
-        // {
-        //   id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
-        // },
+        {
+          id: "animeflv|onair", type: "AnimeFLV", name: "On Air"
+        },
         {
           id: "animeav1|onair", type: "AnimeAV1", name: "On Air"
         },
@@ -309,7 +316,7 @@ function ReadManifest() {
       ],
       "idPrefixes": [
         "tt",
-        // "animeflv:",
+        "animeflv:",
         "animeav1:",
         "henaojara:",
         "tioanime:",

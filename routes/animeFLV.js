@@ -1,5 +1,4 @@
-const ANIMEFLV_API_BASE = "https://animeflv.ahmedrangel.com/api"
-const ANIMEFLV_BASE = "https://www4.animeflv.net"
+const ANIMEFLV_BASE = "https://www.animeflv.one"
 
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
@@ -83,7 +82,10 @@ exports.UpdateAiringAnimeFile = function () {
 exports.SearchAnimeFLV = async function (query, genreArr = undefined, url = undefined, page = undefined, gottenItems = 0) {
   if (!url && !query && !genreArr) throw Error("No arguments passed to SearchAnimeFLV()")
   const animeFLVURL = (url) ? url
-    : `${encodeURIComponent(ANIMEFLV_BASE)}%2Fbrowse%3F${(query) ? "q%3D" + encodeURIComponent(query) + "%26" : ""}${(genreArr) ? "genre%5B%5D%3D" + genreArr.join("%26genre%5B%5D%3D") : ""}${(page) ? "%26page%3D" + page : ""}`
+    : `${ANIMEFLV_BASE}/animes?${new URLSearchParams({
+      ...(query ? { buscar: query } : {}),
+      ...(page ? { page: String(page) } : {})
+    })}`
   /*const reqURL = `${ANIMEFLV_API_BASE}/search/by-url?url=${animeFLVURL}`
   console.log("\x1b[36mSearching:\x1b[39m", reqURL)
   return fetch(reqURL).then((resp) => {
@@ -126,6 +128,9 @@ exports.GetAnimeBySlug = async function (slug) {
     const epCount = data.data.episodes.length
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover)
+    const background = matches
+      ? `${ANIMEFLV_BASE}/uploads/animes/thumbs/${matches[1]}.jpg`
+      : data.data.cover
     const videos = data.data.episodes.map((ep) => {
       let d = new Date(Date.now())
       return {
@@ -134,7 +139,9 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: ep.number,
         number: ep.number,
-        thumbnail: `https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
+        thumbnail: matches
+          ? `${ANIMEFLV_BASE}/uploads/animes/thumbs/${matches[1]}.jpg`
+          : data.data.cover,
         released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
@@ -171,7 +178,7 @@ exports.GetAnimeBySlug = async function (slug) {
     // }
     return {
       name: data.data.title, alternative_titles: data.data.alternative_titles, type: (data.data.type === "Anime") ? "series" : "movie",
-      videos, poster: data.data.cover, background: `${ANIMEFLV_BASE}/uploads/animes/thumbs/${matches[1]}.jpg`, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `animeflv:${slug}`,
+      videos, poster: data.data.cover, background, genres: data.data.genres, description: data.data.synopsis, website: data.data.url, id: `animeflv:${slug}`,
       language: "jpn", links, //both behavior hints can't coexist, if there's an upcoming episode, videos.length > 1
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `animeflv:${slug}:1` } }
@@ -199,69 +206,52 @@ exports.GetItemStreams = async function (slug, onlyInternal=true, epNumber = 1) 
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function GetEpisodeLinks(slug, epNumber = 1) {
   try {
-    const episodeData = async () => {
-      if (slug && !epNumber)
-        return await fetch(ANIMEFLV_BASE + "/ver/" + slug).then((resp) => {
-          if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-          if (resp === undefined) throw Error(`Undefined response!`)
-          return resp.text()
-        }).catch(() => null);
-      else if (slug && epNumber)
-        return await fetch(ANIMEFLV_BASE + "/ver/" + slug + "-" + epNumber).then((resp) => {
-          if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-          if (resp === undefined) throw Error(`Undefined response!`)
-          return resp.text()
-        }).catch(() => null);
-      else return null;
-    }
-
-    const html = await episodeData(); //fetch the page once
+    if (!slug) return null;
+    const episodeSlug = epNumber ? `${slug}-${epNumber}` : slug;
+    const response = await fetch(`${ANIMEFLV_BASE}/ver/${episodeSlug}`);
+    if (!response.ok) throw Error(`HTTP error! Status: ${response.status}`);
+    const html = await response.text();
     if (!html) return null;
 
     const $ = cheerio.load(html);
 
     const episodeLinks = {
-      title: $("body > div.Wrapper > div.Body > div > div > div > nav.Brdcrmb > a").next("i").next("a").text(),
-      number: Number($("body > div.Wrapper > div.Body > div > div > div > div.CapiTop > h2.SubTitle").text().replace("Episodio ", "")),
+      title: $("nav.Brdcrmb a").last().text().trim() || $("h1").first().text().trim(),
+      number: Number($(".CapiTop h2.SubTitle").text().replace("Episodio ", "")) || Number(episodeSlug.match(/-(\d+)$/)?.[1]),
       servers: []
     }
 
-    const scripts = $("script");
-    const serversFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var videos ="));
-    const serversObj = serversFind?.match(/var videos = (\{.*\})/)?.[1];
-    if (serversObj) {
-      const servers = JSON.parse(serversObj).SUB;
-      for (const s of servers) {
-        episodeLinks.servers.push({
-          name: s?.title,
-          download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
-          embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/"),
-          dub: false
-        });
+    const downloadData = $(".dwn").attr("data-dwn");
+    if (downloadData) {
+      let links;
+      try {
+        links = JSON.parse(downloadData.replace(/&quot;/g, '"').replace(/\\\//g, "/"));
+      } catch (error) {
+        throw Error(`Invalid AnimeFLV download data: ${error.message}`);
       }
-      const dubs = JSON.parse(serversObj).DUB || [];
-      for (const s of dubs) {
-        episodeLinks.servers.push({
-          name: s?.title,
-          download: s?.url?.replace("mega.nz/#!", "mega.nz/file/"),
-          embed: s?.code?.replace("mega.nz/embed#!", "mega.nz/embed/"),
-          dub: true
-        });
+      for (const link of links) {
+        try {
+          const parsed = new URL(link);
+          const domain = parsed.hostname.replace(/^www\./, "").split(".")[0].toLowerCase();
+          const serverNames = {
+            bysesukior: "Filemoon",
+            dhcplay: "Streamwish",
+            movearnpre: "Vidhide",
+            mp4upload: "MP4Upload",
+            doodstream: "Doodstream",
+            voe: "Voe",
+            mixdrop: "Mixdrop",
+            streamtape: "Streamtape",
+            yourupload: "YourUpload"
+          };
+          const name = serverNames[domain] || domain;
+          episodeLinks.servers.push({ name, embed: link, dub: false });
+        } catch {
+          console.error("Ignoring invalid AnimeFLV stream URL:", link);
+        }
       }
     }
 
-    const otherDownloads = $("body > div.Wrapper > div.Body > div > div > div > div > div > table > tbody > tr");
-
-    for (const el of otherDownloads) {
-      const name = $(el).find("td").eq(0).text();
-      const lookFor = ["Zippyshare", "1Fichier"];
-      if (lookFor.includes(name)) {
-        episodeLinks.servers.push({
-          name: $(el).find("td").eq(0).text(),
-          download: $(el).find("td:last-child a").attr("href")
-        });
-      }
-    }
     return episodeLinks;
   } catch (e) {
     console.error("Error on GetEpisodeLinks:", e);
@@ -285,15 +275,16 @@ async function GetAnimeInfo(slug) {
     const nextAiringFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var anime_info ="));
     const nextAiringInfo = nextAiringFind?.match(/anime_info = (\[.*\])/)?.[1];
 
+    const cover = $("figure img").first().attr("data-src") || $("figure img").first().attr("src");
     const animeInfo = {
-      title: $("body > div.Wrapper > div > div > div.Ficha.fchlt > div.Container > h1").text(),
+      title: $("h1").first().text().trim().replace(/^Ver\s+/, "").replace(/\s+Online.*$/i, ""),
       alternative_titles: [],
       status: $("body > div.Wrapper > div > div > div.Container > div > aside > p > span").text(),
       rating: $("#votes_prmd").text(),
-      type: $("body > div.Wrapper > div > div > div.Ficha.fchlt > div.Container > span").text(),
-      cover: "https://animeflv.net" + ($("body > div.Wrapper > div > div > div.Container > div > aside > div.AnimeCover > div > figure > img").attr("src")),
-      synopsis: $("body > div.Wrapper > div > div > div.Container > div > main > section:nth-child(1) > div.Description > p").text(),
-      genres: $("body > div.Wrapper > div > div > div.Container > div > main > section:nth-child(1) > nav > a")
+      type: "Anime",
+      cover: cover ? new URL(cover, ANIMEFLV_BASE).href : undefined,
+      synopsis: $(".tx p").first().text().trim() || $("meta[name=description]").attr("content"),
+      genres: $(".gn a")
         .map((_, el) => $(el).text().trim())
         .get(),
       next_airing_episode: nextAiringInfo ? JSON.parse(nextAiringInfo)?.[3] : undefined,
@@ -301,21 +292,29 @@ async function GetAnimeInfo(slug) {
       url
     };
 
-    const episodesFind = scripts.map((_, el) => $(el).html()).get().find(script => script?.includes("var episodes ="));
-    const episodesArray = episodesFind?.match(/episodes = (\[\[.*\].*])/)?.[1];
-    
-    const epObj = JSON.parse(episodesArray)
-    if (epObj) {
-      for (ep of epObj) {
-        if (animeInfo.episodes instanceof Array) {
-          animeInfo.episodes.push({
-            number: ep[0],
-            slug: slug + "-" + ep[0],
-            url: ANIMEFLV_BASE + "/ver/" + slug + "-" + ep[0]
-          });
-        }
+    const seenEpisodes = new Set();
+    $("a[href*='/ver/']").each((_, el) => {
+      const href = $(el).attr("href");
+      const match = href?.match(/\/ver\/[^/]+-(\d+)$/);
+      if (!match || seenEpisodes.has(match[1])) return;
+      seenEpisodes.add(match[1]);
+      animeInfo.episodes.push({
+        number: Number(match[1]),
+        slug: slug + "-" + match[1],
+        url: new URL(href, ANIMEFLV_BASE).href
+      });
+    });
+    const episodeCount = Number($(".info-r[data-ep]").attr("data-ep"));
+    if (animeInfo.episodes.length === 0 && Number.isInteger(episodeCount) && episodeCount > 0) {
+      for (let number = 1; number <= episodeCount; number++) {
+        animeInfo.episodes.push({
+          number,
+          slug: `${slug}-${number}`,
+          url: `${ANIMEFLV_BASE}/ver/${slug}-${number}`
+        });
       }
     }
+    animeInfo.episodes.sort((a, b) => a.number - b.number);
 
     $("body > div.Wrapper > div > div > div.Ficha.fchlt > div.Container > div:nth-child(3) > span").each((i, el) => {
       animeInfo.alternative_titles.push($(el).text());
@@ -370,61 +369,28 @@ async function SearchAnimesBySpecificURL(animeFLVURL) {
       media: []
     };
 
-    const pageSelector = $("body > div.Wrapper > div > div > main > div > ul > li");
-    const getNextAndPrevPages = (selector) => {
-      const aTagValue = selector.last().prev().find("a").text();
-      const aRef = selector.eq(0).children("a").attr("href");
-
-      let foundPages = 0;
-      let previousPage = "";
-      let nextPage = "";
-
-      if (Number(aTagValue) === 0) foundPages = 1;
-      else foundPages = Number(aTagValue);
-
-      if (aRef === "#" || foundPages == 1) previousPage = null;
-      else previousPage = ANIMEFLV_BASE + aRef;
-
-      if (selector.last().children("a").attr("href") === "#" || foundPages == 1) nextPage = null;
-      else nextPage = ANIMEFLV_BASE + selector.last().children("a").attr("href");
-
-      return { foundPages, nextPage, previousPage };
-    }
-    const { foundPages, nextPage, previousPage } = getNextAndPrevPages(pageSelector)
     const scrapSearchAnimeData = ($) => {
-      const selectedElement = $("body > div.Wrapper > div > div > main > ul > li");
-
-      if (selectedElement.length > 0) {
-        const mediaVec = [];
-
-        selectedElement.each((i, el) => {
-          mediaVec.push({
-            title: $(el).find("h3").text(),
-            cover: $(el).find("figure > img").attr("src"),
-            synopsis: $(el).find("div.Description > p").eq(1).text(),
-            rating: $(el).find("article > div > p:nth-child(2) > span.Vts.fa-star").text(),
-            slug: $(el).find("a").attr("href").replace("/anime/", ""),
-            type: $(el).find("a > div > span.Type").text(),
-            url: ANIMEFLV_BASE + ($(el).find("a").attr("href"))
-          });
+      const mediaVec = [];
+      const seen = new Set();
+      $("article.li").each((_, el) => {
+        const link = $(el).find("a[href*='/anime/']").first();
+        const href = link.attr("href");
+        const slug = href?.match(/\/anime\/([^/?#]+)/)?.[1];
+        if (!slug || seen.has(slug)) return;
+        seen.add(slug);
+        const image = link.find("img").first();
+        mediaVec.push({
+          title: $(el).find("h3").first().text().trim() || link.text().trim(),
+          cover: image.attr("data-src") || image.attr("src"),
+          synopsis: $(el).find("p").first().text().trim(),
+          slug,
+          type: $(el).find("u").first().text().trim() || "Anime",
+          url: new URL(href, ANIMEFLV_BASE).href
         });
-        return mediaVec
-      }
-      else {
-        return [];
-      }
+      });
+      return mediaVec;
     }
     search.media.push(...scrapSearchAnimeData($));
-    search.foundPages = foundPages;
-    search.nextPage = nextPage;
-    search.previousPage = previousPage;
-    const getPage = (url) => new URL(url).searchParams.get("page")
-    const pageFromQuery = nextPage ? Number(getPage(nextPage)) : previousPage ? Number(getPage(previousPage)) : null;
-    const isNextPage = nextPage && pageFromQuery;
-    const isPreviousPage = previousPage && pageFromQuery;
-    const inferredPage = isNextPage ? pageFromQuery - 1 : isPreviousPage ? pageFromQuery + 1 : null;
-    search.currentPage = inferredPage || 1;
-    search.hasNextPage = nextPage ? true : false;
     return search;
   } catch (error) {
     console.error("Error al buscar animes por URL:", error);
@@ -434,7 +400,7 @@ async function SearchAnimesBySpecificURL(animeFLVURL) {
 //Adapted from TypeScript from https://github.com/ahmedrangel/animeflv-api/blob/main/server/utils/scrapers/getEpisodeLinks.ts
 async function GetOnAir() {
   try {
-    const onAirData = await fetch(decodeURIComponent(ANIMEFLV_BASE)).then((resp) => {
+    const onAirData = await fetch(`${ANIMEFLV_BASE}/animes?estado=en-emision`).then((resp) => {
       if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
       if (resp === undefined) throw Error(`Undefined response!`)
       return resp.text()
@@ -442,17 +408,15 @@ async function GetOnAir() {
     const $ = cheerio.load(onAirData);
 
     const onAir = [];
-    if ($(".ListSdbr > li").length > 0) {
-      $(".ListSdbr > li").each((i, el) => {
-        const temp = {
-          title: $(el).find("a").remove("span").text(),
-          type: $(el).find("a").children("span").text(),
-          slug: $(el).find("a").attr("href").replace("/anime/", ""),
-          url: ANIMEFLV_BASE + $(el).find("a").attr("href")
-        }
-        onAir.push(temp);
-      })
-    }
+    const seen = new Set();
+    $("article.li").each((_, el) => {
+      const link = $(el).find("a[href*='/anime/']").first();
+      const href = link.attr("href");
+      const slug = href?.match(/\/anime\/([^/?#]+)/)?.[1];
+      if (!slug || seen.has(slug)) return;
+      seen.add(slug);
+      onAir.push({ title: $(el).find("h3").first().text().trim() || link.text().trim(), type: "Anime", slug, url: new URL(href, ANIMEFLV_BASE).href });
+    });
     return onAir;
   } catch (e) {
     console.error("Error on GetOnAir:", e)
