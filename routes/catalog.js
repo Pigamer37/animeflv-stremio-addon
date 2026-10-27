@@ -12,6 +12,7 @@ const henaojaraAPI = require('./henaojara.js')
 const tioanimeAPI = require('./tioanime.js')
 const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
+const latanimeAPI = require('./latanime.js')
 
 /**
  * Tipical express middleware callback.
@@ -189,6 +190,43 @@ function HandleCatalogRequest(req, res, next) {
   //       })
   //     })
   //   }
+  } else if (req.params.videoId.startsWith("latanime")) {
+    //latanime catalog request
+    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
+      let genreArr = res.locals.extraParams.genre
+      //calculate the page to start from, Latanime uses 30 results per page
+      //if skip is defined, we can calculate the page and the number of items we already delivered
+      let page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 30) + 1 : undefined,
+        gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 30 : undefined
+      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+      catalogPromise = latanimeAPI.SearchLatanime(res.locals.extraParams.search, undefined, genreArr, undefined, page, gottenItems).then((result) => {
+        console.log('\x1b[36mGot Latanime metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `latanime:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    } else {
+      catalogPromise = latanimeAPI.GetAiringAnime().then((result) => {
+        console.log('\x1b[36mGot Latanime metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => {
+          return {
+            id: `latanime:${anime.slug}`,
+            type: anime.type,
+            name: anime.title,
+            poster: anime.poster,
+            description: anime.overview,
+            genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+          }
+        })
+      })
+    }
   } else if (req.params.videoId.startsWith("jkanime")) {
     //jkanime catalog request
     if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
