@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 // const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
+const animegratisAPI = require('./animegratis.js')
 const fuzzysort = require('fuzzysort')
 
 /**
@@ -45,7 +46,7 @@ function HandleStreamRequest(req, res, next) {
   let streams = []
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
-  if (/*(videoID?.startsWith("animeflv")) || */(videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime")) || (videoID?.startsWith("animejara")) /*|| (videoID?.startsWith("jkanime"))*/ || (videoID?.startsWith("latanime"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
+  if (/*(videoID?.startsWith("animeflv")) || */(videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime")) || (videoID?.startsWith("animejara")) /*|| (videoID?.startsWith("jkanime"))*/ || (videoID?.startsWith("latanime")) || (videoID?.startsWith("animegratis"))) { //If we got a provider-specific ID
     const ID = idDetails[1] //We want the second part of the videoID
     let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     let season
@@ -65,7 +66,8 @@ function HandleStreamRequest(req, res, next) {
     // const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode)
     const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
     const latanimep = latanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep).then((combinedStreams)=>{
+    const animegratisp = animegratisAPI.GetItemStreams(ID, onlyInternal, episode)
+    CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, animegratisp).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
         res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -221,7 +223,13 @@ function HandleStreamRequest(req, res, next) {
           return streams
         })
       }))
-      CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep).then((combinedStreams)=>{
+      const animegratisp = firstMatch((searchTerm) => animegratisAPI.SearchAnimeGratis(searchTerm, req.params.type).then(notSpecial).then((items) => {
+        const result = fuzzysort.go(searchTerm, items, {key: 'title', limit: 1, threshold: .5})[0]?.obj
+        if (!result) throw Error('No search results!')
+        console.log('\x1b[36mGot AnimeGratis entry:\x1b[39m', result.title)
+        return animegratisAPI.GetItemStreams(result.slug, onlyInternal, episode)
+      }))
+      CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, animegratisp).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -284,9 +292,9 @@ function SearchParamsRegex(extraParams) {
   } else return {}
 }
 
-function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise) {
+function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, animegratisPromise) {
   let lastInternal, lastInternalFLV, lastInternalAV1, lastInternalHena, lastInternalTio, lastInternalJara, lastInternalJK
-  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise]).then((results) => {
+  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, animegratisPromise]).then((results) => {
     let combinedStreams = []
     if (results[0].value) {
       console.log(`\x1b[36mGot ${results[0].value.length} AnimeFLV streams\x1b[39m`)
@@ -370,6 +378,19 @@ function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioa
         combinedStreams = combinedStreams.concat(results[6].value.slice(lastInternalLat + 1)) //Append external links at the end
       }
     } else {console.error('\x1b[31mFailed on Latanime slug search because:\x1b[39m ' + results[6].reason)}
+    if (results[7].value) {
+      console.log(`\x1b[36mGot ${results[7].value.length} AnimeGratis streams\x1b[39m`)
+      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
+      const lastInternalAnimeGratis = results[7].value.findLastIndex((stream)=>stream.url !== undefined)
+      if (lastInternalAnimeGratis === -1) {
+        combinedStreams = combinedStreams.concat(results[7].value)
+      } else if (lastInternal === -1) {
+        combinedStreams = results[7].value.concat(combinedStreams)
+      } else {
+        combinedStreams.splice(lastInternal + 1, 0, ...results[7].value.slice(0, lastInternalAnimeGratis + 1))
+        combinedStreams = combinedStreams.concat(results[7].value.slice(lastInternalAnimeGratis + 1))
+      }
+    } else {console.error('\x1b[31mFailed on AnimeGratis search because:\x1b[39m ' + results[7].reason)}
     return combinedStreams
   })
 }

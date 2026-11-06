@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
+const animegratisAPI = require('./animegratis.js')
 
 /**
  * Tipical express middleware callback.
@@ -225,6 +226,35 @@ function HandleCatalogRequest(req, res, next) {
             genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
           }
         })
+      })
+    }
+  } else if (req.params.videoId.startsWith("animegratis")) {
+    if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
+      const page = (res.locals.extraParams.skip) ? Math.floor(res.locals.extraParams.skip / 24) + 1 : 1
+      const gottenItems = (res.locals.extraParams.skip) ? res.locals.extraParams.skip % 24 : 0
+      console.log("Skipping to page:", page, "with", gottenItems, "items already delivered")
+      catalogPromise = animegratisAPI.SearchAnimeGratis(res.locals.extraParams.search, undefined, res.locals.extraParams.genre, page, gottenItems).then((result) => {
+        console.log('\x1b[36mGot AnimeGratis metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => ({
+          id: `animegratis:${anime.slug}`,
+          type: anime.type,
+          name: anime.title,
+          poster: anime.poster,
+          description: anime.overview,
+          genres: anime.genres,
+        }))
+      })
+    } else {
+      catalogPromise = animegratisAPI.GetAiringAnime().then((result) => {
+        console.log('\x1b[36mGot AnimeGratis metadata for:\x1b[39m', result.length, "search results")
+        return result.map((anime) => ({
+          id: `animegratis:${anime.slug}`,
+          type: anime.type,
+          name: anime.title,
+          poster: anime.poster,
+          description: anime.overview,
+          genres: anime.genres,
+        }))
       })
     }
   } else if (req.params.videoId.startsWith("jkanime")) {
