@@ -80,7 +80,7 @@ function HandleStreamRequest(req, res, next) {
       }
     })
   } else {
-    let episode, season, animeIMDBIDPromise, romajiPromise
+    let episode, season, animeIMDBIDPromise, titleCandidatesPromise
 
     if (videoID?.startsWith("tt")) { //If we got an IMDB ID/TMDB ID
       const ID = videoID //We want the IMDB ID as is
@@ -88,21 +88,21 @@ function HandleStreamRequest(req, res, next) {
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with IMDB ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = Promise.resolve(ID)
-      romajiPromise = relationsAPI.GetRomajiTitle("imdb", ID)
+      titleCandidatesPromise = relationsAPI.GetTitleCandidates("imdb", ID)
     } else if (videoID?.startsWith("tmdb")) {
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       season = idDetails[2] //undefined if we don't get a season number in the query, which is fine
       episode = idDetails[3] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with TMDB ID:\x1b[39m ${ID}`)
       animeIMDBIDPromise = Metadata.GetIMDBIDFromTMDBID(ID, req.params.type)
-      romajiPromise = relationsAPI.GetRomajiTitle("themoviedb", ID)
+      titleCandidatesPromise = relationsAPI.GetTitleCandidates("themoviedb", ID)
     } else if (videoID.match(/^(?:kitsu|mal|anidb|anilist)$/)) { //If we got a kitsu, mal, anilist or anidb ID
       const ID = idDetails[1] //We want the second part of the videoID, which is the kitsu ID
       episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
       console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
       const mappings = relationsAPI.GetAniZipMappings(videoID, ID) //one ani.zip call for both the IMDB ID and the romaji title
       animeIMDBIDPromise = relationsAPI.GetIMDBIDFromANIMEID(videoID, ID, mappings)
-      romajiPromise = relationsAPI.GetRomajiTitle(videoID, ID, mappings)
+      titleCandidatesPromise = relationsAPI.GetTitleCandidates(videoID, ID, mappings)
     } else {
       if (!res.headersSent) {
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
@@ -112,10 +112,13 @@ function HandleStreamRequest(req, res, next) {
     }
 
     console.log('Extra parameters:', res.locals.extraParams)
-    romajiPromise = romajiPromise?.catch((err) => console.error('\x1b[31mFailed getting romaji title:\x1b[39m ' + err))
+    titleCandidatesPromise = Promise.resolve(titleCandidatesPromise).catch((err) => {
+      console.error('\x1b[31mFailed getting anime titles:\x1b[39m ' + err)
+      return []
+    })
     //a special (season 0) is searched by its own title (from Cinemeta): the romaji would be the main series' title
-    if (parseInt(season) === 0) romajiPromise = Promise.resolve()
-    animeIMDBIDPromise.then((imdbID) => {
+    if (parseInt(season) === 0) titleCandidatesPromise = Promise.resolve([])
+    const metadataPromise = Promise.resolve(animeIMDBIDPromise).then((imdbID) => {
       if (!imdbID || imdbID === "null") throw Error("No IMDB ID")
       let metaProm
       if ((season) && (parseInt(season) === 0) && (req.params.type==="series")){
@@ -135,19 +138,17 @@ function HandleStreamRequest(req, res, next) {
         })
       }
       
-      return metaProm.catch((err) => { //only catches error from TMDB or Cinemeta API calls, which we want
-        console.error('\x1b[31mFailed on metadata:\x1b[39m ' + err)
-        if (!res.headersSent) {
-          res.header('Cache-Control', CLIENT_CACHE.failure)
-          res.json({ streams, message: "Failed getting media info" })
-          next()
-        }
-        throw err //We throw the error so we can catch it later
-      })
-    }).then((metadata) => Promise.resolve(romajiPromise).then((romaji) => {
+      return metaProm
+    }).catch(async (err) => {
+      const titles = await titleCandidatesPromise
+      if (!titles.length || parseInt(season) === 0) throw err
+      console.error('\x1b[31mFailed getting IMDb metadata, searching providers by title:\x1b[39m ' + err)
+      return { title: titles[0] }
+    })
+    Promise.all([metadataPromise, titleCandidatesPromise]).then(([metadata, titleCandidates]) => {
       //Sites list anime by their romaji title: try it first, then the provider's (usually English) title, since the
       //romaji sometimes doesn't match a site's naming (e.g. AniList's "SPY×FAMILY" vs the sites' "Spy x Family")
-      const searchTerms = [...new Set([romaji, metadata.title].filter(Boolean))].map((title) => ((season) && (parseInt(season) !== 1) && (parseInt(season) !== 0)) ? `${title} ${season}` : title)
+      const searchTerms = [...new Set([...titleCandidates, metadata.title].filter(Boolean))].map((title) => ((season) && (parseInt(season) !== 1) && (parseInt(season) !== 0)) ? `${title} ${season}` : title)
       console.log('Search terms:', searchTerms)
       //Runs a source's search/match/streams chain with each search term until one succeeds
       const firstMatch = async (searchFn) => {
@@ -235,7 +236,7 @@ function HandleStreamRequest(req, res, next) {
           }
         }
       })
-    })).catch((err) => {
+    }).catch((err) => {
       console.error('\x1b[31mFailed on metadata search because:\x1b[39m ' + err)
       if (!res.headersSent) {
         res.header('Cache-Control', CLIENT_CACHE.failure)
