@@ -222,14 +222,13 @@ function HandleStreamRequest(req, res, next) {
           return streams
         })
       }))
-      //PorygonSubs has no search of its own: its sitemap's series are matched by exact title (see MatchSeries). A season's
-      //entry can be years after the show's first air date, so the year is only checked for unnumbered titles
+      //PorygonSubs' search only returns exact title matches (see SearchPorygonSubs), checked against the item's year
       const year = metadata.releaseDate?.getFullYear() || undefined //an unparsable date (like Cinemeta's "2020-2021") is NaN
-      const porygonsubsp = firstMatch((searchTerm) => porygonsubsAPI.GetSeriesList(req.params.type).then(notSpecial).then((animeFLVitem) => {
-        const result = porygonsubsAPI.MatchSeries(searchTerm, animeFLVitem, year)
+      const porygonsubsp = firstMatch((searchTerm) => porygonsubsAPI.SearchPorygonSubs(searchTerm, req.params.type, year).then(notSpecial).then((animeFLVitem) => {
+        const result = animeFLVitem[0]
         if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot PorygonSubs entry:\x1b[39m', result.title)
-        return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, episode, (/\s\d{1,2}$/.test(searchTerm)) ? undefined : year)
+        return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, episode, result.year)
       }))
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, porygonsubsp).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {

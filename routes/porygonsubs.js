@@ -15,7 +15,7 @@ const DUB_LANGS = { lat: "lat", cas: "esp" }
  * @param {string} [type] - "movie" or "series", single-episode entries are taken as movies
  * @return {Promise<{title: string, slug: string, type: string}[]>}
  */
-exports.GetSeriesList = async function (type = undefined) {
+async function GetSeriesList(type = undefined) {
   const xml = await fetch(`${PORYGON_BASE}/sitemap.xml`).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     return resp.text()
@@ -50,7 +50,7 @@ const REMAKE_YEAR_DIFFERENCE = 3
  * @param {number} [year] - the requested item's release year
  * @return {(Object|undefined)} the matching item
  */
-exports.MatchSeries = function (searchTerm, items, year = undefined) {
+function MatchSeries(searchTerm, items, year = undefined) {
   const term = titleWords(searchTerm)
   const matches = items.map((item) => {
     const words = titleWords(item.title)
@@ -59,6 +59,19 @@ exports.MatchSeries = function (searchTerm, items, year = undefined) {
   }).filter((m) => m.same)
   if (!year && matches.some((m) => m.extraYear)) return undefined
   return (matches.find((m) => m.extraYear && Math.abs(Number(m.extraYear) - year) <= REMAKE_YEAR_DIFFERENCE) || matches.find((m) => !m.extraYear))?.item
+}
+
+/**
+ * Finds the series a search term (title, plus the season number when it's not the first) refers to, see {@link MatchSeries}
+ * @param {string} query
+ * @param {string} [type] - "movie" or "series"
+ * @param {number} [year] - the requested item's release year
+ * @return {Promise<Object[]>} the matching series, if any, with the year {@link GetItemStreams} should check: a season's
+ * entry can be years after the show's first air date, so it's only set for unnumbered titles
+ */
+exports.SearchPorygonSubs = async function (query, type = undefined, year = undefined) {
+  const match = MatchSeries(query, await GetSeriesList(type), year)
+  return (match) ? [{ ...match, year: (/\s\d{1,2}$/.test(query)) ? undefined : year }] : []
 }
 
 //The site's release year is sometimes off by a few years (Death Note's says 2010), so this only tells apart a remake
