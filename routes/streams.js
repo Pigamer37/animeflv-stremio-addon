@@ -6,6 +6,7 @@ require('dotenv').config()//process.env.var
 const Metadata = require('./metadata_copy.js')
 const relationsAPI = require('./relations.js')
 const CLIENT_CACHE = require('../lib/clientCache.js')
+const streamParser = require('../lib/streamParsing.js')
 // const animeFLVAPI = require('./animeFLV.js')
 const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
@@ -66,6 +67,7 @@ function HandleStreamRequest(req, res, next) {
     const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
     const latanimep = latanimeAPI.GetItemStreams(ID, onlyInternal, episode)
     CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep).then((combinedStreams)=>{
+      combinedStreams = FilterStreams(combinedStreams, res)
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
         res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -222,6 +224,7 @@ function HandleStreamRequest(req, res, next) {
         })
       }))
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep).then((combinedStreams)=>{
+        combinedStreams = FilterStreams(combinedStreams, res)
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -244,6 +247,10 @@ function HandleStreamRequest(req, res, next) {
       }
     })
   }
+}
+
+function FilterStreams (streams, res) {
+  return (res.locals.config?.get("highestQuality") === "true") ? streamParser.KeepHighestQuality(streams) : streams
 }
 /** 
  * Parses the extra config parameter we can get when the addon is configured

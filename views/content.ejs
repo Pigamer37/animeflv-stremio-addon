@@ -2,6 +2,7 @@
   <div class="separator"></div>
   <div style="display:flex;flex-direction:column">
     <label class="label-to-top" style="display:block">Return external streams (they open in a browser) <input type="checkbox" id="externalStreams"<%= (config?.get("externalStreams"))?` checked="true"`:"" %>></label>
+    <label class="label-to-top" style="display:block">Only show the highest available quality per provider and language <input type="checkbox" id="highestQuality"<%= (config?.get("highestQuality"))?` checked="true"`:"" %>></label>
     <label class="label-to-top">Select catalogs that will appear on the Stremio homepage (airing anime for each provider):
     <div style="display:flex;gap:1em;padding-block-start:1em;flex-wrap:wrap;justify-content:space-evenly">
       <!-- <label style="display:block"><img style="height:1.8cap" src="https://www4.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV"><input style="vertical-align:top" type="checkbox" id="animeflv"<%= (config?.get("onAirCatalogs")?.includes("animeflv"))?` checked="true"`:"" %>></label> -->
@@ -28,7 +29,7 @@
   <a id="installLink" class="install-link" href="#">
     <button tabindex="-1" class="full-width">Open In Stremio</button>
   </a>
-  <script>const ta=document.getElementById('manifest_url');const externalStreams=document.getElementById('externalStreams')
+  <script>const ta=document.getElementById('manifest_url');const externalStreams=document.getElementById('externalStreams');const highestQuality=document.getElementById('highestQuality')
     /*const animeflv=document.getElementById('animeflv');*/const animeav1=document.getElementById('animeav1');const henaojara=document.getElementById('henaojara');const tioanime=document.getElementById('tioanime');/*const animejara=document.getElementById('animejara');*//*const jkanime=document.getElementById('jkanime');*/const latanime=document.getElementById('latanime');
     const providers=[/*animeflv,*/animeav1,henaojara,tioanime,/*animejara,*/ /*jkanime,*/latanime]
     const installLink=document.getElementById('installLink')
@@ -36,10 +37,11 @@
       let config=new URLSearchParams();
       if(providers.some((e)=>e.checked)){config.append("onAirCatalogs",providers.filter(e=>e.checked).map(e=>e.id).join())}
       if(externalStreams.checked){config.append("externalStreams","true")}
+      if(highestQuality.checked){config.append("highestQuality","true")}
       ta.innerText=`${window.location.origin}${(config.size>0)?"/"+config.toString():""}/manifest.json`
       installLink.href=ta.value.replace('https://','stremio://').replace('http://','stremio://')
       ta.style.minHeight=ta.scrollHeight+"px"
     }
-    [externalStreams,...providers].forEach((e)=>e.addEventListener('input',()=>genManifLink()))
+    [externalStreams,highestQuality,...providers].forEach((e)=>e.addEventListener('input',()=>genManifLink()))
     genManifLink()</script>
 </div>
