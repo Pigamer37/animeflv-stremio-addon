@@ -222,10 +222,12 @@ function HandleStreamRequest(req, res, next) {
           return streams
         })
       }))
-      //Apotoxin only has Detective Conan, numbered by absolute episode: Kitsu/AniList IDs already use it, Cinemeta's seasons are converted
+      //Apotoxin only has Detective Conan, numbered by absolute episode: Kitsu/AniList IDs already use it, Cinemeta's seasons are converted.
+      //Its movies are matched by their IMDB IDs
+      const conanMovie = (req.params.type === "movie") ? apotoxinAPI.GetMovieNumber(metadata.imdbID) : 0
       const apotoxinp = (metadata.imdbID === apotoxinAPI.CONAN_IMDB_ID && req.params.type === "series" && parseInt(season) !== 0) ?
         ((season) ? apotoxinAPI.GetAbsoluteEpisode(parseInt(season), episode) : Promise.resolve(episode)).then((absEpisode) => apotoxinAPI.GetItemStreams(absEpisode, onlyInternal)) :
-        Promise.resolve([])
+        (conanMovie) ? apotoxinAPI.GetMovieStreams(conanMovie, onlyInternal) : Promise.resolve([])
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, apotoxinp).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)

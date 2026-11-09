@@ -5,6 +5,7 @@ const streamParser = require("../lib/streamParsing.js");
 require('dotenv').config()//process.env.var
 
 //Apotoxin Fansub only subtitles Detective Conan, so it has no catalog or search: it adds streams to that show's episodes
+//and movies
 exports.CONAN_IMDB_ID = "tt0131179"
 
 /**
@@ -23,15 +24,44 @@ exports.GetAbsoluteEpisode = async function (season, episode) {
   return data.meta.videos.filter((v) => v.season > 0 && v.season < season).length + parseInt(episode)
 }
 
+//Apotoxin numbers the movies in release order; IMDB lists each one apart. A new one comes out every April (none in 2020)
+const MOVIE_IMDB_IDS = [
+  "tt0131479", "tt0965649", "tt1067920", "tt1068773", "tt1073223", "tt0990372", "tt1133935", "tt1133559", "tt1133936", "tt0498536", //1-10 (1997-2006)
+  "tt1146290", "tt1155696", "tt1343046", "tt1636815", "tt1840372", "tt2131586", "tt3303446", "tt3455204", "tt3737650", "tt4954660", //11-20 (2007-2016)
+  "tt5692622", "tt7880466", "tt9501310", "tt12093860", "tt19770970", "tt27521477", "tt31474158", "tt35444710" //21-28 (2017-2025)
+]
+
+/**
+ * @param {string} imdbID
+ * @return {number} Apotoxin's number for that Detective Conan movie, 0 if it's not one of them
+ */
+exports.GetMovieNumber = (imdbID) => MOVIE_IMDB_IDS.indexOf(imdbID) + 1
+
 exports.GetItemStreams = async function (epNumber, onlyInternal = true) {
   const data = await fetch(`${APOTOXIN_API_BASE}/capitulo/online/${epNumber}`).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     return resp.json()
   })
   if (!data?.capitulo) throw Error('Empty response!') //episodes they haven't subtitled answer {}
-  const epName = `Detective Conan Ep. ${data.capitulo}`
-  //the magnets play inside Stremio, the embeds go through the usual server handling
-  const torrentStreams = [["FHD", data.magnet_FHD], ["HD", data.magnet_HD]].filter(([, magnet]) => magnet?.startsWith("magnet:")).map(([quality, magnet]) => {
+  return FormatStreams("Detective Conan", data.capitulo, [["FHD", data.magnet_FHD], ["HD", data.magnet_HD]], [data.enlace_online, data.enlace_online2], onlyInternal)
+}
+
+exports.GetMovieStreams = async function (movieNumber, onlyInternal = true) {
+  const data = await fetch(`${APOTOXIN_API_BASE}/pelicula/${movieNumber}`).then((resp) => {
+    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+    return resp.json()
+  })
+  if (!data?.numero) throw Error('Empty response!')
+  //the "online" list has the magnets too, but with HD and FHD swapped in some movies: the download list labels them right
+  const magnets = (data.enlaces || []).filter((e) => e.tipo_enlace?.startsWith("torrent_magnet_")).map((e) => [e.tipo_enlace.split("_").pop().toUpperCase(), e.url])
+  const embeds = (data.enlaces_online || []).map((e) => e.url)
+  return FormatStreams(`Detective Conan: ${data.titulo}`, undefined, magnets.sort(([a], [b]) => a.localeCompare(b)), embeds, onlyInternal)
+}
+
+//the magnets play inside Stremio, the embeds go through the usual server handling
+function FormatStreams(title, number, magnets, embeds, onlyInternal) {
+  const epName = (number !== undefined) ? `${title} Ep. ${number}` : title
+  const torrentStreams = magnets.filter(([, magnet]) => magnet?.startsWith("magnet:")).map(([quality, magnet]) => {
     const params = new URLSearchParams(magnet.slice(magnet.indexOf("?") + 1))
     return {
       infoHash: params.get("xt").split(":").pop().toLowerCase(),
@@ -41,8 +71,8 @@ exports.GetItemStreams = async function (epNumber, onlyInternal = true) {
       behaviorHints: { bingeGroup: "apotoxin|" + quality }
     }
   })
-  const servers = [data.enlace_online, data.enlace_online2].filter((embed) => /^https?:\/\//.test(embed || "")).map((embed) => {
+  const servers = embeds.filter((embed) => /^https?:\/\//.test(embed || "")).map((embed) => {
     return { name: streamParser.getServerTitle(new URL(embed).hostname), embed }
   })
-  return streamParser.GetStreamLinks("Apotoxin", "apotoxin", { data: { title: "Detective Conan", number: data.capitulo, servers } }, onlyInternal).then((streams) => torrentStreams.concat(streams))
+  return streamParser.GetStreamLinks("Apotoxin", "apotoxin", { data: { title, number, servers } }, onlyInternal).then((streams) => torrentStreams.concat(streams))
 }
