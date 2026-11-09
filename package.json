@@ -1,6 +1,6 @@
 {
   "name": "animeflv-stremio-addon",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Add AnimeAV1, Henaojara, TioAnime & Latanime functionallity to Stremio, including catalogs, streams and metadata, even showing upcoming episodes in the calendar! Not affiliated with AnimeAV1, Henaojara, TioAnime, or Latanime. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
   "main": "index.js",
   "scripts": {
