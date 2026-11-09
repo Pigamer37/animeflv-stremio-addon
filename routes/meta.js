@@ -261,6 +261,7 @@ const NATIVE_META_SOURCES = [
   { name: "AnimeAV1", search: (term) => animeAV1API.SearchAnimeAV1(term), meta: (slug) => animeAV1API.GetAnimeBySlug(slug) },
   // { name: "JKAnime", search: (term) => jkanimeAPI.SearchJKAnime(term), meta: (slug) => jkanimeAPI.GetAnimeBySlug(slug) }, //403 on the server (#61)
   { name: "TioAnime", search: (term) => tioanimeAPI.SearchTioAnime(term), meta: (slug) => tioanimeAPI.GetAnimeBySlug(slug) },
+  { name: "AnimeGratis", search: (term) => animegratisAPI.SearchAnimeGratis(term), meta: (slug) => animegratisAPI.GetAnimeBySlug(slug) },
 ]
 async function FindNativeMeta(searchTerm) {
   for (const src of NATIVE_META_SOURCES) {

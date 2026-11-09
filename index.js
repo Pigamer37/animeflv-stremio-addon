@@ -21,20 +21,6 @@ const fsPromises = require("fs/promises")
 //Read once at startup: deploys upload files one by one, so reading package.json on every request could catch it
 //half-written (JSON.parse failed, and the host's proxy kept serving that 500)
 const PACKAGE_JSON = require('./package.json')
-const ANIMEGRATIS_GENRES = [
-  "Acción", "Ambiente Laboral", "Amor entre Chicas", "Amor entre Chicos", "Antropomórfico", "Artes Escénicas",
-  "Artes Marciales", "Artes Visuales", "Aventura", "Cambio de Sexo Mágico", "Carreras",
-  "Chicas Lindas Haciendo Cosas Lindas", "Ciencia Ficción", "Comedia", "Crimen Organizado", "Cuidado Infantil",
-  "Cultura Otaku", "Delincuentes", "Deportes", "Deportes de Combate", "Deportes de Equipo", "Detective", "Drama",
-  "Ecchi", "Educativo", "Erótico", "Escolar", "Estancamiento Romántico", "Fantasía", "Fantasía Urbana",
-  "Gastronomía", "Gore", "Harem", "Harem Inverso", "Histórico", "Humor", "Humor Absurdo", "Ídolos Femeninos",
-  "Ídolos Masculinos", "Infantil", "Isekai", "Iyashikei", "Josei", "Juego de Alto Riesgo", "Juego de Estrategia",
-  "Magia", "Mahou Shoujo", "Mascotas", "Mecha", "Medicina", "Militar", "Misterio", "Mitología",
-  "Mundo del Espectáculo", "Música", "Niños", "Parodia", "Polígono Amoroso", "Premiado", "Psicológico",
-  "Recuentos de la vida", "Reencarnación", "Reparto Adulto", "Romance", "Samurái", "Seinen", "Shoujo", "Shounen",
-  "Sobrenatural", "Súper Poderes", "Supervivencia", "Suspense", "Suspenso", "Terror", "Travestismo", "Vampiros",
-  "Vanguardia", "Viaje en el Tiempo", "Videojuegos", "Villana", "Yuri",
-]
 function ReadManifest() {
   return Promise.resolve(PACKAGE_JSON).then((packageJSON) => {
 
@@ -114,7 +100,6 @@ function ReadManifest() {
           id: "animegratis", type: "AnimeGratis", name: "search results",
           extra: [
             { name: "search", isRequired: true },
-            { name: "genre", options: ANIMEGRATIS_GENRES, optionsLimit: 1, isRequired: false },
             { name: "skip", isRequired: false }
           ]
         },
@@ -233,7 +218,22 @@ function ReadManifest() {
         {
           id: "animegratis|genres", type: "Anime", name: "AnimeGratis",
           extra: [
-            { name: "genre", options: ANIMEGRATIS_GENRES, optionsLimit: 1, isRequired: true },
+            {
+              name: "genre",
+              options: ["Acción", "Ambiente Laboral", "Amor entre Chicas", "Amor entre Chicos", "Antropomórfico", "Artes Escénicas",
+                "Artes Marciales", "Artes Visuales", "Aventura", "Cambio de Sexo Mágico", "Carreras",
+                "Chicas Lindas Haciendo Cosas Lindas", "Ciencia Ficción", "Comedia", "Crimen Organizado", "Cuidado Infantil",
+                "Cultura Otaku", "Delincuentes", "Deportes", "Deportes de Combate", "Deportes de Equipo", "Detective", "Drama",
+                "Ecchi", "Educativo", "Erótico", "Escolar", "Estancamiento Romántico", "Fantasía", "Fantasía Urbana",
+                "Gastronomía", "Gore", "Harem", "Harem Inverso", "Histórico", "Humor", "Humor Absurdo", "Ídolos Femeninos",
+                "Ídolos Masculinos", "Infantil", "Isekai", "Iyashikei", "Josei", "Juego de Alto Riesgo", "Juego de Estrategia",
+                "Magia", "Mahou Shoujo", "Mascotas", "Mecha", "Medicina", "Militar", "Misterio", "Mitología",
+                "Mundo del Espectáculo", "Música", "Niños", "Parodia", "Polígono Amoroso", "Premiado", "Psicológico",
+                "Recuentos de la vida", "Reencarnación", "Reparto Adulto", "Romance", "Samurái", "Seinen", "Shoujo", "Shounen",
+                "Sobrenatural", "Súper Poderes", "Supervivencia", "Suspense", "Suspenso", "Terror", "Travestismo", "Vampiros",
+                "Vanguardia", "Viaje en el Tiempo", "Videojuegos", "Villana", "Yuri"],
+              optionsLimit: 1, isRequired: true
+            },
             { name: "skip", isRequired: false }
           ]
         },

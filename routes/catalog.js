@@ -241,6 +241,7 @@ function HandleCatalogRequest(req, res, next) {
           name: anime.title,
           poster: anime.poster,
           description: anime.overview,
+          releaseInfo: anime.year ? String(anime.year) : undefined,
           genres: anime.genres,
         }))
       })
@@ -253,6 +254,7 @@ function HandleCatalogRequest(req, res, next) {
           name: anime.title,
           poster: anime.poster,
           description: anime.overview,
+          releaseInfo: anime.year ? String(anime.year) : undefined,
           genres: anime.genres,
         }))
       })
