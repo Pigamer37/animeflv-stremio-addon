@@ -222,18 +222,14 @@ function HandleStreamRequest(req, res, next) {
           return streams
         })
       }))
-      //PorygonSubs has no search of its own: its sitemap's series are matched like the other sources' search results.
-      //Without a site search narrowing them down, longer titles that contain the search term must not match (e.g. "Pokémon"
-      //would get "Pokémon XY", "Pocket Monsters" would get "Pocket Monsters: The Origin"): the only extra words allowed are
-      //season ones (like "season" in "Black Clover season 2" for "Black Clover 2")
-      const words = (title) => title.toLowerCase().normalize("NFD").replace(/[^a-z0-9\s]/g, " ").trim().split(/\s+/)
+      //PorygonSubs has no search of its own: its sitemap's series are matched by exact title (see MatchSeries). A season's
+      //entry can be years after the show's first air date, so the year is only checked for unnumbered titles
+      const year = metadata.releaseDate?.getFullYear() || undefined //an unparsable date (like Cinemeta's "2020-2021") is NaN
       const porygonsubsp = firstMatch((searchTerm) => porygonsubsAPI.GetSeriesList(req.params.type).then(notSpecial).then((animeFLVitem) => {
-        const termWords = words(searchTerm)
-        const candidates = animeFLVitem.filter((i) => words(i.title).every((w) => termWords.includes(w) || /^(season|temporada|part|parte|\d+)$/.test(w)))
-        const result = fuzzysort.go(searchTerm, candidates, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
+        const result = porygonsubsAPI.MatchSeries(searchTerm, animeFLVitem, year)
         if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot PorygonSubs entry:\x1b[39m', result.title)
-        return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, episode)
+        return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, episode, (/\s\d{1,2}$/.test(searchTerm)) ? undefined : year)
       }))
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, porygonsubsp).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
