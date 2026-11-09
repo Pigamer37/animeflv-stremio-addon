@@ -80,7 +80,6 @@ exports.GetAnimeBySlug = async function (slug) {
     //return first result
     const epCount = data.data.episodes.length
     const videos = data.data.episodes.map((ep) => {
-      let d = new Date(Date.now())
       return {
         id: `henaojara:${slug}:${ep.number}`,
         title: data.data.title + " Ep. " + ep.number,
@@ -88,7 +87,6 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: `${HENAOJARA_BASE}/cdn/img/episodios/${data.data.internalID}-${ep.number}.webp?t=0.1`,//`${HENAOJARA_BASE}/cdn/img/episodios/3988-${ep.number}.webp?t=0.1`,
-        released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
     })

@@ -3,7 +3,6 @@ const ANIMEAV1_BASE = "https://animeav1.com"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
-const episodes = require("../lib/episodes.js");
 const { CollectPages, SettleLimited } = require("../lib/pagination.js");
 //const vercelBlob = require("@vercel/blob");
 require('dotenv').config()//process.env.var
@@ -84,7 +83,6 @@ exports.GetAnimeBySlug = async function (slug) {
     const epCount = data.data.episodes.length
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover) || [] //covers without a numeric file name just get no thumbnails
-    const rank = episodes.Ranks(data.data.episodes.map((ep) => ep.number))
     const videos = data.data.episodes.map((ep) => {
       return {
         id: `animeav1:${slug}:${ep.number}`,
@@ -93,7 +91,6 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: (matches[1]) ? `https://cdn.animeav1.com/screenshots/${matches[1]}/${ep.number}.jpg` : undefined,//`https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
-        released: episodes.EstimateReleased(rank(ep.number), epCount, { start: data.data.startDate, end: data.data.endDate }),
         available: true
       }
     })
@@ -104,7 +101,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: epCount + 1,
         number: epCount + 1,
-        thumbnail: "https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png",
+        thumbnail: "https://imgur.com/3U6r1nF.jpg",
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
       })

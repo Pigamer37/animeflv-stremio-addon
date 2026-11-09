@@ -131,6 +131,7 @@ Add `NO_PROXY=api.themoviedb.org,graphql.anilist.co` to keep the metadata APIs o
 - [ ] Research how to get the files directly to Stremio instead of having to send an external link (Streamtape, Streamwish, Okru & Mixdrop streams are IP bound 😞)
   - [X] Got YourUpload streams working inside of Stremio
   - [X] Got MP4Upload streams working inside of Stremio
+  - [X] Got Uqload streams working inside of Stremio
 
 ### Enhancements/new features
 - [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu and MALSync Stremio addons via <https://relations.yuna.moe/api/v2>

@@ -92,7 +92,6 @@ exports.GetAnimeBySlug = async function (slug) {
     title: (isMovie) ? title : `${title} Ep. ${n}`,
     season: 1, episode: n, number: n,
     thumbnail: poster,
-    released: new Date(new Date(d).setDate(d.getDate() - (epNumbers.length - 1 - i))), //estimated: the site gives no dates
     available: true
   }))
   const url = `${LATANIME_BASE}/anime/${slug}`

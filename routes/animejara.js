@@ -83,7 +83,6 @@ exports.GetAnimeBySlug = async function (slug, type = "series") {
         episode: ep.number,
         number: ep.number,
         thumbnail: ep.poster || data.data.cover,
-        released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
     })
