@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 // const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
+const porygonsubsAPI = require('./porygonsubs.js')
 const fuzzysort = require('fuzzysort')
 
 /**
@@ -221,7 +222,20 @@ function HandleStreamRequest(req, res, next) {
           return streams
         })
       }))
-      CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep).then((combinedStreams)=>{
+      //PorygonSubs has no search of its own: its sitemap's series are matched like the other sources' search results.
+      //Without a site search narrowing them down, longer titles that contain the search term must not match (e.g. "Pokémon"
+      //would get "Pokémon XY", "Pocket Monsters" would get "Pocket Monsters: The Origin"): the only extra words allowed are
+      //season ones (like "season" in "Black Clover season 2" for "Black Clover 2")
+      const words = (title) => title.toLowerCase().normalize("NFD").replace(/[^a-z0-9\s]/g, " ").trim().split(/\s+/)
+      const porygonsubsp = firstMatch((searchTerm) => porygonsubsAPI.GetSeriesList(req.params.type).then(notSpecial).then((animeFLVitem) => {
+        const termWords = words(searchTerm)
+        const candidates = animeFLVitem.filter((i) => words(i.title).every((w) => termWords.includes(w) || /^(season|temporada|part|parte|\d+)$/.test(w)))
+        const result = fuzzysort.go(searchTerm, candidates, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
+        if (!result) throw Error('No search results!')
+        console.log('\x1b[36mGot PorygonSubs entry:\x1b[39m', result.title)
+        return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, episode)
+      }))
+      CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, porygonsubsp).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -284,9 +298,9 @@ function SearchParamsRegex(extraParams) {
   } else return {}
 }
 
-function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise) {
+function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, porygonsubsPromise = Promise.resolve([])) {
   let lastInternal, lastInternalFLV, lastInternalAV1, lastInternalHena, lastInternalTio, lastInternalJara, lastInternalJK
-  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise]).then((results) => {
+  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, porygonsubsPromise]).then((results) => {
     let combinedStreams = []
     if (results[0].value) {
       console.log(`\x1b[36mGot ${results[0].value.length} AnimeFLV streams\x1b[39m`)
@@ -370,6 +384,19 @@ function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioa
         combinedStreams = combinedStreams.concat(results[6].value.slice(lastInternalLat + 1)) //Append external links at the end
       }
     } else {console.error('\x1b[31mFailed on Latanime slug search because:\x1b[39m ' + results[6].reason)}
+    if (results[7].value) {
+      console.log(`\x1b[36mGot ${results[7].value.length} PorygonSubs streams\x1b[39m`)
+      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
+      const lastInternalPory = results[7].value.findLastIndex((stream)=>stream.url !== undefined)
+      if (lastInternalPory === -1) {
+        combinedStreams = combinedStreams.concat(results[7].value) //PorygonSubs has only external links, just append at the end
+      } else if ((lastInternalPory !== -1) && (lastInternal === -1)) {
+        combinedStreams = results[7].value.concat(combinedStreams) //Previous has only external links, prepend at the start
+      } else {
+        combinedStreams.splice(lastInternal + 1, 0, ...results[7].value.slice(0, lastInternalPory + 1)) //Both have internal links, insert PorygonSubs internal links after last internal links
+        combinedStreams = combinedStreams.concat(results[7].value.slice(lastInternalPory + 1)) //Append external links at the end
+      }
+    } else {console.error('\x1b[31mFailed on PorygonSubs slug search because:\x1b[39m ' + results[7].reason)}
     return combinedStreams
   })
 }
