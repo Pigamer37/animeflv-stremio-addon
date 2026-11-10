@@ -150,6 +150,12 @@ exports.GetAnimeBySlug = async function (slug) {
   const alternateTitles = Array.isArray(schema.alternateName) ? schema.alternateName : [schema.alternateName].filter(Boolean)
   const genres = Array.isArray(schema.genre) ? schema.genre : [schema.genre].filter(Boolean)
   const released = (schema.datePublished) ? new Date(schema.datePublished) : undefined
+  const links = [{ name: "AnimeGratis", category: "Open in", url: website }, { name: schema.name, category: "share", url: website }]
+  $("a.ag-saga-card[href*='/anime/']").each((_, link) => {
+    const relatedSlug = $(link).attr("href")?.match(/\/anime\/([^/]+)/)?.[1]
+    const relatedTitle = $(link).attr("title")?.trim()
+    if (relatedSlug && relatedTitle) links.push({ name: relatedTitle, category: "Saga", url: `stremio:///detail/series/animegratis:${relatedSlug}` })
+  })
 
   return {
     id: `animegratis:${slug}`,
@@ -163,7 +169,7 @@ exports.GetAnimeBySlug = async function (slug) {
     description: schema.description,
     website,
     language: "jpn",
-    links: [{ name: "AnimeGratis", category: "Open in", url: website }, { name: schema.name, category: "share", url: website }],
+    links,
     ...(released && !Number.isNaN(released.getTime())) && { released, releaseInfo: String(released.getUTCFullYear()) },
     ...(videos.length === 1) && { behaviorHints: { defaultVideoId: videos[0].id } },
   }
