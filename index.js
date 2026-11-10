@@ -97,6 +97,13 @@ function ReadManifest() {
           ]
         },
         {
+          id: "animegratis", type: "AnimeGratis", name: "search results",
+          extra: [
+            { name: "search", isRequired: true },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "tioanime", type: "TioAnime", name: "search results",
           extra: [{ name: "search", isRequired: true },
           {
@@ -209,6 +216,28 @@ function ReadManifest() {
           ]
         },
         {
+          id: "animegratis|genres", type: "Anime", name: "AnimeGratis",
+          extra: [
+            {
+              name: "genre",
+              options: ["Acción", "Ambiente Laboral", "Amor entre Chicas", "Amor entre Chicos", "Antropomórfico", "Artes Escénicas",
+                "Artes Marciales", "Artes Visuales", "Aventura", "Cambio de Sexo Mágico", "Carreras",
+                "Chicas Lindas Haciendo Cosas Lindas", "Ciencia Ficción", "Comedia", "Crimen Organizado", "Cuidado Infantil",
+                "Cultura Otaku", "Delincuentes", "Deportes", "Deportes de Combate", "Deportes de Equipo", "Detective", "Drama",
+                "Ecchi", "Educativo", "Erótico", "Escolar", "Estancamiento Romántico", "Fantasía", "Fantasía Urbana",
+                "Gastronomía", "Gore", "Harem", "Harem Inverso", "Histórico", "Humor", "Humor Absurdo", "Ídolos Femeninos",
+                "Ídolos Masculinos", "Infantil", "Isekai", "Iyashikei", "Josei", "Juego de Alto Riesgo", "Juego de Estrategia",
+                "Magia", "Mahou Shoujo", "Mascotas", "Mecha", "Medicina", "Militar", "Misterio", "Mitología",
+                "Mundo del Espectáculo", "Música", "Niños", "Parodia", "Polígono Amoroso", "Premiado", "Psicológico",
+                "Recuentos de la vida", "Reencarnación", "Reparto Adulto", "Romance", "Samurái", "Seinen", "Shoujo", "Shounen",
+                "Sobrenatural", "Súper Poderes", "Supervivencia", "Suspense", "Suspenso", "Terror", "Travestismo", "Vampiros",
+                "Vanguardia", "Viaje en el Tiempo", "Videojuegos", "Villana", "Yuri"],
+              optionsLimit: 1, isRequired: true
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "tioanime|genres", type: "Anime", name: "TioAnime",
           extra: [
             {
@@ -271,6 +300,9 @@ function ReadManifest() {
         {
           id: "latanime|onair", type: "Latanime", name: "On Air"
         },
+        {
+          id: "animegratis|onair", type: "AnimeGratis", name: "On Air"
+        },
         // {
         //   id: "animejara|onair", type: "AnimeJara", name: "On Air"
         // },
@@ -298,7 +330,7 @@ function ReadManifest() {
       ],
       "resources": [
         "stream",
-        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ /*"animeflv:",*/"animeav1:","henaojara:","tioanime:",/*"animejara:",*/ /*"jkanime:",*/"latanime:","anilist:","mal:","anidb:"] },
+        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ /*"animeflv:",*/"animeav1:","henaojara:","tioanime:",/*"animejara:",*/ /*"jkanime:",*/"latanime:","animegratis:","anilist:","mal:","anidb:"] },
         "catalog"
       ],
       "types": [
@@ -316,6 +348,7 @@ function ReadManifest() {
         // "animejara:",
         // "jkanime:", //JKAnime answers 403 to the server (#61)
         "latanime:",
+        "animegratis:",
         "tmdb:",
         "anilist:",
         "kitsu:",
@@ -415,7 +448,8 @@ app.listen(process.env.PORT || 3000, () => {
   // const animejaraAPI = require('./routes/animejara.js') // Cloudflare protected
   // const jkanimeAPI = require('./routes/jkanime.js') //JKAnime answers 403 to the server's IP (#61)
   const latanimeAPI = require('./routes/latanime.js')
-  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI/*, jkanimeAPI*/, latanimeAPI]
+  const animegratisAPI = require('./routes/animegratis.js')
+  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI/*, jkanimeAPI*/, latanimeAPI, animegratisAPI]
   const REFRESH = 6 * 3600000 //newly airing shows appear within hours
   //When the code is newer than a saved list (a deploy), that list was built by the old code: refresh it right away
   const codeTime = Promise.all(["routes", "lib"].map((dir) => fsPromises.readdir(dir).then((files) =>
