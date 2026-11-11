@@ -11,7 +11,7 @@ const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
 const tioanimeAPI = require('./tioanime.js')
 // const animejaraAPI = require('./animejara.js')
-const jkanimeAPI = require('./jkanime.js')
+// const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
 const apotoxinAPI = require('./apotoxin.js')
 const fuzzysort = require('fuzzysort')
@@ -56,17 +56,14 @@ function HandleStreamRequest(req, res, next) {
     }
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     console.log('Extra parameters:', res.locals.extraParams)
-    // const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode)
-    const animeFLVp = Promise.resolve([])
+    // const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode) //Original domain down
     const animeAV1p = animeAV1API.GetItemStreams(ID, onlyInternal, episode)
     const henaojarap = henaojaraAPI.GetItemStreams(ID, onlyInternal, episode)
     const tioanimep = tioanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode)
-    const animejarap = Promise.resolve([])
-    // const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
+    // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode) //Cloudflare protected
+    // const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode) //JKAnime answers 403 to the server's IP (#61)
     const latanimep = latanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep).then((combinedStreams)=>{
+    CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep }).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
         res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -169,7 +166,6 @@ function HandleStreamRequest(req, res, next) {
       //   console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
       //   return animeFLVAPI.GetItemStreams(result.slug, onlyInternal, episode)
       // })
-      const animeFLVp = Promise.resolve([])
       const animeAV1p = firstMatch((searchTerm) => animeAV1API.SearchAnimeAV1(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         if (!result) throw Error('No search results!')
@@ -197,14 +193,12 @@ function HandleStreamRequest(req, res, next) {
       //   console.log('\x1b[36mGot AnimeJara entry:\x1b[39m', result.title)
       //   return animejaraAPI.GetItemStreams(result.slug, onlyInternal, season, episode)
       // })
-      const animejarap = Promise.resolve([])
       // const jkanimep = firstMatch((searchTerm) => jkanimeAPI.SearchJKAnime(searchTerm).then(notSpecial).then((animeFLVitem) => {
         // const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         // if (!result) throw Error('No search results!')
         // console.log('\x1b[36mGot JKAnime entry:\x1b[39m', result.title)
         // return jkanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
       // }))
-      const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
       //Latanime lists the sub, Latino and Castellano versions as separate entries, with inconsistent season naming
       //("X S2 Latino", "X 2 Castellano"): entries of the requested season are matched by base title (fuzzy matched like
       //the other sources when none is exact) and the streams of every version of the match are merged. Its search is
@@ -223,7 +217,7 @@ function HandleStreamRequest(req, res, next) {
         })
       }))
       const apotoxinp = apotoxinAPI.SearchApotoxin(metadata.imdbID, req.params.type, season, episode, onlyInternal)
-      CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, apotoxinp).then((combinedStreams)=>{
+      CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep, Apotoxin: apotoxinp }).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -286,107 +280,28 @@ function SearchParamsRegex(extraParams) {
   } else return {}
 }
 
-function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, apotoxinPromise = Promise.resolve([])) {
-  let lastInternal, lastInternalFLV, lastInternalAV1, lastInternalHena, lastInternalTio, lastInternalJara, lastInternalJK
-  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, apotoxinPromise]).then((results) => {
-    let combinedStreams = []
-    if (results[0].value) {
-      console.log(`\x1b[36mGot ${results[0].value.length} AnimeFLV streams\x1b[39m`)
-      combinedStreams = combinedStreams.concat(results[0].value)
-    } else {console.error('\x1b[31mFailed on AnimeFLV stream search because:\x1b[39m ' + results[0].reason)}
-    if (results[1].value) {
-      console.log(`\x1b[36mGot ${results[1].value.length} AnimeAV1 streams\x1b[39m`)
-      lastInternalFLV = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
-      lastInternalAV1 = results[1].value.findLastIndex((stream)=>stream.url !== undefined)
-      if (lastInternalAV1 === -1) {
-        combinedStreams = combinedStreams.concat(results[1].value) //AnimeAV1 has only external links, just append at the end
-      } else if ((lastInternalAV1 !== -1) && (lastInternalFLV === -1)) {
-        combinedStreams = results[1].value.concat(combinedStreams) //AnimeFLV has only external links, prepend at the start
-      } else {
-        combinedStreams.splice(lastInternalFLV + 1, 0, ...results[1].value.slice(0, lastInternalAV1 + 1)) //Both have internal links, insert AnimeAV1 internal links after last AnimeFLV internal links
-        combinedStreams = combinedStreams.concat(results[1].value.slice(lastInternalAV1 + 1)) //Append external links at the end
-      }
-    } else {console.error('\x1b[31mFailed on AnimeAV1 slug search because:\x1b[39m ' + results[1].reason)}
-    if (results[2].value) {
-      console.log(`\x1b[36mGot ${results[2].value.length} Henaojara streams\x1b[39m`)
-      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
-      lastInternalHena = results[2].value.findLastIndex((stream)=>stream.url !== undefined)
-      if (lastInternalHena === -1) {
-        combinedStreams = combinedStreams.concat(results[2].value) //Henaojara has only external links, just append at the end
-      } else if ((lastInternalHena !== -1) && (lastInternal === -1)) {
-        combinedStreams = results[2].value.concat(combinedStreams) //Previous has only external links, prepend at the start
-      } else {
-        combinedStreams.splice(lastInternal + 1, 0, ...results[2].value.slice(0, lastInternalHena + 1)) //Both have internal links, insert Henaojara internal links after last internal links
-        combinedStreams = combinedStreams.concat(results[2].value.slice(lastInternalHena + 1)) //Append external links at the end
-      }
-    } else {console.error('\x1b[31mFailed on Henaojara slug search because:\x1b[39m ' + results[2].reason)}
-    if (results[3].value) {
-      console.log(`\x1b[36mGot ${results[3].value.length} TioAnime streams\x1b[39m`)
-      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
-      lastInternalTio = results[3].value.findLastIndex((stream)=>stream.url !== undefined)
-      if (lastInternalTio === -1) {
-        combinedStreams = combinedStreams.concat(results[3].value) //TioAnime has only external links, just append at the end
-      } else if ((lastInternalTio !== -1) && (lastInternal === -1)) {
-        combinedStreams = results[3].value.concat(combinedStreams) //Previous has only external links, prepend at the start
-      } else {
-        combinedStreams.splice(lastInternal + 1, 0, ...results[3].value.slice(0, lastInternalTio + 1)) //Both have internal links, insert TioAnime internal links after last internal links
-        combinedStreams = combinedStreams.concat(results[3].value.slice(lastInternalTio + 1)) //Append external links at the end
-      }
-    } else {console.error('\x1b[31mFailed on TioAnime slug search because:\x1b[39m ' + results[3].reason)}
-    if (results[4].value) {
-      console.log(`\x1b[36mGot ${results[4].value.length} AnimeJara streams\x1b[39m`)
-      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
-      lastInternalJara = results[4].value.findLastIndex((stream)=>stream.url !== undefined)
-      if (lastInternalJara === -1) {
-        combinedStreams = combinedStreams.concat(results[4].value) //AnimeJara has only external links, just append at the end
-      } else if ((lastInternalJara !== -1) && (lastInternal === -1)) {
-        combinedStreams = results[4].value.concat(combinedStreams) //Previous has only external links, prepend at the start
-      } else {
-        combinedStreams.splice(lastInternal + 1, 0, ...results[4].value.slice(0, lastInternalJara + 1)) //Both have internal links, insert AnimeJara internal links after last internal links
-        combinedStreams = combinedStreams.concat(results[4].value.slice(lastInternalJara + 1)) //Append external links at the end
-      }
-    } else {console.error('\x1b[31mFailed on AnimeJara slug search because:\x1b[39m ' + results[4].reason)}
-    if (results[5].value) {
-      console.log(`\x1b[36mGot ${results[5].value.length} JKAnime streams\x1b[39m`)
-      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
-      lastInternalJK = results[5].value.findLastIndex((stream)=>stream.url !== undefined)
-      if (lastInternalJK === -1) {
-        combinedStreams = combinedStreams.concat(results[5].value) //JKAnime has only external links, just append at the end
-      } else if ((lastInternalJK !== -1) && (lastInternal === -1)) {
-        combinedStreams = results[5].value.concat(combinedStreams) //Previous has only external links, prepend at the start
-      } else {
-        combinedStreams.splice(lastInternal + 1, 0, ...results[5].value.slice(0, lastInternalJK + 1)) //Both have internal links, insert JKAnime internal links after last internal links
-        combinedStreams = combinedStreams.concat(results[5].value.slice(lastInternalJK + 1)) //Append external links at the end
-      }
-    } else {console.error('\x1b[31mFailed on JKAnime slug search because:\x1b[39m ' + results[5].reason)}
-    if (results[6].value) {
-      console.log(`\x1b[36mGot ${results[6].value.length} Latanime streams\x1b[39m`)
-      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
-      const lastInternalLat = results[6].value.findLastIndex((stream)=>stream.url !== undefined)
-      if (lastInternalLat === -1) {
-        combinedStreams = combinedStreams.concat(results[6].value) //Latanime has only external links, just append at the end
-      } else if ((lastInternalLat !== -1) && (lastInternal === -1)) {
-        combinedStreams = results[6].value.concat(combinedStreams) //Previous has only external links, prepend at the start
-      } else {
-        combinedStreams.splice(lastInternal + 1, 0, ...results[6].value.slice(0, lastInternalLat + 1)) //Both have internal links, insert Latanime internal links after last internal links
-        combinedStreams = combinedStreams.concat(results[6].value.slice(lastInternalLat + 1)) //Append external links at the end
-      }
-    } else {console.error('\x1b[31mFailed on Latanime slug search because:\x1b[39m ' + results[6].reason)}
-    if (results[7].value) {
-      console.log(`\x1b[36mGot ${results[7].value.length} Apotoxin streams\x1b[39m`)
-      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined || stream.infoHash !== undefined)
-      const lastInternalApo = results[7].value.findLastIndex((stream)=>stream.url !== undefined || stream.infoHash !== undefined)
-      if (lastInternalApo === -1) {
-        combinedStreams = combinedStreams.concat(results[7].value) //Apotoxin has only external links, just append at the end
-      } else if ((lastInternalApo !== -1) && (lastInternal === -1)) {
-        combinedStreams = results[7].value.concat(combinedStreams) //Previous has only external links, prepend at the start
-      } else {
-        combinedStreams.splice(lastInternal + 1, 0, ...results[7].value.slice(0, lastInternalApo + 1)) //Both have internal links, insert Apotoxin torrents/internal links after last internal links
-        combinedStreams = combinedStreams.concat(results[7].value.slice(lastInternalApo + 1)) //Append external links at the end
-      }
-    } else {console.error('\x1b[31mFailed on Apotoxin stream search because:\x1b[39m ' + results[7].reason)}
-    return combinedStreams
-  })
+//Internal streams (they play inside Stremio: direct links and torrents) go first: each source's go after the previous
+//sources' internal ones, and its external ones at the end
+const isInternal = (stream) => stream.url !== undefined || stream.infoHash !== undefined
+
+/**
+ * @param {Object<string, Promise<Array>>} sources - each source's streams promise, by its name, in priority order
+ * @return {Promise<Array>} the streams of the sources that got them
+ */
+function CombineStreams(sources) {
+  const names = Object.keys(sources)
+  return Promise.allSettled(Object.values(sources)).then((results) => results.reduce((combined, result, i) => {
+    if (!result.value) {
+      console.error(`\x1b[31mFailed on ${names[i]} stream search because:\x1b[39m ` + result.reason)
+      return combined
+    }
+    console.log(`\x1b[36mGot ${result.value.length} ${names[i]} streams\x1b[39m`)
+    const lastInternal = combined.findLastIndex(isInternal), lastNewInternal = result.value.findLastIndex(isInternal)
+    if (lastNewInternal === -1) return combined.concat(result.value) //it has only external links, append them at the end
+    if (lastInternal === -1) return result.value.concat(combined) //the previous ones are only external, prepend it at the start
+    return [...combined.slice(0, lastInternal + 1), ...result.value.slice(0, lastNewInternal + 1), //its internal links after the previous ones
+      ...combined.slice(lastInternal + 1), ...result.value.slice(lastNewInternal + 1)] //and its external links at the end
+  }, []))
 }
 
 module.exports = stream;
