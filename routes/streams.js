@@ -11,7 +11,7 @@ const animeAV1API = require('./animeav1.js')
 const henaojaraAPI = require('./henaojara.js')
 const tioanimeAPI = require('./tioanime.js')
 // const animejaraAPI = require('./animejara.js')
-const jkanimeAPI = require('./jkanime.js')
+// const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
 const apotoxinAPI = require('./apotoxin.js')
 const fuzzysort = require('fuzzysort')
@@ -56,17 +56,14 @@ function HandleStreamRequest(req, res, next) {
     }
     console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
     console.log('Extra parameters:', res.locals.extraParams)
-    // const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode)
-    const animeFLVp = Promise.resolve([])
+    // const animeFLVp = animeFLVAPI.GetItemStreams(ID, onlyInternal, episode) //Original domain down
     const animeAV1p = animeAV1API.GetItemStreams(ID, onlyInternal, episode)
     const henaojarap = henaojaraAPI.GetItemStreams(ID, onlyInternal, episode)
     const tioanimep = tioanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode)
-    const animejarap = Promise.resolve([])
-    // const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
+    // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode) //Cloudflare protected
+    // const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode) //JKAnime answers 403 to the server's IP (#61)
     const latanimep = latanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    CombineStreams({ AnimeFLV: animeFLVp, AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, AnimeJara: animejarap, JKAnime: jkanimep, Latanime: latanimep }).then((combinedStreams)=>{
+    CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep }).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
         res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -169,7 +166,6 @@ function HandleStreamRequest(req, res, next) {
       //   console.log('\x1b[36mGot AnimeFLV entry:\x1b[39m', result.title)
       //   return animeFLVAPI.GetItemStreams(result.slug, onlyInternal, episode)
       // })
-      const animeFLVp = Promise.resolve([])
       const animeAV1p = firstMatch((searchTerm) => animeAV1API.SearchAnimeAV1(searchTerm, req.params.type).then(notSpecial).then((animeFLVitem) => {
         const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         if (!result) throw Error('No search results!')
@@ -197,14 +193,12 @@ function HandleStreamRequest(req, res, next) {
       //   console.log('\x1b[36mGot AnimeJara entry:\x1b[39m', result.title)
       //   return animejaraAPI.GetItemStreams(result.slug, onlyInternal, season, episode)
       // })
-      const animejarap = Promise.resolve([])
       // const jkanimep = firstMatch((searchTerm) => jkanimeAPI.SearchJKAnime(searchTerm).then(notSpecial).then((animeFLVitem) => {
         // const result = fuzzysort.go(searchTerm, animeFLVitem, {key: 'title', limit: 1, threshold: .5})[0]?.obj;
         // if (!result) throw Error('No search results!')
         // console.log('\x1b[36mGot JKAnime entry:\x1b[39m', result.title)
         // return jkanimeAPI.GetItemStreams(result.slug, onlyInternal, episode)
       // }))
-      const jkanimep = Promise.resolve([]) //JKAnime answers 403 to the server's IP (#61)
       //Latanime lists the sub, Latino and Castellano versions as separate entries, with inconsistent season naming
       //("X S2 Latino", "X 2 Castellano"): entries of the requested season are matched by base title (fuzzy matched like
       //the other sources when none is exact) and the streams of every version of the match are merged. Its search is
@@ -223,7 +217,7 @@ function HandleStreamRequest(req, res, next) {
         })
       }))
       const apotoxinp = apotoxinAPI.SearchApotoxin(metadata.imdbID, req.params.type, season, episode, onlyInternal)
-      CombineStreams({ AnimeFLV: animeFLVp, AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, AnimeJara: animejarap, JKAnime: jkanimep, Latanime: latanimep, Apotoxin: apotoxinp }).then((combinedStreams)=>{
+      CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep, Apotoxin: apotoxinp }).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', CLIENT_CACHE.streams)
