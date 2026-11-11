@@ -223,13 +223,13 @@ function HandleStreamRequest(req, res, next) {
           return streams
         })
       }))
-      //PorygonSubs' search only returns exact title matches (see SearchPorygonSubs), checked against the item's year
+      //PorygonSubs' search only returns exact title matches or ID-mapped entries (see SearchPorygonSubs), checked against the item's year
       const year = metadata.releaseDate?.getFullYear() || undefined //an unparsable date (like Cinemeta's "2020-2021") is NaN
-      const porygonsubsp = firstMatch((searchTerm) => porygonsubsAPI.SearchPorygonSubs(searchTerm, req.params.type, year).then(notSpecial).then((animeFLVitem) => {
+      const porygonsubsp = firstMatch((searchTerm) => porygonsubsAPI.SearchPorygonSubs(searchTerm, req.params.type, year, { imdbID: metadata.imdbID, season, episode, idType: videoID, id: idDetails[1] }).then(notSpecial).then((animeFLVitem) => {
         const result = animeFLVitem[0]
         if (!result) throw Error('No search results!')
         console.log('\x1b[36mGot PorygonSubs entry:\x1b[39m', result.title)
-        return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, episode, result.year)
+        return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, result.episode ?? episode, result.year)
       }))
       const apotoxinp = apotoxinAPI.SearchApotoxin(metadata.imdbID, req.params.type, season, episode, onlyInternal)
       CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, apotoxinp, porygonsubsp).then((combinedStreams)=>{

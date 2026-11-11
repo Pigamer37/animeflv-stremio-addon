@@ -61,15 +61,63 @@ function MatchSeries(searchTerm, items, year = undefined) {
   return (matches.find((m) => m.extraYear && Math.abs(Number(m.extraYear) - year) <= REMAKE_YEAR_DIFFERENCE) || matches.find((m) => !m.extraYear))?.item
 }
 
+//Pokémon (and some Dragon Ball movies) are listed under their Spanish titles, which no search term matches, so they're
+//matched by IMDB ID. Pokémon's main series is a single IMDB entry: its seasons (Cinemeta's, TVDB's) are the site's
+//entries, except Diamond & Pearl's four, which are one there, and Master Quest's (5), which it doesn't have
+const POKEMON_IMDB_ID = "tt0168366"
+const DP = "pokemon-diamante-y-perla"
+const POKEMON_SEASONS = { //season: [slug, episodes of that entry in the previous seasons]
+  1: ["pokemon-atrapalos-ya", 0], 2: ["pokemon-liga-naranja", 0], 3: ["pokemon-los-viajes-johto", 0], 4: ["pokemon-los-campeones-de-la-liga-johto", 0],
+  6: ["pokemon-fuerza-maxima", 0], 7: ["pokemon-reto-maximo", 0], 8: ["pokemon-batalla-avanzada", 0], 9: ["pokemon-batalla-de-la-frontera", 0],
+  10: [DP, 0], 11: [DP, 51], 12: [DP, 103], 13: [DP, 155], 14: ["pokemon-best-wishes", 0], 15: ["pokemon-best-wishes-2", 0],
+  16: ["pokemon-xy", 0], 17: ["pokemon-xy-and-z", 0], 18: ["pokemon-sun-and-moon", 0], 19: ["pokemon-2019", 0], 20: ["horizontes-pokemon", 0]
+}
+const IMDB_SLUGS = {
+  tt26692417: "horizontes-pokemon", tt29079338: "pokemon-mezase-pokemon-master", tt1294022: "pokemon-cronicas", tt3218680: "pocket-monsters-the-origin",
+  tt6071336: "pokemon-generaciones", tt15356258: "pokemon-evoluciones", tt11547516: "pokemon-hakumei-no-tsubasa", tt19848562: "pokemon-nieves-de-hisui",
+  tt21970564: "pocket-monsters-pokemon-especial-el-dios-arceus", tt3657074: "pokemon-xy-la-mega-evolucion-mas-fuerte", tt12471116: "poketoon",
+  tt0190641: "pokemon-la-pelicula-mewtwo-contraataca", tt0210234: "pokemon-la-pelicula-2000-el-poder-de-uno", tt0235679: "pokemon-pelicula-3-el-hechizo-de-los-unown",
+  tt0287635: "pokemon-por-siempre-celebi-la-voz-del-bosque", tt0347791: "heroes-pokemon-latios-y-latias", tt0420076: "pokemon-jirachi-y-los-deseos",
+  tt0435286: "pokemon-el-destino-de-deoxys-audio-latino", tt0875609: "pokemon-lucario-y-el-misterio-de-mew-audio-latino", tt1000095: "pokemon-pokemon-ranger-y-el-templo-del-mar",
+  tt1226251: "pokemon-el-surgimiento-de-darkrai", tt1160525: "pokemon-giratina-y-el-guerrero-celestial", tt1468843: "pokemon-arceus-y-la-joya-de-la-vida",
+  tt1690470: "pokemon-zoroark-el-maestro-de-ilusiones", tt1739212: "pokemon-negro-victini-y-reshiram-pokemon-blanco-victini-y-zekrom",
+  tt1961324: "pokemon-negro-victini-y-reshiram-pokemon-blanco-victini-y-zekrom", tt2549540: "pokemon-kyurem-contra-el-espadachin-mistico",
+  tt8856470: "pokemon-mewtwo-contraataca-evolucion", tt11819890: "pokemon-koko",
+  tt0142251: "dragon-ball-la-leyenda-de-shen-long", tt0142249: "dragon-ball-la-princesa-durmiente-del-castillo-embrujado",
+  tt0142248: "dragon-ball-una-aventura-mistica", tt0142250: "dragon-ball-el-camino-hacia-el-poder"
+}
+
 /**
- * Finds the series a search term (title, plus the season number when it's not the first) refers to, see {@link MatchSeries}
+ * The PorygonSubs entry and episode an IMDB-mapped item is, see {@link IMDB_SLUGS}
+ * @param {{imdbID: string, season: string, episode: string, idType: string, id: string}} item - season is undefined for
+ * Kitsu/AniList/MAL/AniDB IDs, whose episode is their own entry's: ani.zip tells its TVDB (Cinemeta) season and episode
+ * @return {Promise<{slug: string, episode: (number|undefined)}|undefined>} undefined when it's not mapped
+ */
+async function MapByIMDBID({ imdbID, season, episode, idType, id }) {
+  if (IMDB_SLUGS[imdbID]) return { slug: IMDB_SLUGS[imdbID], episode }
+  if (imdbID !== POKEMON_IMDB_ID) return undefined
+  if (season === undefined && /^(kitsu|mal|anilist|anidb)$/.test(idType)) {
+    const data = await fetch(`https://api.ani.zip/mappings?${idType}_id=${id}`).then((resp) => resp.json()) //cached, the IMDB ID came from it
+    ;({ seasonNumber: season, episodeNumber: episode } = data?.episodes?.[episode ?? 1] || {})
+  }
+  const [slug, offset] = POKEMON_SEASONS[season] || []
+  return (slug) ? { slug, episode: offset + parseInt(episode ?? 1) } : { slug: undefined } //a season it doesn't have
+}
+
+/**
+ * Finds the series a search term (title, plus the season number when it's not the first) refers to, see {@link MatchSeries}.
+ * Items with Spanish titles there are found by their IDs instead, see {@link MapByIMDBID}
  * @param {string} query
  * @param {string} [type] - "movie" or "series"
  * @param {number} [year] - the requested item's release year
+ * @param {Object} [ids] - the requested item's IDs, see {@link MapByIMDBID}
  * @return {Promise<Object[]>} the matching series, if any, with the year {@link GetItemStreams} should check: a season's
- * entry can be years after the show's first air date, so it's only set for unnumbered titles
+ * entry can be years after the show's first air date, so it's only set for unnumbered titles. Mapped items also have
+ * the site's episode number
  */
-exports.SearchPorygonSubs = async function (query, type = undefined, year = undefined) {
+exports.SearchPorygonSubs = async function (query, type = undefined, year = undefined, ids = {}) {
+  const mapped = await MapByIMDBID(ids)
+  if (mapped) return (mapped.slug) ? [{ title: query, slug: mapped.slug, episode: mapped.episode }] : []
   const match = MatchSeries(query, await GetSeriesList(type), year)
   return (match) ? [{ ...match, year: (/\s\d{1,2}$/.test(query)) ? undefined : year }] : []
 }
