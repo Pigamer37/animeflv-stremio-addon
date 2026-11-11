@@ -6,7 +6,7 @@ require('dotenv').config()//process.env.var
 
 //Apotoxin Fansub only subtitles Detective Conan, so it has no catalog or search: it adds streams to that show's episodes
 //and movies
-exports.CONAN_IMDB_ID = "tt0131179"
+const CONAN_IMDB_ID = "tt0131179"
 
 /**
  * Apotoxin numbers episodes like the Japanese broadcast (absolute, as Kitsu/AniList do), Cinemeta splits them in seasons.
@@ -15,8 +15,8 @@ exports.CONAN_IMDB_ID = "tt0131179"
  * @param {number} episode
  * @return {Promise<number>} absolute episode number
  */
-exports.GetAbsoluteEpisode = async function (season, episode) {
-  const data = await fetch(`${CINEMETA_BASE}/meta/series/${exports.CONAN_IMDB_ID}.json`).then((resp) => {
+async function GetAbsoluteEpisode(season, episode) {
+  const data = await fetch(`${CINEMETA_BASE}/meta/series/${CONAN_IMDB_ID}.json`).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
     return resp.json()
   })
@@ -32,10 +32,22 @@ const MOVIE_IMDB_IDS = [
 ]
 
 /**
- * @param {string} imdbID
- * @return {number} Apotoxin's number for that Detective Conan movie, 0 if it's not one of them
+ * Gets Apotoxin's streams for a Detective Conan episode or movie, empty for anything else
+ * @param {string} imdbID - the item's IMDB ID (Kitsu/AniList items get theirs from the mappings)
+ * @param {string} type - "series" or "movie"
+ * @param {string} [season] - Cinemeta's season, undefined for Kitsu/AniList IDs, which already use absolute numbers
+ * @param {string} [episode]
+ * @param {boolean} [onlyInternal]
+ * @return {Promise<Array>} streams
  */
-exports.GetMovieNumber = (imdbID) => MOVIE_IMDB_IDS.indexOf(imdbID) + 1
+exports.SearchApotoxin = async function (imdbID, type, season, episode, onlyInternal = true) {
+  if (type === "movie") {
+    const movieNumber = MOVIE_IMDB_IDS.indexOf(imdbID) + 1
+    return (movieNumber) ? exports.GetMovieStreams(movieNumber, onlyInternal) : []
+  }
+  if (imdbID !== CONAN_IMDB_ID || parseInt(season) === 0) return [] //season 0 holds the specials, which Apotoxin numbers apart
+  return exports.GetItemStreams((season) ? await GetAbsoluteEpisode(parseInt(season), episode) : episode, onlyInternal)
+}
 
 exports.GetItemStreams = async function (epNumber, onlyInternal = true) {
   const data = await fetch(`${APOTOXIN_API_BASE}/capitulo/online/${epNumber}`).then((resp) => {
@@ -62,13 +74,14 @@ exports.GetMovieStreams = async function (movieNumber, onlyInternal = true) {
 function FormatStreams(title, number, magnets, embeds, onlyInternal) {
   const epName = (number !== undefined) ? `${title} Ep. ${number}` : title
   const torrentStreams = magnets.filter(([, magnet]) => magnet?.startsWith("magnet:")).map(([quality, magnet]) => {
-    const params = new URLSearchParams(magnet.slice(magnet.indexOf("?") + 1))
+    const params = new URL(magnet).searchParams
+    const infoHash = params.get("xt").split(":").pop().toLowerCase()
     return {
-      infoHash: params.get("xt").split(":").pop().toLowerCase(),
-      sources: params.getAll("tr").map((tracker) => "tracker:" + tracker),
+      infoHash,
+      sources: params.getAll("tr").map((tracker) => "tracker:" + tracker).concat("dht:" + infoHash),
       name: "Apotoxin\n" + quality + " (torrent)",
       description: epName + "\n⚙️ " + params.get("dn") + "\n🇯🇵🇪🇸",
-      behaviorHints: { bingeGroup: "apotoxin|" + quality }
+      behaviorHints: { bingeGroup: "apotoxin|" + quality, filename: params.get("dn") || undefined }
     }
   })
   const servers = embeds.filter((embed) => /^https?:\/\//.test(embed || "")).map((embed) => {
