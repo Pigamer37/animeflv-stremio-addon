@@ -7,8 +7,8 @@
 <!-- <p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="300"/></p> -->
 <!-- <p align="center"><img src="https://cdn.jkdesa.com/assets3/css/img/jkanimenet-dark.png?v=2.0.184" alt="JKAnime logo" width="256"/></p> -->
 <p align="center"><img src="https://latanime.org/img/logito.png" alt="Latanime logo" width="256"/></p>
-
-Node.js and express.js based addon to add AnimeAV1, Henaojara, TioAnime & Latanime functionallity to Stremio, not affiliated with AnimeAV1 Henaojara, TioAnime or Latanime. (I'm new to backend so I'm using it as a learning experience).
+<p align="center"><img src="https://apotoxinfansub.com/images/isologo.svg" alt="Apotoxin Fansub logo" width="256"/></p>
+Node.js and express.js based addon to add AnimeAV1, Henaojara, TioAnime, Latanime & Apotoxin Fansub functionallity to Stremio, not affiliated with AnimeAV1 Henaojara, TioAnime or Latanime. (I'm new to backend so I'm using it as a learning experience).
 
 ## Normal use
 ### Install by visiting <https://pigamer37.alwaysdata.net/configure>, or by copying <stremio://pigamer37.alwaysdata.net/manifest.json> on your browser or paste <https://pigamer37.alwaysdata.net/manifest.json> on the Stremio addons search bar :mag: or the Add addon button
@@ -19,10 +19,11 @@ Node.js and express.js based addon to add AnimeAV1, Henaojara, TioAnime & Latani
 - :wrench: Compatible with other addons, like Cinemeta, TMDB or kitsu so you can use your preferred metadata provider (see [supported ID's](#endpoints) for technical details)
 - :page_with_curl: See metadata extracted from AnimeAV1, Henaojara, TioAnime & Latanime natively in Stremio, like synopses/overviews, genres, related media, episode lists and release dates for upcoming episodes
   - :calendar: If you add series to your library (through an AnimeFLV or TioAnime ID), upcoming episodes will show up in your Stremio calendar!
-- :satellite: Provides stream sources from AnimeAV1, Henaojara, TioAnime & Latanime
+- :satellite: Provides stream sources from AnimeAV1, Henaojara, TioAnime, Latanime, Apotoxin Fansub & PorygonSubs
+  - :mag_right: Detective Conan episodes and movies also get Apotoxin Fansub's torrents (they play directly in Stremio) and streams. Apotoxin only subtitles Conan, so it has no catalog of its own
   - :mag_right: PorygonSubs' streams are added to the series it has (matched by title against its sitemap). It has no catalog of its own
 
-This addon provides metadata and streaming options from AnimeAV1, Henaojara, TioAnime & Latanime. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeAV1, Henaojara, TioAnime & Latanime, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV ...", "AnimeAV1 ...", "Henaojara ...", "TioAnime ...", "AnimeJara ..." or "Latanime ..." (the ones marked as external open a player on your browser, working on getting more sources to be watchable directly on Stremio. You can add them by [configuring the addon](https://pigamer37.alwaysdata.net/configure), as they are not added by default).
+This addon provides metadata and streaming options from AnimeAV1, Henaojara, TioAnime, Latanime, Apotoxin Fansub & PorygonSubs. It offers a catalog with airing anime on the homepage, and a searchable catalog of all AnimeAV1, Henaojara, TioAnime & Latanime, even being able to filter by genre. Additionally, when you open an item on Stremio that matches some parameters set in the manifest (generated on [`index.js`](index.js)), or whenever you start watching something, the platform will call this addon. When the program can get the data for the item you are about to watch, some metadata will be provided and/or streaming options will appear as "AnimeFLV ...", "AnimeAV1 ...", "Henaojara ...", "TioAnime ...", "AnimeJara ..." or "Latanime ..." (the ones marked as external open a player on your browser, working on getting more sources to be watchable directly on Stremio. You can add them by [configuring the addon](https://pigamer37.alwaysdata.net/configure), as they are not added by default).
 
 > [!TIP]
 > ### Recommendations
@@ -108,6 +109,9 @@ Add `NO_PROXY=api.themoviedb.org,graphql.anilist.co` to keep the metadata APIs o
 >
 > <p align="center"><img src="https://tioanime.com/assets/img/logo-dark.png" alt="Henaojara logo" width="256"/></p>
 > This application/addon uses TioAnime but is not endorsed, certified, or otherwise approved by TioAnime.
+>
+> <p align="center"><img src="https://apotoxinfansub.com/images/isologo.svg" alt="Apotoxin Fansub logo" width="256"/></p>
+> This application/addon uses Apotoxin Fansub but is not endorsed, certified, or otherwise approved by Apotoxin Fansub.
 >
 <!-- > <p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="300"/></p>
 > This application/addon uses AnimeJara but is not endorsed, certified, or otherwise approved by AnimeJara.

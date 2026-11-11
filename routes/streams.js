@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 // const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
+const apotoxinAPI = require('./apotoxin.js')
 const porygonsubsAPI = require('./porygonsubs.js')
 const fuzzysort = require('fuzzysort')
 
@@ -230,7 +231,8 @@ function HandleStreamRequest(req, res, next) {
         console.log('\x1b[36mGot PorygonSubs entry:\x1b[39m', result.title)
         return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, episode, result.year)
       }))
-      CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, porygonsubsp).then((combinedStreams)=>{
+      const apotoxinp = apotoxinAPI.SearchApotoxin(metadata.imdbID, req.params.type, season, episode, onlyInternal)
+      CombineStreams(animeFLVp, animeAV1p, henaojarap, tioanimep, animejarap, jkanimep, latanimep, apotoxinp, porygonsubsp).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -293,9 +295,9 @@ function SearchParamsRegex(extraParams) {
   } else return {}
 }
 
-function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, porygonsubsPromise = Promise.resolve([])) {
+function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, apotoxinPromise = Promise.resolve([]), porygonsubsPromise = Promise.resolve([])) {
   let lastInternal, lastInternalFLV, lastInternalAV1, lastInternalHena, lastInternalTio, lastInternalJara, lastInternalJK
-  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, porygonsubsPromise]).then((results) => {
+  return Promise.allSettled([animeFLVPromise, animeAV1Promise, henaojaraPromise, tioanimePromise, animejaraPromise, jkanimePromise, latanimePromise, apotoxinPromise, porygonsubsPromise]).then((results) => {
     let combinedStreams = []
     if (results[0].value) {
       console.log(`\x1b[36mGot ${results[0].value.length} AnimeFLV streams\x1b[39m`)
@@ -380,18 +382,31 @@ function CombineStreams(animeFLVPromise, animeAV1Promise, henaojaraPromise, tioa
       }
     } else {console.error('\x1b[31mFailed on Latanime slug search because:\x1b[39m ' + results[6].reason)}
     if (results[7].value) {
-      console.log(`\x1b[36mGot ${results[7].value.length} PorygonSubs streams\x1b[39m`)
-      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined)
-      const lastInternalPory = results[7].value.findLastIndex((stream)=>stream.url !== undefined)
-      if (lastInternalPory === -1) {
-        combinedStreams = combinedStreams.concat(results[7].value) //PorygonSubs has only external links, just append at the end
-      } else if ((lastInternalPory !== -1) && (lastInternal === -1)) {
+      console.log(`\x1b[36mGot ${results[7].value.length} Apotoxin streams\x1b[39m`)
+      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined || stream.infoHash !== undefined)
+      const lastInternalApo = results[7].value.findLastIndex((stream)=>stream.url !== undefined || stream.infoHash !== undefined)
+      if (lastInternalApo === -1) {
+        combinedStreams = combinedStreams.concat(results[7].value) //Apotoxin has only external links, just append at the end
+      } else if ((lastInternalApo !== -1) && (lastInternal === -1)) {
         combinedStreams = results[7].value.concat(combinedStreams) //Previous has only external links, prepend at the start
       } else {
-        combinedStreams.splice(lastInternal + 1, 0, ...results[7].value.slice(0, lastInternalPory + 1)) //Both have internal links, insert PorygonSubs internal links after last internal links
-        combinedStreams = combinedStreams.concat(results[7].value.slice(lastInternalPory + 1)) //Append external links at the end
+        combinedStreams.splice(lastInternal + 1, 0, ...results[7].value.slice(0, lastInternalApo + 1)) //Both have internal links, insert Apotoxin torrents/internal links after last internal links
+        combinedStreams = combinedStreams.concat(results[7].value.slice(lastInternalApo + 1)) //Append external links at the end
       }
-    } else {console.error('\x1b[31mFailed on PorygonSubs slug search because:\x1b[39m ' + results[7].reason)}
+    } else {console.error('\x1b[31mFailed on Apotoxin stream search because:\x1b[39m ' + results[7].reason)}
+    if (results[8].value) {
+      console.log(`\x1b[36mGot ${results[8].value.length} PorygonSubs streams\x1b[39m`)
+      lastInternal = combinedStreams.findLastIndex((stream)=>stream.url !== undefined || stream.infoHash !== undefined)
+      const lastInternalPory = results[8].value.findLastIndex((stream)=>stream.url !== undefined)
+      if (lastInternalPory === -1) {
+        combinedStreams = combinedStreams.concat(results[8].value) //PorygonSubs has only external links, just append at the end
+      } else if ((lastInternalPory !== -1) && (lastInternal === -1)) {
+        combinedStreams = results[8].value.concat(combinedStreams) //Previous has only external links, prepend at the start
+      } else {
+        combinedStreams.splice(lastInternal + 1, 0, ...results[8].value.slice(0, lastInternalPory + 1)) //Both have internal links, insert PorygonSubs internal links after last internal links
+        combinedStreams = combinedStreams.concat(results[8].value.slice(lastInternalPory + 1)) //Append external links at the end
+      }
+    } else {console.error('\x1b[31mFailed on PorygonSubs slug search because:\x1b[39m ' + results[8].reason)}
     return combinedStreams
   })
 }
