@@ -97,9 +97,6 @@ Add `NO_PROXY=api.themoviedb.org,graphql.anilist.co` to keep the metadata APIs o
 
 ## Acknowledgements:
 > [!NOTE]
-<!-- > <p align="center"><img src="https://www3.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV logo" width="256"/></p>
-> This application/addon uses AnimeFLV but is not endorsed, certified, or otherwise approved by AnimeFLV.
-> -->
 > <p align="center"><img src="https://animeav1.com/img/logo-dark.svg" alt="AnimeAV1 logo" width="256"/></p>
 > This application/addon uses AnimeAV1 but is not endorsed, certified, or otherwise approved by AnimeAV1.
 >
@@ -109,18 +106,21 @@ Add `NO_PROXY=api.themoviedb.org,graphql.anilist.co` to keep the metadata APIs o
 > <p align="center"><img src="https://tioanime.com/assets/img/logo-dark.png" alt="Henaojara logo" width="256"/></p>
 > This application/addon uses TioAnime but is not endorsed, certified, or otherwise approved by TioAnime.
 >
+> <p align="center"><img src="https://latanime.org/img/logito.png" alt="Latanime logo" width="256"/></p>
+> This application/addon uses Latanime but is not endorsed, certified, or otherwise approved by Latanime.
+>
 > <p align="center"><img src="https://apotoxinfansub.com/images/isologo.svg" alt="Apotoxin Fansub logo" width="256"/></p>
 > This application/addon uses Apotoxin Fansub but is not endorsed, certified, or otherwise approved by Apotoxin Fansub.
 >
+<!-- > <p align="center"><img src="https://www3.animeflv.net/assets/animeflv/img/logo.png?v=2.3" alt="AnimeFLV logo" width="256"/></p>
+> This application/addon uses AnimeFLV but is not endorsed, certified, or otherwise approved by AnimeFLV.
+> -->
 <!-- > <p align="center"><img src="https://animejara.com/wp-content/uploads/2025/11/ANIMEJARA_INICIO3.png" alt="AnimeJara logo" width="300"/></p>
 > This application/addon uses AnimeJara but is not endorsed, certified, or otherwise approved by AnimeJara.
 > -->
 <!-- > <p align="center"><img src="https://cdn.jkdesa.com/assets3/css/img/jkanimenet-dark.png?v=2.0.184" alt="JKAnime logo" width="256"/></p>
 > This application/addon uses JKAnime but is not endorsed, certified, or otherwise approved by JKAnime.
 > -->
-> <p align="center"><img src="https://latanime.org/img/logito.png" alt="Latanime logo" width="256"/></p>
-> This application/addon uses Latanime but is not endorsed, certified, or otherwise approved by Latanime.
->
 <!-- > [The unofficial AnimeFLV API](https://animeflv.ahmedrangel.com/api)
 > This application/addon uses the unofficial AnimeFLV API (or its adapted code) but is not endorsed, certified, or otherwise approved by it.
 > -->
@@ -132,10 +132,11 @@ Add `NO_PROXY=api.themoviedb.org,graphql.anilist.co` to keep the metadata APIs o
 ## TO DO:
 - [X] Publish to Stremio Addon Catalog (not on Beam Up, because the beamup tool is not working for me)
 - [X] Implement Stremio's `skip` extra argument functionality for pagination (each query outputs 24 results)
-- [ ] Research how to get the files directly to Stremio instead of having to send an external link (Streamtape, Streamwish, Okru & Mixdrop streams are IP bound 😞)
-  - [X] Got YourUpload streams working inside of Stremio
-  - [X] Got MP4Upload streams working inside of Stremio
-  - [X] Got Uqload streams working inside of Stremio
+- [ ] Research how to get the files directly to Stremio instead of having to send an external link (Streamtape, Streamwish, Okru & Mixdrop streams are IP bound 😞) For now, these services work inside Stremio also on the public instance:
+  - [X] YourUpload
+  - [X] MP4Upload
+  - [X] Uqload
+  - [X] Voe
 
 ### Enhancements/new features
 - [X] Support MyAnimeList, AniDB, AniList and kitsu ID's and thus the kitsu and MALSync Stremio addons via <https://relations.yuna.moe/api/v2>
