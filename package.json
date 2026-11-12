@@ -1,6 +1,6 @@
 {
   "name": "animeflv-stremio-addon",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "Add AnimeAV1, Henaojara, TioAnime, Latanime & Apotoxin Fansub functionallity to Stremio, including catalogs, streams and metadata, even showing upcoming episodes in the calendar! Not affiliated with AnimeAV1, Henaojara, TioAnime, or Latanime. GitHub repo: https://github.com/Pigamer37/animeflv-stremio-addon",
   "main": "index.js",
   "scripts": {
