@@ -122,7 +122,7 @@ exports.GetAnimeBySlug = async function (slug) {
       videos, poster: data.data.cover, background: (matches[1]) ? `https://cdn.animeav1.com/thumbnails/${matches[1]}.jpg` : data.data.cover, genres: data.data.genres, description: data.data.synopsis.replaceAll(/\\n/g,'\n').replaceAll(/\\"/g,'"'), website: data.data.url, id: `animeav1:${slug}`,
       language: "jpn", links,
       runtime: data.data.runtime,
-      ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: data.data.startDate.getFullYear() + "-".concat((data.data.endDate!==undefined)?data.data.endDate?.getFullYear():"") },
+      ...(data.data.startDate) && { released: data.data.startDate, releaseInfo: ReleaseInfo(data.data.startDate, data.data.endDate) },
       ...(data.data.trailers) && { trailers: [ {source: data.data.trailers, type: "Trailer"} ] },
       ...(data.data.next_airing_episode !== undefined) && { behaviorHints: { hasScheduledVideos: true } },
       ...(videos.length == 1) && { behaviorHints: { defaultVideoId: `animeav1:${slug}:1` } }
@@ -138,6 +138,12 @@ exports.GetItemStreams = async function (slug, onlyInternal=true, epNumber = 1) 
   }).then((data) => {
     return streamParser.GetStreamLinks("AnimeAV1", "animeAV1", data, onlyInternal)
   })
+}
+
+//"2020-2021", "2020" if it started and ended the same year, or "2020-" if it's still airing
+function ReleaseInfo(startDate, endDate) {
+  const start = startDate.getFullYear(), end = endDate?.getFullYear()
+  return (start === end) ? `${start}` : `${start}-${end ?? ""}`
 }
 
 async function GetEpisodeLinks(slug, epNumber = 1) {
