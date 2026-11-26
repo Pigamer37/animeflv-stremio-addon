@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 // const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
+const animegratisAPI = require('./animegratis.js')
 const fuzzysort = require('fuzzysort')
 
 /**
@@ -93,6 +94,22 @@ function HandleMetaRequest(req, res, next) {
       if (!res.headersSent) {
         res.header('Cache-Control', "max-age=86400, stale-while-revalidate=86400, stale-if-error=259200")
         res.json({ meta: {}, message: "Failed getting Latanime info" });
+        next()
+      }
+    })
+  } else if (videoID?.startsWith("animegratis")){
+    const ID = idDetails[1]
+    console.log(`\x1b[33mGot a ${req.params.type} with ${videoID} ID:\x1b[39m ${ID}`)
+    animegratisAPI.GetAnimeBySlug(ID).then((animeMeta) => {
+      console.log('\x1b[36mGot AnimeGratis metadata for:\x1b[39m', animeMeta.name)
+      res.header('Cache-Control', CLIENT_CACHE.meta)
+      res.json({ meta: animeMeta, message: "Got AnimeGratis metadata!" })
+      next()
+    }).catch((err) => {
+      console.error('\x1b[31mFailed on AnimeGratis slug search because:\x1b[39m ' + err)
+      if (!res.headersSent) {
+        res.header('Cache-Control', CLIENT_CACHE.failure)
+        res.json({ meta: {}, message: "Failed getting AnimeGratis info" });
         next()
       }
     })
@@ -244,6 +261,7 @@ const NATIVE_META_SOURCES = [
   { name: "AnimeAV1", search: (term) => animeAV1API.SearchAnimeAV1(term), meta: (slug) => animeAV1API.GetAnimeBySlug(slug) },
   // { name: "JKAnime", search: (term) => jkanimeAPI.SearchJKAnime(term), meta: (slug) => jkanimeAPI.GetAnimeBySlug(slug) }, //403 on the server (#61)
   { name: "TioAnime", search: (term) => tioanimeAPI.SearchTioAnime(term), meta: (slug) => tioanimeAPI.GetAnimeBySlug(slug) },
+  { name: "AnimeGratis", search: (term) => animegratisAPI.SearchAnimeGratis(term), meta: (slug) => animegratisAPI.GetAnimeBySlug(slug) },
 ]
 async function FindNativeMeta(searchTerm) {
   for (const src of NATIVE_META_SOURCES) {

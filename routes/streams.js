@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 // const animejaraAPI = require('./animejara.js')
 // const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
+const animegratisAPI = require('./animegratis.js')
 const apotoxinAPI = require('./apotoxin.js')
 const porygonsubsAPI = require('./porygonsubs.js')
 const fuzzysort = require('fuzzysort')
@@ -47,7 +48,7 @@ function HandleStreamRequest(req, res, next) {
   let streams = []
   const idDetails = req.params.videoId.split(':')
   const videoID = idDetails[0] //We only want the first part of the videoID, which is the IMDB ID, the rest would be the season and episode
-  if (/*(videoID?.startsWith("animeflv")) || */(videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime")) || (videoID?.startsWith("animejara")) /*|| (videoID?.startsWith("jkanime"))*/ || (videoID?.startsWith("latanime"))) { //If we got an AnimeFLV or AnimeAV1 specific ID
+  if (/*(videoID?.startsWith("animeflv")) || */(videoID?.startsWith("animeav1")) || (videoID?.startsWith("henaojara")) || (videoID?.startsWith("tioanime")) || (videoID?.startsWith("animejara")) /*|| (videoID?.startsWith("jkanime"))*/ || (videoID?.startsWith("latanime")) || (videoID?.startsWith("animegratis"))) { //If we got a provider-specific ID
     const ID = idDetails[1] //We want the second part of the videoID
     let episode = idDetails[2] //undefined if we don't get an episode number in the query, which is fine
     let season
@@ -64,8 +65,9 @@ function HandleStreamRequest(req, res, next) {
     // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode) //Cloudflare protected
     // const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode) //JKAnime answers 403 to the server's IP (#61)
     const latanimep = latanimeAPI.GetItemStreams(ID, onlyInternal, episode)
+    const animegratisp = animegratisAPI.GetItemStreams(ID, onlyInternal, episode)
     const porygonp = porygonsubsAPI.GetItemStreams(ID, onlyInternal, episode)
-    CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep, PorygonSubs: porygonp }).then((combinedStreams)=>{
+    CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep, AnimeGratis: animegratisp, PorygonSubs: porygonp }).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
         res.header('Cache-Control', CLIENT_CACHE.streams)
@@ -218,6 +220,12 @@ function HandleStreamRequest(req, res, next) {
           return streams
         })
       }))
+      const animegratisp = firstMatch((searchTerm) => animegratisAPI.SearchAnimeGratis(searchTerm, req.params.type).then(notSpecial).then((items) => {
+        const result = fuzzysort.go(searchTerm, items, {key: 'title', limit: 1, threshold: .5})[0]?.obj
+        if (!result) throw Error('No search results!')
+        console.log('\x1b[36mGot AnimeGratis entry:\x1b[39m', result.title)
+        return animegratisAPI.GetItemStreams(result.slug, onlyInternal, episode)
+      }))
       //PorygonSubs' search only returns exact title matches or ID-mapped entries (see SearchPorygonSubs), checked against the item's year
       const year = metadata.releaseDate?.getFullYear() || undefined //an unparsable date (like Cinemeta's "2020-2021") is NaN
       const porygonsubsp = firstMatch((searchTerm) => porygonsubsAPI.SearchPorygonSubs(searchTerm, req.params.type, year, { imdbID: metadata.imdbID, season, episode, idType: videoID, id: idDetails[1] }).then(notSpecial).then((animeFLVitem) => {
@@ -227,7 +235,7 @@ function HandleStreamRequest(req, res, next) {
         return porygonsubsAPI.GetItemStreams(result.slug, onlyInternal, result.episode ?? episode, result.year)
       }))
       const apotoxinp = apotoxinAPI.SearchApotoxin(metadata.imdbID, req.params.type, season, episode, onlyInternal)
-      CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep, Apotoxin: apotoxinp, PorygonSubs: porygonsubsp }).then((combinedStreams)=>{
+      CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep, AnimeGratis: animegratisp, Apotoxin: apotoxinp, PorygonSubs: porygonsubsp }).then((combinedStreams)=>{
         if (combinedStreams.length > 0) {
           console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
           res.header('Cache-Control', CLIENT_CACHE.streams)
