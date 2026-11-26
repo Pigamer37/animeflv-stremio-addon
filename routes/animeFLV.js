@@ -135,7 +135,6 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: `https://cdn.animeflv.net/screenshots/${matches[1]}/${ep.number}/th_3.jpg`,
-        released: new Date(d.setDate(d.getDate() - (epCount - ep.number))),
         available: true
       }
     })

@@ -1,0 +1,3 @@
+{
+  "ignore": ["onair*.json", "README.md"]
+}

@@ -76,7 +76,6 @@ exports.GetAnimeBySlug = async function (slug) {
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover)
     const videos = data.data.episodes.map((ep) => {
-      let d = new Date(Date.now())
       return {
         id: `jkanime:${slug}:${ep.number}`,
         title: data.data.title + " Ep. " + ep.number,
@@ -84,7 +83,7 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: ep.thumbnail,
-        released: ep.released || new Date(d.setDate(d.getDate() - (lastNumber - ep.number))), //estimated when unknown
+        released: ep.released,
         available: true
       }
     })
@@ -95,7 +94,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: lastNumber + 1,
         number: lastNumber + 1,
-        thumbnail: `https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png`,
+        thumbnail: 'https://imgur.com/3U6r1nF.jpg',
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
       })

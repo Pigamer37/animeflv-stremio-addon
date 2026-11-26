@@ -3,7 +3,6 @@ const TIOANIME_BASE = "https://tioanime.com"
 const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
-const episodes = require("../lib/episodes.js");
 const { CollectPages, SettleLimited } = require("../lib/pagination.js");
 require('dotenv').config()//process.env.var
 
@@ -88,7 +87,6 @@ exports.GetAnimeBySlug = async function (slug) {
     const epCount = data.data.episodes.length
     const imgPattern = /\/(\d+).jpg$/g
     const matches = imgPattern.exec(data.data.cover) || [] //covers without a numeric file name just get no thumbnails
-    const rank = episodes.Ranks(data.data.episodes.map((ep) => ep.number))
     const videos = data.data.episodes.map((ep) => {
       return {
         id: `tioanime:${slug}:${ep.number}`,
@@ -97,7 +95,6 @@ exports.GetAnimeBySlug = async function (slug) {
         episode: ep.number,
         number: ep.number,
         thumbnail: (matches[1]) ? `${TIOANIME_BASE}/uploads/thumbs/${matches[1]}.jpg` : undefined,
-        released: episodes.EstimateReleased(rank(ep.number), epCount, { start: data.data.startDate }),
         available: true
       }
     })
@@ -108,7 +105,7 @@ exports.GetAnimeBySlug = async function (slug) {
         season: 1,
         episode: epCount + 1,
         number: epCount + 1,
-        thumbnail: `https://www3.animeflv.net/assets/animeflv/img/cnt/proximo.png`,
+        thumbnail: 'https://imgur.com/3U6r1nF.jpg',
         released: new Date(data.data.next_airing_episode),
         available: false //next episode is not available yet
       })
@@ -286,8 +283,6 @@ async function GetAnimeInfo(slug) {
     }
 
     animeInfo.year = $("#tioanime > article > div > div > aside > div.meta > span.year").text().trim();
-    animeInfo.startDate = episodes.ParseAnimeSeason($("#tioanime > article > div > div > aside > div.meta > span.season").first().text())
-      || ((/^\d{4}$/.test(animeInfo.year)) ? new Date(Date.UTC(Number(animeInfo.year), 0, 1)) : undefined);
 
     return animeInfo;
   } catch (error) {
