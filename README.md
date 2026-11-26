@@ -9,7 +9,7 @@
 <p align="center"><img src="https://latanime.org/img/logito.png" alt="Latanime logo" width="256"/></p>
 <p align="center"><img src="https://apotoxinfansub.com/images/isologo.svg" alt="Apotoxin Fansub logo" width="256"/></p>
 <p align="center"><img src="https://porygonsubs.com/assets/img/logo-2.png" alt="PorygonSubs logo" width="256"/></p>
-Node.js and express.js based addon to add AnimeAV1, Henaojara, TioAnime, Latanime, Apotoxin Fansub & PorygonSubs functionallity to Stremio, not affiliated with AnimeAV1 Henaojara, TioAnime or Latanime. (I'm new to backend so I'm using it as a learning experience).
+Node.js and express.js based addon to add AnimeAV1, Henaojara, TioAnime, Latanime, Apotoxin Fansub & PorygonSubs functionallity to Stremio, not affiliated with any of them. (I'm new to backend so I'm using it as a learning experience).
 
 ## Normal use
 ### Install by visiting <https://pigamer37.alwaysdata.net/configure>, or by copying <stremio://pigamer37.alwaysdata.net/manifest.json> on your browser or paste <https://pigamer37.alwaysdata.net/manifest.json> on the Stremio addons search bar :mag: or the Add addon button

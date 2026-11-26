@@ -64,7 +64,8 @@ function HandleStreamRequest(req, res, next) {
     // const animejarap = animejaraAPI.GetItemStreams(ID, onlyInternal, season, episode) //Cloudflare protected
     // const jkanimep = jkanimeAPI.GetItemStreams(ID, onlyInternal, episode) //JKAnime answers 403 to the server's IP (#61)
     const latanimep = latanimeAPI.GetItemStreams(ID, onlyInternal, episode)
-    CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep }).then((combinedStreams)=>{
+    const porygonp = porygonsubsAPI.GetItemStreams(ID, onlyInternal, episode)
+    CombineStreams({ /*AnimeFLV: animeFLVp, */AnimeAV1: animeAV1p, Henaojara: henaojarap, TioAnime: tioanimep, /*AnimeJara: animejarap, JKAnime: jkanimep, */Latanime: latanimep, PorygonSubs: porygonp }).then((combinedStreams)=>{
       if (combinedStreams.length > 0) {
         console.log(`\x1b[36mGot ${combinedStreams.length} streams\x1b[39m`)
         res.header('Cache-Control', CLIENT_CACHE.streams)

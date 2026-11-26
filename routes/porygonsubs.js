@@ -66,13 +66,13 @@ function MatchSeries(searchTerm, items, year = undefined) {
 //entries, except Diamond & Pearl's four, which are one there, and Master Quest's (5), which it doesn't have
 const POKEMON_IMDB_ID = "tt0168366"
 const DP = "pokemon-diamante-y-perla"
-const POKEMON_SEASONS = { //season: [slug, episodes of that entry in the previous seasons]
+const POKEMON_SEASONS = Object.freeze({ //season: [slug, episodes of that entry in the previous seasons]
   1: ["pokemon-atrapalos-ya", 0], 2: ["pokemon-liga-naranja", 0], 3: ["pokemon-los-viajes-johto", 0], 4: ["pokemon-los-campeones-de-la-liga-johto", 0],
   6: ["pokemon-fuerza-maxima", 0], 7: ["pokemon-reto-maximo", 0], 8: ["pokemon-batalla-avanzada", 0], 9: ["pokemon-batalla-de-la-frontera", 0],
   10: [DP, 0], 11: [DP, 51], 12: [DP, 103], 13: [DP, 155], 14: ["pokemon-best-wishes", 0], 15: ["pokemon-best-wishes-2", 0],
   16: ["pokemon-xy", 0], 17: ["pokemon-xy-and-z", 0], 18: ["pokemon-sun-and-moon", 0], 19: ["pokemon-2019", 0], 20: ["horizontes-pokemon", 0]
-}
-const IMDB_SLUGS = {
+})
+const IMDB_SLUGS = Object.freeze({
   tt26692417: "horizontes-pokemon", tt29079338: "pokemon-mezase-pokemon-master", tt1294022: "pokemon-cronicas", tt3218680: "pocket-monsters-the-origin",
   tt6071336: "pokemon-generaciones", tt15356258: "pokemon-evoluciones", tt11547516: "pokemon-hakumei-no-tsubasa", tt19848562: "pokemon-nieves-de-hisui",
   tt21970564: "pocket-monsters-pokemon-especial-el-dios-arceus", tt3657074: "pokemon-xy-la-mega-evolucion-mas-fuerte", tt12471116: "poketoon",
@@ -85,7 +85,7 @@ const IMDB_SLUGS = {
   tt8856470: "pokemon-mewtwo-contraataca-evolucion", tt11819890: "pokemon-koko",
   tt0142251: "dragon-ball-la-leyenda-de-shen-long", tt0142249: "dragon-ball-la-princesa-durmiente-del-castillo-embrujado",
   tt0142248: "dragon-ball-una-aventura-mistica", tt0142250: "dragon-ball-el-camino-hacia-el-poder"
-}
+})
 
 /**
  * The PorygonSubs entry and episode an IMDB-mapped item is, see {@link IMDB_SLUGS}
