@@ -1,31 +1,133 @@
 const PORYGON_BASE = "https://porygonsubs.com"
 
+const fsPromises = require("fs/promises");
 const cheerio = require("cheerio");
 const streamParser = require("../lib/streamParsing.js");
 require('dotenv').config()//process.env.var
 
-//PorygonSubs has no catalog or search of its own here: its streams are added to the items opened from other catalogs.
-//Its search is a Livewire component (that only looks at the main title), but the sitemap lists every series and episode,
-//so it's matched against that
 const SERVER_NAMES = { fm: "Filemoon", voe: "Voe", kf: "Krakenfiles", mega: "Mega", mp4u: "MP4Upload", dood: "Doodstream", wish: "Streamwish" }
 const DUB_LANGS = { lat: "lat", cas: "esp" }
 
-/**
- * Lists every PorygonSubs series from its sitemap
- * @param {string} [type] - "movie" or "series", single-episode entries are taken as movies
- * @return {Promise<{title: string, slug: string, type: string}[]>}
- */
-async function GetSeriesList(type = undefined) {
-  const xml = await fetch(`${PORYGON_BASE}/sitemap.xml`).then((resp) => {
+//The site's pages are Livewire components: what they load after the page (search results, the full episode list, other
+//servers) is asked to them with a POST that carries the page's session cookie, CSRF token and the component's snapshot
+async function LoadPage(url) {
+  const resp = await fetch(url)
+  if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
+  const $ = cheerio.load(await resp.text())
+  return {
+    $, snapshots: $("[wire\\:snapshot]").map((_, el) => $(el).attr("wire:snapshot")).get(),
+    livewire: { uri: $("[data-update-uri]").attr("data-update-uri"), token: $("[data-csrf]").attr("data-csrf"), cookie: resp.headers.getSetCookie().map((c) => c.split(";")[0]).join("; "), referer: url }
+  }
+}
+
+async function CallLivewire(livewire, snapshot, method, params = [], updates = {}) {
+  if (!livewire.uri || !livewire.token || !snapshot) throw Error("No Livewire component!")
+  const body = JSON.stringify({ _token: livewire.token, components: [{ snapshot, updates, calls: [{ path: "", method, params }] }] })
+  return fetch(livewire.uri, { method: "POST", body, headers: { "Content-Type": "application/json", "X-Livewire": "1", "Cookie": livewire.cookie, "Referer": livewire.referer } }).then((resp) => {
     if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    return resp.text()
+    return resp.json()
+  }).then((data) => ({ html: data.components[0].effects?.html, data: JSON.parse(data.components[0].snapshot).data }))
+}
+
+const snapshotOf = (snapshots, name) => snapshots.find((s) => JSON.parse(s).memo.name === name)
+
+/**
+ * Searches the site, which returns every match at once (the whole site, about a hundred entries, without filters). Its
+ * text search only looks for the term inside the main title
+ * @param {{q: string, gene: string, airing: boolean}} [filters] - gene is a genre's slug, as in the site's genre links
+ * @return {Promise<{title: string, slug: string, type: string, category: string, poster: string, airing: boolean}[]>}
+ * category is the site's (Anime, Película, Ova, Ona, Especial)
+ */
+async function SearchSeries({ q, gene, airing } = {}) {
+  const url = new URL(`${PORYGON_BASE}/buscar`)
+  if (q) url.searchParams.set("q", q)
+  if (gene) url.searchParams.set("gene", gene)
+  const page = await LoadPage(url.toString())
+  const { html } = await CallLivewire(page.livewire, snapshotOf(page.snapshots, "frontend.buscar"), "loadAnimes", [], (airing) ? { selectedEstado: "1" } : {})
+  const $ = cheerio.load(html || "")
+  return $("a[href]").filter((_, a) => $(a).find("h4").length > 0).map((_, a) => {
+    const el = $(a), category = el.find("span.top-2.right-2").text().trim()
+    return {
+      title: el.find("h4").text().trim(),
+      slug: el.attr("href").match(/porygonsubs\.com\/([^/?#]+)$/)?.[1],
+      type: (category === "Película") ? "movie" : "series", category,
+      poster: el.find("img").attr("src"),
+      airing: /EN EMISI[OÓ]N/i.test(el.text())
+    }
+  }).get().filter((item) => item.slug)
+}
+
+exports.AiringCacheFile = './onairPORYGON_titles.json'
+
+exports.GetAiringAnimeFromWeb = async function () {
+  return SearchSeries({ airing: true }).then((data) => {
+    if (!data || data.length < 1) throw Error("Invalid response!")
+    return data.map(({ title, type, slug, poster }) => ({ title, type, slug, poster }))
   })
-  const paths = [...xml.matchAll(/<loc>https:\/\/porygonsubs\.com\/([^<]+)<\/loc>/g)].map((m) => m[1])
-  const episodes = paths.filter((p) => p.startsWith("ver/"))
-  return paths.filter((p) => !p.startsWith("ver/") && !p.includes("/")).map((slug) => {
-    const count = episodes.filter((p) => new RegExp(`^ver/${slug}-\\d+$`).test(p)).length
-    return { title: slug.replace(/-+/g, " "), slug, type: (count > 1) ? "series" : "movie" }
-  }).filter((item) => !type || item.type === type)
+}
+
+exports.GetAiringAnime = async function () {
+  return fsPromises.readFile(exports.AiringCacheFile).then((data) => JSON.parse(data)).catch((err) => {
+    console.error('\x1b[31mFailed reading titles cache:\x1b[39m ' + err)
+    return this.GetAiringAnimeFromWeb() //If the file doesn't exist, get the titles from the web
+  })
+}
+
+exports.UpdateAiringAnimeFile = function () {
+  return this.GetAiringAnimeFromWeb().then((titles) => {
+    console.log(`\x1b[36mGot ${titles.length} titles\x1b[39m, saving to cache`)
+    return fsPromises.writeFile(exports.AiringCacheFile, JSON.stringify(titles))
+  }).then(() => console.log('\x1b[32mOn Air PorygonSubs titles "cached" successfully!\x1b[39m')
+  ).catch((err) => {
+    console.error('\x1b[31mFailed "caching" titles:\x1b[39m ' + err)
+  })
+}
+
+/**
+ * For the catalogs: a text search or a genre's entries
+ * @param {string} [query]
+ * @param {string[]} [genreArr] - the first genre's slug is used
+ * @param {number} [skip] - the site returns every result at once, so later pages are cut from the same list
+ */
+exports.SearchCatalog = async function (query = undefined, genreArr = undefined, skip = 0) {
+  if (!query && !genreArr?.length) throw Error("No arguments passed to SearchCatalog()")
+  return SearchSeries({ q: query, gene: genreArr?.[0] }).then((data) => data.slice(Number(skip) || 0).map((anime) => ({ ...anime, genres: genreArr })))
+}
+
+exports.GetAnimeBySlug = async function (slug) {
+  const url = `${PORYGON_BASE}/${slug}`
+  const page = await LoadPage(url)
+  const $ = page.$
+  const title = $("h1").first().text().trim()
+  if (!title) throw Error("Invalid response!")
+  //"<type> • <year> • <status>"
+  const [type, year, status] = $("h1 ~ p.text-gray-400 > span").not(".text-zinc-600").map((_, el) => $(el).text().trim()).get()
+  const isMovie = type === "Película"
+  //the page shows the last 15 episodes, the rest are asked to its episode list
+  const episodes = await CallLivewire(page.livewire, snapshotOf(page.snapshots, "anime.anime-capitulo"), "loadAll").then(({ html }) => cheerio.load(html || "")).catch(() => $)
+  const videos = episodes("[data-episode]").map((_, el) => ({ number: Number(episodes(el).attr("data-episode")), thumbnail: episodes(el).find("img").attr("src") })).get()
+    .filter((ep) => ep.number > 0).sort((a, b) => a.number - b.number).map(({ number, thumbnail }) => ({
+      id: `porygonsubs:${slug}:${number}`,
+      title: (isMovie) ? title : `${title} Ep. ${number}`,
+      season: 1, episode: number, number, thumbnail, available: true
+    }))
+  //the page's component has each related entry's slug and relation; its title is in the entry's link
+  const related = (JSON.parse(snapshotOf(page.snapshots, "frontend.anime") || "{}").data?.relacionados?.[0] || []).map(([r]) => ({
+    name: $(`a[href$='/${r.serie}'][title]`).attr("title") || r.serie, category: r.relacion,
+    url: `stremio:///detail/series/porygonsubs:${r.serie}`
+  }))
+  const altTitles = $("h1 + p.text-blue-400").text().split(",").map((t) => t.trim()).filter(Boolean)
+  return {
+    name: title, type: (isMovie) ? "movie" : "series",
+    videos, poster: `${PORYGON_BASE}/image/imagen/260/380/${slug}.jpg`, background: $("meta[property='og:image']").attr("content"),
+    genres: $("a[href^='/buscar?gene=']").map((_, a) => $(a).text().trim()).get(),
+    description: $("h1").parent().find("p.leading-relaxed").first().text().trim(),
+    website: url, id: `porygonsubs:${slug}`,
+    ...(altTitles.length) && { alternative_titles: altTitles },
+    ...(/^\d{4}$/.test(year)) && { releaseInfo: (status === "Finalizado" || isMovie) ? year : `${year}-` },
+    links: [{ name: "PorygonSubs", category: "Open in", url }, { name: title, category: "share", url }, ...related],
+    ...(videos.length == 1) && { behaviorHints: { defaultVideoId: videos[0].id } }
+  }
 }
 
 //Words that only say which season it is ("Black Clover season 2", "Captain Tsubasa temporada 2 junior youth hen") or
@@ -39,14 +141,15 @@ const isYear = (word) => /^(19|20)\d\d$/.test(word)
 const REMAKE_YEAR_DIFFERENCE = 3
 
 /**
- * Without a site search narrowing the list down, a fuzzy match isn't safe: a longer title containing the search term
- * would match ("Pokémon" would get "Pokémon XY", "Black Clover" would get "Black Clover season 2"). An entry matches when
+ * The site's search only finds titles containing the search term as written ("Black Clover 2" doesn't find "Black Clover
+ * Season 2"), and a fuzzy match isn't safe: a longer title containing the search term would match ("Pokémon" would get
+ * "Pokémon XY", "Black Clover" would get "Black Clover season 2"). So the whole list is matched here: an entry matches when
  * it has the same words as the search term, ignoring filler words and order, so its season number has to be the
  * requested one. The only extra word allowed is a year, which tells remakes apart ("Digimon Adventure 2020"): it must be
  * the item's own, and such an entry is preferred over the one without a year. Without the item's year, a title that has
  * remakes listed is ambiguous, so nothing matches
  * @param {string} searchTerm - with the season number appended when it's not the first, like the other sources' searches
- * @param {{title: string, slug: string}[]} items - from {@link GetSeriesList}
+ * @param {{title: string, slug: string}[]} items - from {@link SearchSeries}
  * @param {number} [year] - the requested item's release year
  * @return {(Object|undefined)} the matching item
  */
@@ -118,7 +221,8 @@ async function MapByIMDBID({ imdbID, season, episode, idType, id }) {
 exports.SearchPorygonSubs = async function (query, type = undefined, year = undefined, ids = {}) {
   const mapped = await MapByIMDBID(ids)
   if (mapped) return (mapped.slug) ? [{ title: query, slug: mapped.slug, episode: mapped.episode }] : []
-  const match = MatchSeries(query, await GetSeriesList(type), year)
+  //an OVA, ONA or special can be listed as a movie or as a series elsewhere
+  const match = MatchSeries(query, (await SearchSeries()).filter((item) => !type || item.type === type || !["Anime", "Película"].includes(item.category)), year)
   return (match) ? [{ ...match, year: (/\s\d{1,2}$/.test(query)) ? undefined : year }] : []
 }
 
@@ -127,12 +231,8 @@ exports.SearchPorygonSubs = async function (query, type = undefined, year = unde
 const MAX_YEAR_DIFFERENCE = 10
 
 exports.GetItemStreams = async function (slug, onlyInternal = true, epNumber = 1, year = undefined) {
-  const url = `${PORYGON_BASE}/ver/${slug}-${epNumber ?? 1}`
-  const resp = await fetch(url)
-  if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-  const html = await resp.text()
-  const $ = cheerio.load(html)
-  const snapshot = $("[wire\\:snapshot]").map((_, el) => $(el).attr("wire:snapshot")).get().find((s) => s.includes('"embed"'))
+  const { $, snapshots, livewire } = await LoadPage(`${PORYGON_BASE}/ver/${slug}-${epNumber ?? 1}`)
+  const snapshot = snapshots.find((s) => s.includes('"embed"'))
   if (!snapshot) throw Error("No player in the page!")
   const data = JSON.parse(snapshot).data
   const pageYear = Number($("div.text-gray-500 > span").map((_, el) => $(el).text().trim()).get().find(isYear))
@@ -143,27 +243,11 @@ exports.GetItemStreams = async function (slug, onlyInternal = true, epNumber = 1
     return { lang: $(el).attr("data-position").split("-")[1], idioma: Number(idioma), server }
   }).get().filter((b) => b.server)
   if (buttons.length < 1) throw Error("No servers!")
-  //the others are asked to its Livewire component, which only answers with this page's session cookie and CSRF token
-  const livewire = {
-    uri: $("[data-update-uri]").attr("data-update-uri"),
-    token: $("[data-csrf]").attr("data-csrf"),
-    cookie: resp.headers.getSetCookie().map((c) => c.split(";")[0]).join("; "),
-    snapshot, referer: url
-  }
   const wanted = buttons.filter((b, i) => i === 0 || !onlyInternal || b.server === "mp4u") //external servers are only listed when asked for
-  const servers = await Promise.allSettled(wanted.map((b, i) => ((i === 0) ? Promise.resolve(data.embed) : GetServerEmbed(livewire, b)).then((embed) => {
+  const servers = await Promise.allSettled(wanted.map((b, i) => ((i === 0) ? Promise.resolve(data.embed) : CallLivewire(livewire, snapshot, "selecServer", [{ idioma: b.idioma, slug: b.server }]).then((r) => r.data.embed)).then((embed) => {
     if (!/^https?:\/\//.test(embed || "")) throw Error("No embed!")
     return { name: SERVER_NAMES[b.server] || streamParser.getServerTitle(new URL(embed).hostname), embed, dub: b.lang !== "sub", dubLang: DUB_LANGS[b.lang] }
   }))).then((results) => results.filter((r) => r.value).map((r) => r.value))
   return streamParser.GetStreamLinks("PorygonSubs", "porygonsubs", { data: { title: data.titleaux?.replace(/\s+cap[ií]tulo\s+\d+.*$/i, "") || slug.replace(/-+/g, " "), number: epNumber, servers } }, onlyInternal)
-}
-
-async function GetServerEmbed(livewire, button) {
-  if (!livewire.uri || !livewire.token) throw Error("No Livewire endpoint!")
-  const body = JSON.stringify({ _token: livewire.token, components: [{ snapshot: livewire.snapshot, updates: {}, calls: [{ path: "", method: "selecServer", params: [{ idioma: button.idioma, slug: button.server }] }] }] })
-  return fetch(livewire.uri, { method: "POST", body, headers: { "Content-Type": "application/json", "X-Livewire": "1", "Cookie": livewire.cookie, "Referer": livewire.referer } }).then((resp) => {
-    if ((!resp.ok) || resp.status !== 200) throw Error(`HTTP error! Status: ${resp.status}`)
-    return resp.json()
-  }).then((data) => JSON.parse(data.components[0].snapshot).data.embed)
 }
 

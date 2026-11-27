@@ -13,6 +13,7 @@ const tioanimeAPI = require('./tioanime.js')
 const animejaraAPI = require('./animejara.js')
 const jkanimeAPI = require('./jkanime.js')
 const latanimeAPI = require('./latanime.js')
+const porygonsubsAPI = require('./porygonsubs.js')
 
 /**
  * Tipical express middleware callback.
@@ -227,6 +228,21 @@ function HandleCatalogRequest(req, res, next) {
         })
       })
     }
+  } else if (req.params.videoId.startsWith("porygonsubs")) {
+    //porygonsubs catalog request, the site returns every result at once
+    const toMeta = (anime) => ({
+      id: `porygonsubs:${anime.slug}`,
+      type: anime.type,
+      name: anime.title,
+      poster: anime.poster,
+      genres: (anime.genres) ? anime.genres.map((el) => el.slice(0, 1).toUpperCase() + el.slice(1)) : undefined
+    })
+    catalogPromise = ((res.locals.extraParams && !req.params.videoId.includes("onair"))
+      ? porygonsubsAPI.SearchCatalog(res.locals.extraParams.search, res.locals.extraParams.genre, res.locals.extraParams.skip)
+      : porygonsubsAPI.GetAiringAnime()).then((result) => {
+      console.log('\x1b[36mGot PorygonSubs metadata for:\x1b[39m', result.length, "search results")
+      return result.map(toMeta)
+    })
   } else if (req.params.videoId.startsWith("jkanime")) {
     //jkanime catalog request
     if (res.locals.extraParams && !req.params.videoId.includes("onair")) {
