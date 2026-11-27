@@ -97,6 +97,19 @@ function ReadManifest() {
           ]
         },
         {
+          id: "porygonsubs", type: "PorygonSubs", name: "search results",
+          extra: [{ name: "search", isRequired: true },
+          {
+            name: "genre",
+            options: ["accion", "artes-marciales", "aventura", "ciencia-ficcion", "comedia", "deportes", "drama", "ecchi", "escolares",
+              "fantasia", "game", "horror", "latino", "magia", "mecha", "militar", "misterio", "ninos", "pokemon-anime", "peliculas-pokemon",
+              "pokemon-latino", "psicologico", "romance", "shojo", "shonen", "slice-of-life", "sobrenatural", "superpoderes", "vampiros"],
+            optionsLimit: 1, isRequired: false
+          },
+          { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "tioanime", type: "TioAnime", name: "search results",
           extra: [{ name: "search", isRequired: true },
           {
@@ -209,6 +222,19 @@ function ReadManifest() {
           ]
         },
         {
+          id: "porygonsubs|genres", type: "Anime", name: "PorygonSubs",
+          extra: [
+            {
+              name: "genre",
+              options: ["accion", "artes-marciales", "aventura", "ciencia-ficcion", "comedia", "deportes", "drama", "ecchi", "escolares",
+                "fantasia", "game", "horror", "latino", "magia", "mecha", "militar", "misterio", "ninos", "pokemon-anime", "peliculas-pokemon",
+                "pokemon-latino", "psicologico", "romance", "shojo", "shonen", "slice-of-life", "sobrenatural", "superpoderes", "vampiros"],
+              optionsLimit: 1, isRequired: true
+            },
+            { name: "skip", isRequired: false }
+          ]
+        },
+        {
           id: "tioanime|genres", type: "Anime", name: "TioAnime",
           extra: [
             {
@@ -271,6 +297,9 @@ function ReadManifest() {
         {
           id: "latanime|onair", type: "Latanime", name: "On Air"
         },
+        {
+          id: "porygonsubs|onair", type: "PorygonSubs", name: "On Air"
+        },
         // {
         //   id: "animejara|onair", type: "AnimeJara", name: "On Air"
         // },
@@ -298,7 +327,7 @@ function ReadManifest() {
       ],
       "resources": [
         "stream",
-        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ /*"animeflv:",*/"animeav1:","henaojara:","tioanime:",/*"animejara:",*/ /*"jkanime:",*/"latanime:","anilist:","mal:","anidb:"] },
+        { name: 'meta', types: ['movie', 'series', 'anime', 'other'], idPrefixes: [ /*"animeflv:",*/"animeav1:","henaojara:","tioanime:",/*"animejara:",*/ /*"jkanime:",*/"latanime:","porygonsubs:","anilist:","mal:","anidb:"] },
         "catalog"
       ],
       "types": [
@@ -316,6 +345,7 @@ function ReadManifest() {
         // "animejara:",
         // "jkanime:", //JKAnime answers 403 to the server (#61)
         "latanime:",
+        "porygonsubs:",
         "tmdb:",
         "anilist:",
         "kitsu:",
@@ -415,7 +445,8 @@ app.listen(process.env.PORT || 3000, () => {
   // const animejaraAPI = require('./routes/animejara.js') // Cloudflare protected
   // const jkanimeAPI = require('./routes/jkanime.js') //JKAnime answers 403 to the server's IP (#61)
   const latanimeAPI = require('./routes/latanime.js')
-  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI/*, jkanimeAPI*/, latanimeAPI]
+  const porygonsubsAPI = require('./routes/porygonsubs.js')
+  let imports = [/*animeFLVAPI, animejaraAPI,*/ animeAV1API, tioanimeAPI, henaojaraAPI/*, jkanimeAPI*/, latanimeAPI, porygonsubsAPI]
   const REFRESH = 6 * 3600000 //newly airing shows appear within hours
   //When the code is newer than a saved list (a deploy), that list was built by the old code: refresh it right away
   const codeTime = Promise.all(["routes", "lib"].map((dir) => fsPromises.readdir(dir).then((files) =>
